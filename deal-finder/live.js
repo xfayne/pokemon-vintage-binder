@@ -3,9 +3,8 @@
  'use strict';
  const page=document.querySelector('#dealsPage .collection-panel');
  const bridge=()=>window.VintageDealBridge;
- if(!page || !page.querySelector('.deal-summary'))return;
+ if(!page || !page.querySelector('.collection-heading'))return;
  const DEFAULT_WORKER_URL='https://pokemon-vintage-ebay-deals.xfayne.workers.dev';
- const key='pokemon-ebay-worker-endpoint-v1';
  const $=id=>document.getElementById(id);
  const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const money=v=>{if(!v || !Number.isFinite(Number(v.value)) || !/^[A-Z]{3}$/.test(String(v.currency)))return '—';try{return new Intl.NumberFormat('en-US',{style:'currency',currency:v.currency,maximumFractionDigits:2}).format(Number(v.value));}catch(_){return String(v.value)+' '+String(v.currency)}};
@@ -15,21 +14,8 @@
  const ui=document.createElement('section');
  ui.className='live-auctions';
  ui.setAttribute('aria-label','מכרזים חיים מ־eBay');
- ui.innerHTML='<div class="live-title"><div><h3>⚡ מכרזים חיים ב־eBay</h3><p>מכרזים שנשלפו מ־eBay על קלפים ב־Wishlist שלך, כולל הצעות ומחיר משלוח כשהם זמינים.</p></div><span id="liveBadge" class="live-badge">לא מחובר</span></div>'+
- '<div class="live-toolbar"><button type="button" id="liveReload" class="btn primary">↻ חפש מכרזים עכשיו</button>'+
- '<label for="liveSort">מיון <select id="liveSort"><option value="discount">הנחה משוערת</option><option value="closing">מסתיימים בקרוב</option><option value="bids">הכי מעט הצעות</option><option value="match">התאמת קלף</option></select></label>'+
- '<label class="live-only-shipping"><input type="checkbox" id="liveOnlyShipping"> רק משלוח ידוע</label></div>'+
- '<div id="liveStatus" class="live-status" role="status"></div><div id="liveListings" class="live-results" role="list"></div>'+
- '<div class="live-more"><button type="button" class="btn" id="liveMore" hidden>חפש את ארבעת הקלפים הבאים ↓</button></div>'+
- '<details class="live-settings" id="liveSettings"><summary>⚙ חיבור למקור הנתונים</summary>'+
- '<p>כדי לשלוף מכרזים אוטומטית, יש להזין כתובת של שרת eBay Worker עם פרטי גישה שמורים בשרת. אין להזין כאן סיסמה או מפתח API.</p>'+
- '<form id="liveConnectForm"><label for="liveEndpoint">כתובת ה־Worker</label><div class="live-connect-row"><input id="liveEndpoint" type="url" placeholder="https://your-worker.workers.dev" autocomplete="url" inputmode="url"><button type="submit" class="btn primary">חבר</button></div></form>'+
- '<p class="live-settings-hint">כתובת השרת נשמרת בדפדפן הזה. מפתחות eBay נשארים בשרת בלבד.</p></details>'+
- '<p class="live-disclaimer">הנחות מוצגות רק כחישוב מותנה במצב הקלף שנבחר ובמחיר השוק. התאמה, מצב, אותנטיות ומשלוח אינם מאומתים באמצעות התמונות. המחירים עשויים להשתנות.</p>';
- page.querySelector('.deal-summary').after(ui);
- $('liveEndpoint').value=state.endpoint;
- // Fixed public endpoint is configured in source. Do not display the obsolete manual connection form.
- $('liveSettings').hidden=true;
+ ui.innerHTML="<div class=\"live-title\"><span id=\"liveBadge\" class=\"live-badge\">בודק חיבור…</span></div>\n<div id=\"liveStatus\" class=\"live-status\" role=\"status\"></div>\n<div id=\"liveControls\" class=\"live-toolbar\" hidden>\n <button type=\"button\" id=\"liveReload\" class=\"btn primary\">↻ חפש מכרזים</button>\n <label for=\"dealGrade\">מצב להערכת מחיר <select id=\"dealGrade\"><option>NM</option><option>LP</option><option selected>MP</option><option>HP</option><option>DMG</option></select></label>\n <label for=\"liveSort\">מיון <select id=\"liveSort\"><option value=\"discount\">הנחה משוערת</option><option value=\"closing\">מסתיימים בקרוב</option><option value=\"bids\">מעט הצעות</option><option value=\"match\">התאמת קלף</option></select></label>\n <label class=\"live-only-shipping\"><input type=\"checkbox\" id=\"liveOnlyShipping\"> רק משלוח ידוע</label>\n</div>\n<div id=\"liveListings\" class=\"live-results\" role=\"list\"></div>\n<div class=\"live-more\"><button type=\"button\" class=\"btn\" id=\"liveMore\" hidden>חפש בארבעה קלפים נוספים ↓</button></div>\n<p class=\"live-disclaimer\" id=\"liveDisclaimer\" hidden>הערכת ההנחה מניחה את מצב הקלף שנבחר. יש לבדוק מצב, מקוריות, משלוח ועמלות לפני הצעה; נתוני מכרז משתנים בזמן אמת.</p>";
+ page.querySelector('.collection-heading').after(ui);
 
  const list=()=>bridge()?.getWishlistCards?.()||[];
  const usd=(a)=>{if(!a||typeof a.value!=='number')return null;return window.VintageDealsDashboard?.convertToUSD?.(a.value,a.currency)??null};
@@ -65,15 +51,15 @@
   $('liveReload').disabled=state.loading || !state.endpoint || state.status==='awaiting-keys';
   $('liveMore').disabled=state.loading;
   $('liveMore').hidden=state.loading || state.done || state.status!=='ready' || state.searched>=total;
-  $('liveSettings').open=false;
- $('liveSettings').hidden=true;
+  $('liveControls').hidden=state.status!=='ready';
+  $('liveDisclaimer').hidden=state.status!=='ready';
   let status='';
   if(!state.endpoint)status='כדי לקבל מכרזים חיים צריך לחבר שרת eBay. התשתית קיימת; כרגע אין כתובת שרת מוגדרת.';
   else if(state.loading)status='בודקת מכרזים ומחירי משלוח עבור קלפים מרשימת הרצונות…';
   else if(state.error)status=state.error;
-  else if(state.status==='awaiting-keys')status='השרת מחובר, אך ממתינים למפתחות eBay Production. אין צורך להגדיר את כתובת השרת ידנית.';
+  else if(state.status==='awaiting-keys')status='החיבור לשרת מוכן. ממתינים לאישור חשבון המפתחים ולהגדרת מפתחות eBay כדי להתחיל לחפש מכרזים אוטומטית.';
   else if(state.fetchedAt)status='מקור: eBay Browse API · נבדקו '+state.searched+' מתוך '+total+' קלפים · עודכן: '+new Date(state.fetchedAt).toLocaleString('he-IL')+(state.errors.length?' · היו '+state.errors.length+' שגיאות חלקיות':'');
-  else if(state.status==='ready')status='מחובר ל־eBay. ניתן להתחיל חיפוש אוטומטי.';
+  else if(state.status==='ready')status='מחובר ל־eBay. ניתן לחפש מכרזים על קלפים מה־Wishlist שלך.';
   else status='בדיקת חיבור לשרת eBay…';
   $('liveStatus').textContent=status;
   const lookup=cardIndex(),sort=$('liveSort').value,shippingOnly=$('liveOnlyShipping').checked;
@@ -87,7 +73,7 @@
   if(sort==='match')enriched.sort((a,b)=>b.item.matchConfidence-a.item.matchConfidence);
   $('liveListings').innerHTML=enriched.length ? enriched.map(({item,card,score})=>{
    const pct=score.discount!==null?Math.round(score.discount*100):null;
-   const target=Number($('dealDiscount')?.value||35);
+   const target=35;
    const flag=pct!==null&&pct>=target&&item.matchConfidence>=70&&item.shipping!==null;
    const dt=Number.isFinite(new Date(item.endTime).getTime())?timeLabel(item.endTime):'זמן סיום לא ידוע';
    const amount=score.allIn===null?'—':'$'+score.allIn.toFixed(2);
@@ -110,11 +96,6 @@
    '';
  }
 
- function endpoint(raw){
-  try{const url=new URL(raw.trim());if(url.protocol!=='https:'||url.username||url.password||url.search||url.hash||url.pathname!=='/')return null;
-   return url.origin;
-  }catch(_){return null}
- }
  async function connect(){
   if(!state.endpoint){state.status='setup';render();return false}
   state.status='loading';state.error='';render();
@@ -151,15 +132,6 @@
   finally{state.loading=false;render()}
  }
 
- $('liveConnectForm').addEventListener('submit',async e=>{
-  e.preventDefault();
-  const input=endpoint($('liveEndpoint').value);
-  if(!input){state.error='כתובת לא תקינה. דרושה כתובת HTTPS של Worker בלבד, ללא נתיב או מפתח.';state.status='error';render();return}
-  state.endpoint=input;
-  try{localStorage.setItem(key,input)}catch(_){}
-  const connected=await connect();
-  if(connected)await findMore(true);
- });
  $('liveReload').addEventListener('click',()=>findMore(true));
  $('liveMore').addEventListener('click',()=>findMore(false));
  $('liveSort').addEventListener('change',render);
