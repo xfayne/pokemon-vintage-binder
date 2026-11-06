@@ -285,6 +285,34 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
 .purchase-controls input{flex:0 1 130px;width:130px;min-width:0;height:37px;padding:6px 8px;font-size:15px}
 .purchase-controls select{flex:0 0 67px;width:67px;max-width:67px;height:37px;padding:5px 4px}
 @media(max-width:650px){.compact-market .market-value{font-size:18px}}
+
+/* v15: contextual tabs and an account menu on the top left */
+.hero-top{display:flex;align-items:center;justify-content:space-between;gap:12px;position:relative;margin-bottom:11px}
+.hero-top .eyebrow{min-width:0}
+.account-area{position:relative;flex-shrink:0}
+.account-trigger{display:flex;align-items:center;gap:7px;padding:5px 9px 5px 6px;border:1px solid #ffffff35;border-radius:999px;background:#ffffff13;color:#fff;font-size:12px;min-height:37px;font-weight:700}
+.account-trigger:hover{background:#ffffff28}
+.account-avatar{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:#ffffff25;font-size:13px}
+.account-chevron{font-size:15px;opacity:.85}
+.account-menu{position:absolute;left:0;top:calc(100% + 8px);min-width:184px;max-width:calc(100vw - 26px);background:#fff;color:#26334c;border:1px solid #dce4f1;box-shadow:0 16px 35px #0b163555;border-radius:13px;z-index:30;padding:5px;display:grid;gap:2px}
+.account-menu[hidden]{display:none}
+.account-menu button{border:0;background:transparent;border-radius:8px;color:#24324b;padding:11px;text-align:right;font-size:13px;font-weight:650;white-space:nowrap}
+.account-menu button:hover,.account-menu button:focus-visible{background:#eff2fe}
+.account-separator{height:1px;background:#e8ebf4;margin:3px 2px}
+.cloud-config .cloudmeta{margin:13px 0;color:#293952;display:grid;gap:3px}
+.cloud-config .cloudmeta small{color:#66758c}
+.owned-toolbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin:0 0 12px}
+.owned-toolbar label{display:flex;gap:8px;align-items:center;font-size:12px;font-weight:750;color:#64718a}
+.owned-toolbar select{max-width:210px;padding:8px 10px;background:#fff;border:1px solid #d5ddec;border-radius:9px;color:#273851}
+.owned-item[data-open-owned]{cursor:pointer;transition:border-color .15s,background .15s,box-shadow .15s}
+.owned-item[data-open-owned]:hover{border-color:#aebbef;background:#f5f7ff;box-shadow:0 4px 13px #172b4410}
+.owned-item[data-open-owned]:focus-visible{outline:3px solid #8b9cf4;outline-offset:2px}
+.owned-market{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:3px}
+.owned-condition{font-size:11px;font-weight:800;color:#455686;background:#e9eefe;border-radius:6px;padding:3px 6px}
+.owned-price{font-size:12px;font-weight:800;color:#20715c;direction:ltr;unicode-bidi:isolate}
+.owned-price.pending{font-weight:500;color:#8d98a8}
+.wishlist-heading-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+@media(max-width:650px){.hero-top{align-items:flex-start}.hero-top .eyebrow{font-size:10px;letter-spacing:.6px;line-height:1.7}.account-trigger{font-size:11px;max-width:145px}.account-trigger #accountName{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.account-chevron{display:none}.owned-toolbar{align-items:stretch}.owned-toolbar select{max-width:170px}.owned-item{gap:8px}.owned-price{font-size:11px}}
 </style>
 </head>
 <body>
