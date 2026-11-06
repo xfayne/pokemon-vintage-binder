@@ -2638,6 +2638,13 @@ if(stickySitebar){
 const BASE='https://openapi.tcgtracking.com/v1/3';
 const CONDITIONS=[['NM','Near Mint'],['LP','Lightly Played'],['MP','Moderately Played'],['HP','Heavily Played'],['DMG','Damaged']];
 const setPromise=new Map();
+// Verified TCGTracking product IDs for cards filed under different TCGplayer groups.
+const MARKET_OVERRIDES={
+ 'basep-3':{set:'WoTC Promo',productId:87414},
+ 'basep-5':{set:'WoTC Promo',productId:84909},
+ 'movie2000-ancient-mew':{set:'Miscellaneous Cards & Products',productId:108589},
+ 'base1-8':{set:'Deck Exclusives',productId:42425}
+};
 const ownedPriceCache=new Map(),ownedPricePending=new Set();
 function getOwnedPrice(card,setName,condition,firstEdition=false){
  if(!card||!condition)return null;
@@ -2645,7 +2652,7 @@ function getOwnedPrice(card,setName,condition,firstEdition=false){
  if(ownedPriceCache.has(key))return ownedPriceCache.get(key);
  if(!ownedPricePending.has(key)){
   ownedPricePending.add(key);
-  getSetData(setName).then(data=>{
+  getSetData(setName,card).then(data=>{
    const market=makeMarket(card,data);
    const variant=market?bestVariant(card,market.variants.keys(),firstEdition):null;
    const row=variant?market.variants.get(variant)?.get(condition):null;
@@ -2660,7 +2667,7 @@ function getOwnedPrice(card,setName,condition,firstEdition=false){
 }
 let catalogPromise=null,requestId=0;
 const esc=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
-const nameKey=s=>String(s??'').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9♀♂]/g,'');
+const nameKey=s=>String(s??'').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/♀/g,'f').replace(/♂/g,'m').replace(/[^a-z0-9]/g,'');
 const numKey=s=>String(s??'').replace(/^#/,'').split('/')[0].replace(/[^0-9]/g,'').replace(/^0+(?=\d)/,'');
 const usd=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n);
 async function getJSON(path){
@@ -2669,9 +2676,10 @@ async function getJSON(path){
  finally{clearTimeout(timer);}
 }
 function sets(){if(!catalogPromise)catalogPromise=getJSON(BASE+'/sets').catch(e=>{catalogPromise=null;throw e});return catalogPromise;}
-async function getSetData(setName){
+async function getSetData(setName,card){
  const catalog=await sets(),groups=Array.isArray(catalog.sets)?catalog.sets:[];
- const group=groups.find(g=>nameKey(g.name)===nameKey(setName) && !String(g.name).toLowerCase().includes('inactive'));
+ const wanted=MARKET_OVERRIDES[card?.id]?.set||(setName==='Wizards Black Star Promos'?'WoTC Promo':setName);
+ const group=groups.find(g=>nameKey(g.name)===nameKey(wanted) && !String(g.name).toLowerCase().includes('inactive'));
  if(!group)return null;
  if(!setPromise.has(group.id)){
   const promise=Promise.all([getJSON(BASE+'/sets/'+group.id+'/cards'),getJSON(BASE+'/sets/'+group.id+'/skus')])
@@ -2686,19 +2694,21 @@ function bestVariant(card,names,firstEdition=false){
  const rank=(raw)=>{
   const v=String(raw).toLowerCase();
   const isFirst=/1st|first edition/.test(v);
-  if(firstEdition!==isFirst)return -1;
+  // Regular starter-deck Machamp is stamped 1st Edition even outside the shadowless print.
+  const effectiveFirst=card.id==='base1-8'?true:firstEdition;
+  if(effectiveFirst!==isFirst)return -1;
   if(desired==='holo'){
    if(/reverse/.test(v))return -1;
    if(/holofoil/.test(v))return /unlimited/.test(v)?120:110;
    if(/holo/.test(v))return 100;
-   if(firstEdition&&/1st edition$/.test(v))return 60;
+   if(effectiveFirst&&/1st edition$/.test(v))return 60;
    return -1;
   }
   if(desired==='reverse')return /reverse holo/.test(v)?120:-1;
   if(/holo|foil/.test(v)&&!/normal/.test(v))return -1;
   if(/normal/.test(v))return /unlimited/.test(v)?125:110;
   if(/unlimited/.test(v))return 100;
-  if(firstEdition&&/1st edition/.test(v))return 90;
+  if(effectiveFirst&&/1st edition/.test(v))return 90;
   return v==='normal'?90:-1;
  };
  const ranked=[...names].map(name=>({name,score:rank(name)})).filter(x=>x.score>=0).sort((a,b)=>b.score-a.score);
@@ -2706,9 +2716,12 @@ function bestVariant(card,names,firstEdition=false){
 }
 function makeMarket(card,setData){
  if(!setData)return null;
- const products=setData.cards.filter(p=>numKey(p.number)===numKey(card.number));
- const target=products.find(p=>nameKey(p.name)===nameKey(card.name))
-   || products.find(p=>nameKey(p.name).includes(nameKey(card.name))&&nameKey(card.name).length>=4);
+ const special=MARKET_OVERRIDES[card.id];
+ // A verified ID prevents accidentally pricing a different printing or promo.
+ const target=special
+   ? (setData.group?.name===special.set?setData.cards.find(p=>p.id===special.productId):null)
+   : setData.cards.find(p=>numKey(p.number)===numKey(card.number)&&
+       nameKey(p.name.replace(/\s*\(\d{1,3}\)\s*$/,''))===nameKey(card.name));
  if(!target)return null;
  const productSku=setData.skus?.products?.[String(target.id)]||{};
  const variants=new Map();
@@ -2758,7 +2771,7 @@ async function show(card,setInfo){
  if(!panel)return;
  panel.innerHTML='<span class="market-label">מחיר שוק</span><span class="market-status">טוען…</span>';
  try{
-  const data=await getSetData(setInfo?.name||'');
+  const data=await getSetData(setInfo?.name||'',card);
   if(seq!==requestId||!document.getElementById('modalPricePanel'))return;
   if(!data){panel.innerHTML='<span class="market-label">מחיר שוק</span><span class="market-status">אין נתונים לסדרה</span>';return;}
   const market=makeMarket(card,data);
