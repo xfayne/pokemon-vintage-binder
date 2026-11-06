@@ -450,11 +450,11 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
 .wishlist-items .wish-item>img[data-drag-kind]:active,
 .wishlist-items .wish-rank[data-drag-kind]:active{cursor:grabbing}
 /* Whole-card Wishlist drag: hold to drag on touch, normal swipes scroll the page. */
-.wishlist-items .wish-item,
-.wishlist-items .wish-item>img[data-drag-kind],
-.wishlist-items .wish-rank[data-drag-kind]{
+.wishlist-items .wish-item{
  touch-action:pan-y;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none
 }
+.wishlist-items .wish-item>img[data-drag-kind],
+.wishlist-items .wish-item>.wish-rank[data-drag-kind]{touch-action:none}
 .wishlist-items .wish-item{cursor:grab}
 .wishlist-items .wish-item.drag-origin{cursor:grabbing}
 .wishlist-items .wish-side button{cursor:pointer}
@@ -2396,7 +2396,8 @@ function attachCollections(){
  }
  document.addEventListener('pointerdown',e=>{
   const wishRow=e.target.closest('[data-order-kind="wishlist"]');
-  if(wishRow&&(e.pointerType==='touch'||e.target.closest('button,a,input,select')))return;
+  const directTouchHandle=e.target.closest('.wish-item>img[data-drag-kind],.wish-item>.wish-rank[data-drag-kind]');
+  if(wishRow&&(e.target.closest('button,a,input,select')||(e.pointerType==='touch'&&!directTouchHandle)))return;
   const h=e.target.closest('[data-drag-kind]');if(!h||e.button!==0)return;
   if(gesture)clearDragVisual();
   const kind=h.dataset.dragKind,from=Number(h.dataset.dragIndex);
@@ -2435,7 +2436,7 @@ function attachCollections(){
  function touchPoint(e,id){return Array.from(e.changedTouches).find(t=>t.identifier===id);}
  document.addEventListener('touchstart',e=>{
   const row=e.target.closest('[data-order-kind="wishlist"][data-order-index]');
-  if(!row||e.target.closest('button,a,input,select')||e.touches.length!==1)return;
+  if(!row||e.target.closest('button,a,input,select')||e.target.closest('.wish-item>img[data-drag-kind],.wish-item>.wish-rank[data-drag-kind]')||e.touches.length!==1)return;
   cancelTouch();
   const touch=e.changedTouches[0];
   const pending={
