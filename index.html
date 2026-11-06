@@ -234,11 +234,40 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
 .wish-move-actions{display:grid;gap:9px;margin-top:16px}
 .wish-move-actions .btn{width:100%;justify-content:center;min-height:43px}
 .wish-move-cancel{display:block;margin:14px auto 0;background:none;border:0;color:#6c7790;padding:7px 18px}
+
+/* v13: accessible details, private purchase price and condition-specific market quotes */
+.dialog{max-height:calc(100dvh - 24px);overflow-y:auto;-webkit-overflow-scrolling:touch}
+.purchase-field{margin:15px 0 5px;padding:12px;border:1px solid #cbd8ee;background:#f5f8ff;border-radius:12px}
+.purchase-field[hidden]{display:none}
+.purchase-heading{font-weight:780;color:#223a60;margin-bottom:9px}
+.purchase-controls{display:flex;gap:8px;align-items:center}
+.purchase-controls input{min-width:0;flex:1;padding:10px;border:1px solid #c7d4e8;border-radius:9px;font-size:16px;direction:ltr;text-align:left}
+.purchase-controls select{flex:0 0 auto;max-width:115px;padding:10px 5px;border:1px solid #c7d4e8;border-radius:9px;background:white;font-size:14px}
+.purchase-field small{display:block;color:#6b7991;margin-top:8px;line-height:1.4}
+.market-panel{margin:20px 0 0;border-top:1px solid #e1e6ef;padding-top:15px}
+.market-heading{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.market-heading h4{font-size:17px;margin:0 0 6px}
+.market-note,.market-updated{font-size:12px;color:#6c7890;line-height:1.65}
+.market-variants{margin:10px 0 13px;display:grid;gap:5px}
+.market-variants label{font-size:12px;font-weight:700;color:#495b74}
+.market-variants select{border:1px solid #c8d5e7;border-radius:9px;background:white;padding:9px;font-size:14px;max-width:100%;width:100%}
+.market-conditions{display:grid;gap:3px}
+.market-condition{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px;border-bottom:1px solid #edf0f4}
+.market-condition.selected{border-radius:8px;background:#fff6e2}
+.market-condition .condition-name{font-size:14px;color:#293c5b}
+.market-condition .condition-name small{display:block;color:#7b8aa1;font-size:11px}
+.market-condition .market-value{font-size:16px;font-weight:800;direction:ltr}
+.market-condition .market-low{font-size:11px;font-weight:400;color:#7d8798;text-align:left;direction:ltr}
+.market-status{font-size:13px;color:#68778f;line-height:1.6;margin:11px 0}
+.market-footer{margin-top:10px;font-size:12px;color:#667892;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.market-footer a{font-weight:720}
+.wish-item img[data-preview]{cursor:pointer}
+@media(max-width:650px){.modal-main{grid-template-columns:1fr;gap:13px}.modal-img{max-width:180px;display:block;margin:auto}.purchase-controls select{max-width:112px}}
 </style>
 </head>
 <body>
 <header class="hero"><div class="hero-inner">
-<div class="eyebrow">THE ORIGINAL WOTC ERA · 1999–2002 · v12</div>
+<div class="eyebrow">THE ORIGINAL WOTC ERA · 1999–2002 · v13</div>
 <h1>Pokémon Vintage Binder <span aria-hidden="true">✦</span></h1>
 <p>כל הקלפים מהילדות, במקום אחד. רשימה מלאה של Base, Jungle, Fossil, Team Rocket, Gym וכל סדרות Neo, עם סימון ברור של Holo ו־Shining.</p>
 <div class="stats">
@@ -1724,10 +1753,10 @@ function embeddedCards(){
 }
 
 const $=id=>document.getElementById(id);
-const state={cards:[],owned:{},wish:{},removedWish:{},conditions:{},notes:{},binderExcluded:{},binderOrder:[],wishOrder:[],binderIncludeWish:true,binderPage:0,view:'catalog',active:'all',extras:false,holoOnly:false,pokemonOnly:false,status:'all',sort:'num',query:'',limit:96,ready:false,failures:[]};
-function getProgress(){normalizeOrders();return {owned:{...state.owned},wish:{...state.wish},removedWish:{...state.removedWish},conditions:{...state.conditions},notes:{...state.notes},binderExcluded:{...state.binderExcluded},binderIncludeWish:state.binderIncludeWish,binderOrder:[...state.binderOrder],wishOrder:[...state.wishOrder]}}
+const state={cards:[],owned:{},wish:{},removedWish:{},conditions:{},notes:{},purchasePrices:{},binderExcluded:{},binderOrder:[],wishOrder:[],binderIncludeWish:true,binderPage:0,view:'catalog',active:'all',extras:false,holoOnly:false,pokemonOnly:false,status:'all',sort:'num',query:'',limit:96,ready:false,failures:[]};
+function getProgress(){normalizeOrders();return {owned:{...state.owned},wish:{...state.wish},removedWish:{...state.removedWish},conditions:{...state.conditions},notes:{...state.notes},purchasePrices:{...state.purchasePrices},binderExcluded:{...state.binderExcluded},binderIncludeWish:state.binderIncludeWish,binderOrder:[...state.binderOrder],wishOrder:[...state.wishOrder]}}
 function validPart(raw){return raw&&typeof raw==='object'&&!Array.isArray(raw)?raw:{}}
-function adoptProgress(value){for(const k of ['owned','wish','removedWish','conditions','notes','binderExcluded'])state[k]={...validPart(value?.[k])};for(const id of Object.keys(state.removedWish))delete state.wish[id];state.binderIncludeWish=typeof value?.binderIncludeWish==='boolean'?value.binderIncludeWish:true;for(const k of ['binderOrder','wishOrder'])state[k]=Array.isArray(value?.[k])?[...value[k]]:[];normalizeOrders();renderAll();}
+function adoptProgress(value){for(const k of ['owned','wish','removedWish','conditions','notes','purchasePrices','binderExcluded'])state[k]={...validPart(value?.[k])};for(const id of Object.keys(state.removedWish))delete state.wish[id];state.binderIncludeWish=typeof value?.binderIncludeWish==='boolean'?value.binderIncludeWish:true;for(const k of ['binderOrder','wishOrder'])state[k]=Array.isArray(value?.[k])?[...value[k]]:[];normalizeOrders();renderAll();}
 function ensureCloudEdit(){if(window.VintageCloud?.canEdit?.())return true;
  toast('כדי לשמור שינויים צריך להתחבר ל־Google ולהמתין לטעינת האוסף.');
  const dialog=$('cloudDialog');if(dialog&&!dialog.open)dialog.showModal();return false;}
@@ -1797,12 +1826,33 @@ function toggleWish(id){
  state.wish[id]=true;delete state.removedWish[id];
  normalizeOrders();save(true);renderAll();
 }
-function showModal(id){const c=state.cards.find(c=>c.id===id);if(!c)return;const s=MAP.get(c.set);$('modalContent').innerHTML=`<div class="modal-main"><div><img class="modal-img" src="${esc(c.large)}" alt="${esc(c.name)}"></div><div class="modal-data"><div class="eyebrow" style="color:#697997;letter-spacing:.5px">${esc(s.name)} · ${s.year}</div><h3>${esc(c.name)}</h3><div class="card-sub">#${esc(cardNumber(c))}</div><p>${rarityHtml(c)}<br>${c.finish==='unknown'?'בקלפי פרומו ייתכנו כמה גימורים. בדוק את הקלף הספציפי.':c.set==='base6'?'ב־Legendary Collection יש גם הדפסת Reverse Holo נפרדת, שלא מופיעה כאן כפריט נוסף.':c.finish==='normal'?'קלף רגיל (לא Holo), לפי ההדפסה הסטנדרטית.':'קלף מבריק בהדפסה הסטנדרטית.'}</p><div class="modal-own-row"><button class="btn ${state.owned[c.id]?'':'primary'}" id="modalOwned">${state.owned[c.id]?'✓ יש לי — הסר':'✓ סמן שיש לי'}</button><button class="btn" id="modalWish">${state.wish[c.id]?'★ ברשימת רצונות':'☆ לרשימת רצונות'}</button></div><div class="modal-actions"><label>מצב הקלף (אופציונלי)<select id="modalCondition"><option value="">לא צוין</option>${['NM','LP','MP','HP','DMG'].map(v=>`<option value="${v}" ${state.conditions[c.id]===v?'selected':''}>${v}</option>`).join('')}</select></label><label>הערות (למשל: Unlimited, פגם קטן, כמות)<textarea id="modalNotes" maxlength="600" placeholder="הערות אישיות...">${esc(state.notes[c.id]||'')}</textarea></label><a href="https://www.google.com/search?q=${encodeURIComponent('Pokemon '+s.name+' '+c.name+' '+cardNumber(c)+' card')}" target="_blank" rel="noopener">השוואת גרסאות ומידע נוסף ↗</a></div></div></div>`;
- $('modalOwned').onclick=()=>{toggleOwned(c.id);showModal(c.id)};$('modalWish').onclick=()=>{toggleWish(c.id);showModal(c.id)};$('modalCondition').onchange=e=>{if(!ensureCloudEdit()){e.target.value=state.conditions[c.id]||'';return;}const v=e.target.value;if(v)state.conditions[c.id]=v;else delete state.conditions[c.id];save();renderCards()};$('modalNotes').oninput=e=>{if(!ensureCloudEdit()){e.target.value=state.notes[c.id]||'';return;}const v=e.target.value;if(v)state.notes[c.id]=v;else delete state.notes[c.id];save()};if(!$('modal').open)$('modal').showModal();}
+function updatePurchasePrice(id){
+ if(!ensureCloudEdit()){showModal(id);return;}
+ const amountField=$('modalPurchaseAmount'), currencyField=$('modalPurchaseCurrency');
+ const raw=String(amountField.value||'').trim().replace(',','.');
+ if(raw===''){delete state.purchasePrices[id];save();return;}
+ const amount=Number(raw);
+ if(!Number.isFinite(amount)||amount<0||amount>1000000000){toast('הכנס סכום רכישה תקין');return;}
+ const currency=['ILS','EUR','USD'].includes(currencyField.value)?currencyField.value:'ILS';
+ state.purchasePrices[id]={amount:Math.round(amount*100)/100,currency};
+ save();
+}
+function showModal(id){const c=state.cards.find(c=>c.id===id);if(!c)return;const s=MAP.get(c.set);$('modalContent').innerHTML=`<div class="modal-main"><div><img class="modal-img" src="${esc(c.large)}" alt="${esc(c.name)}"></div><div class="modal-data"><div class="eyebrow" style="color:#697997;letter-spacing:.5px">${esc(s.name)} · ${s.year}</div><h3>${esc(c.name)}</h3><div class="card-sub">#${esc(cardNumber(c))}</div><p>${rarityHtml(c)}<br>${c.finish==='unknown'?'בקלפי פרומו ייתכנו כמה גימורים. בדוק את הקלף הספציפי.':c.set==='base6'?'ב־Legendary Collection יש גם הדפסת Reverse Holo נפרדת, שלא מופיעה כאן כפריט נוסף.':c.finish==='normal'?'קלף רגיל (לא Holo), לפי ההדפסה הסטנדרטית.':'קלף מבריק בהדפסה הסטנדרטית.'}</p><div class="modal-own-row"><button class="btn ${state.owned[c.id]?'':'primary'}" id="modalOwned">${state.owned[c.id]?'✓ יש לי — הסר':'✓ סמן שיש לי'}</button><button class="btn" id="modalWish">${state.wish[c.id]?'★ ברשימת רצונות':'☆ לרשימת רצונות'}</button></div><div class="purchase-field" id="modalPurchaseBox" ${state.owned[c.id]?'':'hidden'}>
+   <div class="purchase-heading">💰 מחיר רכישה שלי</div>
+   <div class="purchase-controls">
+    <input type="number" id="modalPurchaseAmount" inputmode="decimal" min="0" max="1000000000" step="0.01" placeholder="כמה שילמתי?" value="${state.purchasePrices[c.id]?.amount??''}" aria-label="מחיר הרכישה">
+    <select id="modalPurchaseCurrency" aria-label="מטבע הרכישה">
+     ${[['ILS','₪ שקל'],['EUR','€ אירו'],['USD','$ דולר']].map(([code,label])=>`<option value="${code}" ${(state.purchasePrices[c.id]?.currency||'ILS')===code?'selected':''}>${label}</option>`).join('')}
+    </select>
+   </div><small>נשמר רק באוסף הפרטי שלך ב־Firestore. לא מוצג בקישור השיתוף.</small>
+  </div><div class="modal-actions"><label>מצב הקלף (אופציונלי)<select id="modalCondition"><option value="">לא צוין</option>${['NM','LP','MP','HP','DMG'].map(v=>`<option value="${v}" ${state.conditions[c.id]===v?'selected':''}>${v}</option>`).join('')}</select></label><label>הערות (למשל: Unlimited, פגם קטן, כמות)<textarea id="modalNotes" maxlength="600" placeholder="הערות אישיות...">${esc(state.notes[c.id]||'')}</textarea></label><a href="https://www.google.com/search?q=${encodeURIComponent('Pokemon '+s.name+' '+c.name+' '+cardNumber(c)+' card')}" target="_blank" rel="noopener">השוואת גרסאות ומידע נוסף ↗</a></div></div></div><section class="market-panel" id="modalPricePanel" aria-live="polite"></section>`;
+ $('modalOwned').onclick=()=>{toggleOwned(c.id);showModal(c.id)};$('modalWish').onclick=()=>{toggleWish(c.id);showModal(c.id)};$('modalCondition').onchange=e=>{if(!ensureCloudEdit()){e.target.value=state.conditions[c.id]||'';return;}const v=e.target.value;if(v)state.conditions[c.id]=v;else delete state.conditions[c.id];save();renderCards()};if(state.owned[c.id]){ $('modalPurchaseAmount').onchange=()=>updatePurchasePrice(c.id); $('modalPurchaseCurrency').onchange=()=>updatePurchasePrice(c.id); }
+ window.VintageMarketPrices?.show(c,s);
+ $('modalNotes').oninput=e=>{if(!ensureCloudEdit()){e.target.value=state.notes[c.id]||'';return;}const v=e.target.value;if(v)state.notes[c.id]=v;else delete state.notes[c.id];save()};if(!$('modal').open)$('modal').showModal();}
 function download(content,type,filename){const blob=new Blob([content],{type});const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download=filename;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),2500)}
-function backup(){const data={app:'pokemon-vintage-binder',version:2,date:new Date().toISOString(),...getProgress()};download(JSON.stringify(data,null,2),'application/json;charset=utf-8','pokemon-vintage-my-collection.json');toast('נוצר גיבוי. שמור את הקובץ במקום בטוח.')}
-function exportCSV(){if(!state.ready){toast('חכה שהרשימה תיטען');return;}const cols=['Set','Number','Name','Type','Holo','Owned','Wishlist','Condition','Notes'];const rows=[cols,...catalog().map(c=>[MAP.get(c.set).name,cardNumber(c),c.name,c.kind,c.finish,state.owned[c.id]?'Yes':'No',state.wish[c.id]?'Yes':'No',state.conditions[c.id]||'',state.notes[c.id]||''])];const csv='\ufeff'+rows.map(r=>r.map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(',')).join('\r\n');download(csv,'text/csv;charset=utf-8','pokemon-vintage-checklist.csv');toast('הקובץ נוצר. אפשר לפתוח אותו ב־Excel או Google Sheets.')}
-async function importBackup(file){if(!file||!ensureCloudEdit())return;try{const data=JSON.parse(await file.text());if(data.app!=='pokemon-vintage-binder'||typeof data.owned!=='object'||!data.owned||Array.isArray(data.owned))throw Error('invalid file');if(!confirm('הייבוא יחליף את סימוני הקלפים שיש לך כרגע. להמשיך?'))return;for(const k of ['owned','wish','removedWish','conditions','notes','binderExcluded'])state[k]=(data[k]&&typeof data[k]==='object'&&!Array.isArray(data[k]))?data[k]:{};for(const k of ['binderOrder','wishOrder'])state[k]=Array.isArray(data[k])?[...data[k]]:[];if(typeof data.binderIncludeWish==='boolean')state.binderIncludeWish=data.binderIncludeWish;normalizeOrders();save();renderAll();toast('הגיבוי יובא בהצלחה!')}catch(e){toast('לא ניתן לייבא: הקובץ אינו גיבוי תקין של האוסף.')}}
+function backup(){const data={app:'pokemon-vintage-binder',version:3,date:new Date().toISOString(),...getProgress()};download(JSON.stringify(data,null,2),'application/json;charset=utf-8','pokemon-vintage-my-collection.json');toast('נוצר גיבוי. שמור את הקובץ במקום בטוח.')}
+function exportCSV(){if(!state.ready){toast('חכה שהרשימה תיטען');return;}const cols=['Set','Number','Name','Type','Holo','Owned','Wishlist','Condition','Notes','Purchase Price','Purchase Currency'];const rows=[cols,...catalog().map(c=>[MAP.get(c.set).name,cardNumber(c),c.name,c.kind,c.finish,state.owned[c.id]?'Yes':'No',state.wish[c.id]?'Yes':'No',state.conditions[c.id]||'',state.notes[c.id]||'',state.purchasePrices[c.id]?.amount??'',state.purchasePrices[c.id]?.currency||''])];const csv='\ufeff'+rows.map(r=>r.map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(',')).join('\r\n');download(csv,'text/csv;charset=utf-8','pokemon-vintage-checklist.csv');toast('הקובץ נוצר. אפשר לפתוח אותו ב־Excel או Google Sheets.')}
+async function importBackup(file){if(!file||!ensureCloudEdit())return;try{const data=JSON.parse(await file.text());if(data.app!=='pokemon-vintage-binder'||typeof data.owned!=='object'||!data.owned||Array.isArray(data.owned))throw Error('invalid file');if(!confirm('הייבוא יחליף את סימוני הקלפים שיש לך כרגע. להמשיך?'))return;for(const k of ['owned','wish','removedWish','conditions','notes','purchasePrices','binderExcluded'])state[k]=(data[k]&&typeof data[k]==='object'&&!Array.isArray(data[k]))?data[k]:{};for(const k of ['binderOrder','wishOrder'])state[k]=Array.isArray(data[k])?[...data[k]]:[];if(typeof data.binderIncludeWish==='boolean')state.binderIncludeWish=data.binderIncludeWish;normalizeOrders();save();renderAll();toast('הגיבוי יובא בהצלחה!')}catch(e){toast('לא ניתן לייבא: הקובץ אינו גיבוי תקין של האוסף.')}}
 
 // Collection organization: separate binder positions and wishlist priorities.
 function normalizeOrders(){
@@ -1888,8 +1938,8 @@ function renderCollections(){if(!state.ready)return;normalizeOrders();
  $('wishlistItems').innerHTML=state.wishOrder.length?state.wishOrder.map((id,i)=>{const c=cardLookup.get(id);if(!c)return '';
  const owned=!!state.owned[id],inBinder=state.binderOrder.includes(id);
  return `<article class="wish-item" role="listitem" data-order-kind="wishlist" data-order-index="${i}">
- <span class="wish-rank">${i+1}</span><img loading="lazy" decoding="async" src="${esc(c.image)}" alt="${esc(c.name)} — גרור לשינוי סדר" data-drag-kind="wishlist" data-drag-index="${i}" title="החזק וגרור לסידור" draggable="false"><div class="wish-copy"><strong>${esc(c.name)}</strong><small>${esc(MAP.get(c.set)?.name||'')} · #${esc(cardNumber(c))}${owned?' · ✓ יש לי':''}</small></div>
- <div class="wishlist-actions"><div class="reorder-row"><button type="button" data-move-kind="wishlist" data-move-index="${i}" data-move-delta="-1" ${i===0?'disabled':''} aria-label="מעלה עדיפות">↑</button><button type="button" class="drag-handle" data-drag-kind="wishlist" data-drag-index="${i}" aria-label="גרור שינוי עדיפות">⋮⋮ גרור</button><button type="button" data-move-kind="wishlist" data-move-index="${i}" data-move-delta="1" ${i===state.wishOrder.length-1?'disabled':''} aria-label="מוריד עדיפות">↓</button></div><button type="button" class="btn sm wish-move-action" data-wish-move="${esc(id)}" aria-label="העבר את ${esc(c.name)} למיקום אחר ברשימת המשאלות">↗ העבר</button><button type="button" class="btn sm" data-owned-binder="${esc(id)}">${inBinder?'↗ העבר בבינדר':'＋ לבינדר'}</button><button class="wish-remove" type="button" data-remove-wish="${esc(id)}" aria-label="מחק משאלה מהרשימה">✕ הסר משאלה</button></div></article>`}).join(''):
+ <span class="wish-rank">${i+1}</span><img loading="lazy" decoding="async" src="${esc(c.image)}" alt="${esc(c.name)} — לחץ לפרטים או גרור לשינוי סדר" data-preview="${esc(id)}" data-drag-kind="wishlist" data-drag-index="${i}" title="החזק וגרור לסידור" draggable="false"><div class="wish-copy"><strong>${esc(c.name)}</strong><small>${esc(MAP.get(c.set)?.name||'')} · #${esc(cardNumber(c))}${owned?' · ✓ יש לי':''}</small></div>
+ <div class="wishlist-actions"><button type="button" class="btn sm" data-preview="${esc(id)}" aria-label="פרטים על ${esc(c.name)}">פרטים</button><div class="reorder-row"><button type="button" data-move-kind="wishlist" data-move-index="${i}" data-move-delta="-1" ${i===0?'disabled':''} aria-label="מעלה עדיפות">↑</button><button type="button" class="drag-handle" data-drag-kind="wishlist" data-drag-index="${i}" aria-label="גרור שינוי עדיפות">⋮⋮ גרור</button><button type="button" data-move-kind="wishlist" data-move-index="${i}" data-move-delta="1" ${i===state.wishOrder.length-1?'disabled':''} aria-label="מוריד עדיפות">↓</button></div><button type="button" class="btn sm wish-move-action" data-wish-move="${esc(id)}" aria-label="העבר את ${esc(c.name)} למיקום אחר ברשימת המשאלות">↗ העבר</button><button type="button" class="btn sm" data-owned-binder="${esc(id)}">${inBinder?'↗ העבר בבינדר':'＋ לבינדר'}</button><button class="wish-remove" type="button" data-remove-wish="${esc(id)}" aria-label="מחק משאלה מהרשימה">✕ הסר משאלה</button></div></article>`}).join(''):
  `<div class="no-cards">רשימת המשאלות עדיין ריקה. סמן ☆ ליד קלף בקטלוג כדי להוסיף אותו. <button type="button" class="btn sm primary" data-view-btn="catalog">לקטלוג</button></div>`;
  renderOwnedList();
 }
@@ -2047,6 +2097,121 @@ attach();loadEmbeddedData();
 
 
 <script>
+/* TCGTracking open market data (TCGplayer SKU-level prices, per condition/printing).
+   No user data is sent to the price provider; only the chosen card set is queried. */
+(()=>{
+'use strict';
+const BASE='https://openapi.tcgtracking.com/v1/3';
+const CONDITIONS=[['NM','Near Mint'],['LP','Lightly Played'],['MP','Moderately Played'],['HP','Heavily Played'],['DMG','Damaged']];
+const setPromise=new Map();
+let catalogPromise=null,requestId=0;
+const esc=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+const nameKey=s=>String(s??'').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9♀♂]/g,'');
+const numKey=s=>String(s??'').replace(/^#/,'').split('/')[0].replace(/[^0-9]/g,'').replace(/^0+(?=\d)/,'');
+const usd=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n);
+async function getJSON(path){
+ const ac=new AbortController(),timer=setTimeout(()=>ac.abort(),13000);
+ try{const r=await fetch(path,{signal:ac.signal});if(!r.ok)throw Error('HTTP '+r.status);return await r.json();}
+ finally{clearTimeout(timer);}
+}
+function sets(){if(!catalogPromise)catalogPromise=getJSON(BASE+'/sets').catch(e=>{catalogPromise=null;throw e});return catalogPromise;}
+async function getSetData(setName){
+ const catalog=await sets(),groups=Array.isArray(catalog.sets)?catalog.sets:[];
+ const group=groups.find(g=>nameKey(g.name)===nameKey(setName) && !String(g.name).toLowerCase().includes('inactive'));
+ if(!group)return null;
+ if(!setPromise.has(group.id)){
+  const promise=Promise.all([getJSON(BASE+'/sets/'+group.id+'/cards'),getJSON(BASE+'/sets/'+group.id+'/skus')])
+   .then(([cards,skus])=>({cards:Array.isArray(cards.products)?cards.products:[],skus,group}))
+   .catch(e=>{setPromise.delete(group.id);throw e});
+  setPromise.set(group.id,promise);
+ }
+ return setPromise.get(group.id);
+}
+function bestVariant(card,names){
+ const desired=(card.finish==='holo'||card.finish==='shining')?'holo':card.finish==='reverse'?'reverse':'normal';
+ const score=(v)=>{
+  const t=String(v).toLowerCase();
+  if(/1st|first edition/.test(t))return -100;
+  if(desired==='holo'){if(t==='unlimited holofoil')return 110;if(t==='holofoil')return 90;if(t==='holo')return 85;return 0;}
+  if(desired==='reverse'){if(t==='reverse holofoil')return 110;if(t==='reverse holo')return 100;return 0;}
+  if(t==='unlimited edition normal'||t==='unlimited')return 110;
+  if(t==='normal')return 90;
+  return /holo|foil/.test(t)?0:50;
+ };
+ return [...names].sort((a,b)=>score(b)-score(a))[0];
+}
+function makeMarket(card,setData){
+ if(!setData)return null;
+ const products=setData.cards.filter(p=>numKey(p.number)===numKey(card.number));
+ const target=products.find(p=>nameKey(p.name)===nameKey(card.name))
+   || products.find(p=>nameKey(p.name).includes(nameKey(card.name))&&nameKey(card.name).length>=4);
+ if(!target)return null;
+ const productSku=setData.skus?.products?.[String(target.id)]||{};
+ const variants=new Map();
+ for(const row of Object.values(productSku)){
+  if(!row || row.lng!=='EN'||!CONDITIONS.some(([code])=>code===row.cnd))continue;
+  const variant=String(row.var||row.var_a||row.vid||'');
+  if(!variant)continue;
+  if(!variants.has(variant))variants.set(variant,new Map());
+  const list=variants.get(variant);
+  const old=list.get(row.cnd);
+  const good=n=>typeof n==='number' && Number.isFinite(n) && n>=0;
+  if(!old || (good(row.mkt)&&!good(old.mkt)) || (good(row.mkt)===good(old.mkt) && (row.cnt||0)>(old.cnt||0)))list.set(row.cnd,row);
+ }
+ return {product:target,variants,updated:setData.skus?.updated||setData.group?.skus_modified||null,preferred:bestVariant(card,variants.keys())};
+}
+function priceLink(card,market){
+ const u=market?.product?.tcgplayer_url;
+ if(typeof u==='string'&&/^https:\/\//.test(u))return u;
+ return 'https://www.tcgplayer.com/search/pokemon/product?productLineName=pokemon&q='+encodeURIComponent(card.name+' '+card.number);
+}
+function rowsHTML(market,variant,condition){
+ const available=market.variants.get(variant)||new Map();
+ return CONDITIONS.map(([key,label])=>{
+  const row=available.get(key)||{},v=row.mkt;
+  const valid=typeof v==='number'&&Number.isFinite(v)&&v>=0;
+  const low=typeof row.low==='number'&&Number.isFinite(row.low)&&row.low>=0?row.low:null;
+  return '<div class="market-condition '+(key===condition?'selected':'')+'"><div class="condition-name">'+label+' <small>'+key+'</small></div><div><div class="market-value">'+(valid?usd(v):'—')+'</div>'+(low!==null?'<div class="market-low">מחיר הצעה נמוך '+usd(low)+'</div>':'')+'</div></div>';
+ }).join('');
+}
+function renderMarket(card,market,chosen){
+ const panel=document.getElementById('modalPricePanel');if(!panel)return;
+ const url=priceLink(card,market);
+ const option=[...market.variants.keys()];
+ if(!option.length){panel.innerHTML='<div class="market-heading"><h4>💵 מחירי שוק לפי מצב</h4></div><div class="market-status">לא נמצאו מחירי TCGplayer זמינים להדפסה האנגלית של הקלף הזה.</div><div class="market-footer"><a href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">חפש ב־TCGplayer ↗</a></div>';return;}
+ const variant=option.includes(chosen)?chosen:market.preferred||option[0];
+ const selectedCondition=window.VintageBinder?.getProgress?.()?.conditions?.[card.id]||'';
+ const stamp=market.updated?new Date(market.updated):null;
+ const stampText=stamp&&!Number.isNaN(stamp.getTime())?stamp.toLocaleDateString('he-IL'):'לא ידוע';
+ panel.innerHTML='<div class="market-heading"><h4>💵 מחירי שוק לפי מצב</h4></div>'
+ +'<div class="market-variants"><label for="marketVariant">סוג הדפסה (חשוב במיוחד ב־Unlimited / Holo)</label><select id="marketVariant">'+option.map(v=>'<option value="'+esc(v)+'"'+(v===variant?' selected':'')+'>'+esc(v)+'</option>').join('')+'</select></div>'
+ +'<div class="market-conditions">'+rowsHTML(market,variant,selectedCondition)+'</div>'
+ +'<div class="market-note">מחיר שוק בדולרים, ללא משלוח ומסים. מצב הקלף וההדפסה משפיעים מאוד על המחיר. ערכים חסרים מוצגים כ־—.</div>'
+ +'<div class="market-footer"><span>מקור: TCGplayer דרך TCGTracking · עודכן: '+esc(stampText)+'</span><a href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">הצג ב־TCGplayer ↗</a></div>';
+ panel.querySelector('#marketVariant').addEventListener('change',e=>renderMarket(card,market,e.target.value));
+}
+async function show(card,setInfo){
+ const seq=++requestId,panel=document.getElementById('modalPricePanel');
+ if(!panel)return;
+ panel.innerHTML='<div class="market-heading"><h4>💵 מחירי שוק לפי מצב</h4></div><div class="market-status">טוען מחירים לפי מצב והדפסה…</div>';
+ try{
+  const data=await getSetData(setInfo?.name||'');
+  if(seq!==requestId||!document.getElementById('modalPricePanel'))return;
+  if(!data){panel.innerHTML='<h4>💵 מחירי שוק לפי מצב</h4><div class="market-status">אין כרגע התאמה בטוחה לסדרה הזו במקור המחירים. <a href="'+esc(priceLink(card,null))+'" target="_blank" rel="noopener noreferrer">חפש מחירים ב־TCGplayer ↗</a></div>';return;}
+  const market=makeMarket(card,data);
+  if(!market){panel.innerHTML='<h4>💵 מחירי שוק לפי מצב</h4><div class="market-status">לא נמצאה התאמה מדויקת לקלף לפי שם ומספר, ולכן לא אציג מחיר שעלול להיות של קלף אחר. <a href="'+esc(priceLink(card,null))+'" target="_blank" rel="noopener noreferrer">בדוק ב־TCGplayer ↗</a></div>';return;}
+  renderMarket(card,market);
+ }catch(e){
+  if(seq!==requestId)return;
+  console.warn('TCG market data unavailable:',e);
+  const current=document.getElementById('modalPricePanel');if(current)current.innerHTML='<h4>💵 מחירי שוק לפי מצב</h4><div class="market-status">לא הצלחתי לטעון מחירים כרגע. ניתן לנסות שוב מאוחר יותר.</div><button type="button" class="btn sm" id="retryMarket">נסה שוב</button>';
+  document.getElementById('retryMarket')?.addEventListener('click',()=>show(card,setInfo));
+ }
+}
+window.VintageMarketPrices={show};
+})();
+</script>
+<script>
 /* The public viewer only uses the static catalog and the sanitized shared binder document. */
 (()=>{'use strict';
  const shell=document.getElementById('readerShell'),spread=document.getElementById('readerSpread'),foot=document.getElementById('readerFooter'),prevBtn=document.getElementById('readerPrev'),nextBtn=document.getElementById('readerNext');
@@ -2165,7 +2330,7 @@ const oldKeys=['pokemon-vintage-binder-cards-v1'];
 function setStatus(a,b){status.textContent=a;detail.textContent=b||'';}
 function say(m){message.textContent=m||'';}
 function cleanOld(){try{const keys=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&(k.startsWith(legacyPrefix)||k.startsWith('vintage-binder-firebase-')||oldKeys.includes(k)))keys.push(k);}for(const k of keys)localStorage.removeItem(k);}catch(e){console.warn('Could not purge old collection cache',e);}}
-function clean(p){const out={};for(const k of ['owned','wish','removedWish','conditions','notes','binderExcluded']){const v=p?.[k];out[k]=v&&typeof v==='object'&&!Array.isArray(v)?{...v}:{}}for(const k of ['binderOrder','wishOrder'])out[k]=Array.isArray(p?.[k])?[...new Set(p[k].filter(v=>typeof v==='string'))]:[];out.binderIncludeWish=typeof p?.binderIncludeWish==='boolean'?p.binderIncludeWish:true;for(const id of Object.keys(out.removedWish))delete out.wish[id];out.wishOrder=out.wishOrder.filter(id=>!!out.wish[id]&&!out.removedWish[id]);return out;}
+function clean(p){const out={};for(const k of ['owned','wish','removedWish','conditions','notes','purchasePrices','binderExcluded']){const v=p?.[k];out[k]=v&&typeof v==='object'&&!Array.isArray(v)?{...v}:{}}for(const k of ['binderOrder','wishOrder'])out[k]=Array.isArray(p?.[k])?[...new Set(p[k].filter(v=>typeof v==='string'))]:[];out.binderIncludeWish=typeof p?.binderIncludeWish==='boolean'?p.binderIncludeWish:true;for(const id of Object.keys(out.removedWish))delete out.wish[id];out.wishOrder=out.wishOrder.filter(id=>!!out.wish[id]&&!out.removedWish[id]);return out;}
 function authError(e){switch(e?.code){case 'auth/unauthorized-domain':return 'צריך לאשר את '+location.hostname+' תחת Firebase Authentication → Settings → Authorized domains.';case 'auth/popup-blocked':return 'הדפדפן חסם את החלון. הפעל חלונות קופצים ב־Safari ונסה שוב.';case 'auth/popup-closed-by-user':return 'חלון ההתחברות נסגר לפני שהתחברת.';case 'permission-denied':return 'Firestore חסם את הגישה. בדוק את Security Rules תחת users/{uid}.';}return e?.message||String(e);}
 function resetSession(){shareEnabled=false;shareId=null;shareLoaded=false;shareIncludeWish=false;shareUpdateFailed=false;renderShare();session++;if(stopListening){stopListening();stopListening=null;}clearTimeout(flushTimer);flushTimer=null;user=null;docRef=null;ready=false;pending=false;writing=false;changeSeq=0;lastServerUpdate=0;serverRevision=0;lastWrittenRevision=0;}
 async function loadSdk(){if(sdk)return sdk;const ver='13.1.0';const [a,b,c]=await Promise.all([import('https://www.gstatic.com/firebasejs/'+ver+'/firebase-app.js'),import('https://www.gstatic.com/firebasejs/'+ver+'/firebase-auth.js'),import('https://www.gstatic.com/firebasejs/'+ver+'/firebase-firestore.js')]);sdk={...a,...b,...c};return sdk;}
