@@ -13,7 +13,7 @@ function allowedOrigin(origin,env) {
  return !!origin && origin.replace(/\/+$/,'')===String(env.ALLOWED_ORIGIN||'https://xfayne.github.io').replace(/\/+$/,'');
 }
 function cors(origin,env) {
- return {'access-control-allow-origin':allowedOrigin(origin,env)?origin:'null','access-control-allow-methods':'GET,POST,OPTIONS','access-control-allow-headers':'content-type','access-control-max-age':'600',vary:'origin'};
+ return {'access-control-allow-origin':allowedOrigin(origin,env)?origin:'null','access-control-allow-methods':'GET,POST,OPTIONS','access-control-allow-headers':'content-type,authorization','access-control-max-age':'600',vary:'origin'};
 }
 function clean(x,max) {return String(x==null?'':x).replace(/[\u0000-\u001f]/g,' ').trim().slice(0,max||90)}
 function cardInput(raw) {
