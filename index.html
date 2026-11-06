@@ -516,6 +516,32 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
  }
 }
 
+
+/* Parcel tracking: compact, responsive cards and private read indicators. */
+.shipment-unread{display:inline-flex;align-items:center;justify-content:center;min-width:19px;height:19px;padding:0 5px;background:#bf4267;color:#fff;border-radius:999px;font-size:11px;line-height:1;font-weight:800}
+.shipment-unread[hidden]{display:none!important}
+.shipment-head{align-items:center}.shipment-head-actions{display:flex;gap:8px;flex-wrap:wrap}
+.shipment-notice{margin:0 0 14px}.shipment-list{display:grid;gap:10px}
+.shipment-entry{border:1px solid #e1e7f1;border-radius:13px;background:#fff;padding:13px;min-width:0}
+.shipment-entry-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.shipment-entry-title{font-size:15px;font-weight:800;margin:0 0 5px}.shipment-tracking-number{font-size:12px;direction:ltr;unicode-bidi:isolate;color:#697792}
+.shipment-label{font-size:12px;color:#687792}.shipment-status{font-size:11px;color:#385d92;background:#edf3fc;border:1px solid #d6e2f3;border-radius:8px;padding:5px 8px;font-weight:750;white-space:nowrap}
+.shipment-card-images{display:flex;gap:5px;margin-top:10px;align-items:center}.shipment-card-images img{width:35px;height:48px;object-fit:contain;border-radius:4px;background:#f5f7fb}
+.shipment-actions{display:flex;align-items:center;gap:6px;margin-top:12px;flex-wrap:wrap}.shipment-actions button{padding:6px 10px;font-size:12px}.shipment-actions .shipment-remove{margin-inline-start:auto;color:#a14d61}
+.shipment-entry.is-new{border-color:#c3b3dc}.shipment-new{font-size:11px;font-weight:800;color:#8a3b91}
+.shipment-timeline{display:grid;gap:10px;margin-top:13px;border-top:1px solid #e7ebf4;padding-top:13px}
+.shipment-event{display:grid;grid-template-columns:12px minmax(0,1fr);gap:9px}.shipment-dot{width:9px;height:9px;border-radius:50%;background:#6575d9;margin-top:5px}
+.shipment-event-main{min-width:0}.shipment-event-main strong{display:block;font-size:12px;line-height:1.5}.shipment-event-main small{display:block;color:#75819b;margin-top:3px;font-size:11px}
+.shipment-empty{padding:25px 12px;text-align:center;color:#78869d;background:#f8faff;border:1px dashed #dce4ef;border-radius:12px}
+.shipment-dialog{width:min(94vw,560px);max-height:85vh;border:1px solid #d8dfec;border-radius:16px;padding:18px;background:white;color:#172038}
+.shipment-dialog::backdrop{background:#141c36a8}.shipment-form{display:grid;gap:12px}.shipment-form label{display:grid;gap:6px;font-size:12px;font-weight:750}
+.shipment-form label input,.shipment-form>input{width:100%;height:38px;padding:8px 10px;border:1px solid #d5dded;border-radius:9px;background:#fff}
+.shipment-dialog-head,.shipment-form-actions{display:flex;align-items:center;justify-content:space-between;gap:8px}.shipment-dialog-head h3{margin:0;font-size:18px}
+.shipment-picker-label{font-size:12px;font-weight:800}.shipment-picker-label small{font-weight:400;color:#78859a}
+.shipment-selected{display:flex;gap:5px;flex-wrap:wrap}.shipment-selected button{font-size:11px;padding:5px 8px;border:1px solid #cfd9ea;border-radius:8px;background:#edf3ff;color:#344c86}
+.shipment-card-results{display:grid;gap:5px;max-height:220px;overflow:auto}.shipment-card-choice{display:flex;align-items:center;gap:8px;text-align:start;padding:5px 8px;border-radius:9px;border:1px solid #e5eaf3;background:white}
+.shipment-card-choice img{width:29px;height:40px;object-fit:contain}.shipment-card-choice span{flex:1;min-width:0;font-size:12px}.shipment-card-choice small{display:block;font-size:10px;color:#78859a}.shipment-card-choice.selected{background:#f0f4ff;border-color:#aab8ed}
+@media(max-width:650px){.shipment-head{gap:8px}.shipment-entry{padding:10px}.shipment-head-actions .btn{padding:7px 9px}.shipment-dialog{padding:13px}.shipment-card-results{max-height:180px}}
 </style>
 <link rel="stylesheet" href="deal-finder/live.css?v=20261106-clean-1">
 </head>
@@ -536,6 +562,7 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
   <button type="button" data-view-btn="owned" aria-pressed="false">✅ הקלפים שלי <span class="nav-number" id="ownedCountTab"></span></button>
   <button type="button" data-view-btn="binder" aria-pressed="false">📖 הבינדר שלי <span class="nav-number" id="binderCountTab"></span></button>
   <button type="button" data-view-btn="wishlist" aria-pressed="false">💜 Wishlist <span class="nav-number" id="wishCountTab"></span></button>
+  <button type="button" data-view-btn="shipments" aria-pressed="false">📦 משלוחים <span id="shipmentUnreadTab" class="shipment-unread" hidden></span></button>
   <button type="button" data-view-btn="deals" aria-pressed="false">🔎 מציאות</button>
 </nav>
 </div>
@@ -598,6 +625,28 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
     <div id="wishlistItems" class="wishlist-items" role="list"></div>
   </div>
 </section>
+<section class="collection-page" id="shipmentsPage" hidden aria-label="מעקב משלוחים">
+ <div class="collection-panel">
+  <div class="collection-heading shipment-head">
+   <div><h2>📦 משלוחים</h2><div class="subtle">מעקב משלוחים ושיוך קלפים מהקטלוג שלך</div></div>
+   <div class="shipment-head-actions"><button type="button" class="btn sm" id="shipmentRefresh">↻ עדכון</button><button type="button" class="btn primary sm" id="shipmentAdd">+ משלוח</button></div>
+  </div>
+  <div class="subtle shipment-notice" id="shipmentNotice" role="status"></div>
+  <div class="shipment-list" id="shipmentList"></div>
+ </div>
+</section>
+<dialog id="shipmentDialog" class="shipment-dialog" aria-labelledby="shipmentDialogTitle">
+ <form id="shipmentForm" class="shipment-form">
+  <div class="shipment-dialog-head"><h3 id="shipmentDialogTitle">משלוח חדש</h3><button type="button" id="shipmentCancelTop" class="btn sm">✕</button></div>
+  <label>שם המשלוח <input id="shipmentName" maxlength="70" placeholder="למשל: קלפים מגרמניה" autocomplete="off"></label>
+  <label>מספר מעקב <input id="shipmentNumber" maxlength="50" required dir="ltr" placeholder="LA657049767NL" autocomplete="off" autocapitalize="characters" spellcheck="false"></label>
+  <div class="shipment-picker-label">קלפים במשלוח <small>(אפשר לבחור כמה)</small></div>
+  <input id="shipmentCardSearch" type="search" placeholder="חפש קלף לפי שם, סדרה או מספר…" autocomplete="off">
+  <div id="shipmentSelected" class="shipment-selected"></div>
+  <div id="shipmentCardResults" class="shipment-card-results"></div>
+  <div class="shipment-form-actions"><button class="btn primary" type="submit">שמור משלוח</button><button class="btn" type="button" id="shipmentCancel">ביטול</button></div>
+ </form>
+</dialog>
 <section class="collection-page" id="dealsPage" hidden aria-label="מציאות ומכרזי eBay">
  <div class="collection-panel"><div class="collection-heading"><div><h2>🔎 מציאות</h2><div class="subtle">מכרזים אמיתיים על קלפים מרשימת הרצונות שלך</div></div></div></div>
 </section>
@@ -2008,10 +2057,18 @@ function embeddedCards(){
 }
 
 const $=id=>document.getElementById(id);
-const state={cards:[],owned:{},wish:{},removedWish:{},conditions:{},notes:{},purchasePrices:{},firstEdition:{},ownedAddedAt:{},binderExcluded:{},binderOrder:[],wishOrder:[],binderIncludeWish:true,binderPage:0,view:'catalog',active:'all',extras:false,holoOnly:false,pokemonOnly:false,status:'all',sort:'num',query:'',limit:96,ready:false,failures:[]};
-function getProgress(){normalizeOrders();return {owned:{...state.owned},wish:{...state.wish},removedWish:{...state.removedWish},conditions:{...state.conditions},notes:{...state.notes},purchasePrices:{...state.purchasePrices},firstEdition:{...state.firstEdition},ownedAddedAt:{...state.ownedAddedAt},binderExcluded:{...state.binderExcluded},binderIncludeWish:state.binderIncludeWish,binderOrder:[...state.binderOrder],wishOrder:[...state.wishOrder]}}
+const state={cards:[],owned:{},wish:{},removedWish:{},conditions:{},notes:{},purchasePrices:{},firstEdition:{},ownedAddedAt:{},shipments:[],binderExcluded:{},binderOrder:[],wishOrder:[],binderIncludeWish:true,binderPage:0,view:'catalog',active:'all',extras:false,holoOnly:false,pokemonOnly:false,status:'all',sort:'num',query:'',limit:96,ready:false,failures:[]};
+function normalizeShipment(raw){
+ if(!raw||typeof raw!=='object')return null;
+ const number=String(raw.number||'').trim().toUpperCase();
+ if(!/^[A-Z0-9-]{5,50}$/.test(number))return null;
+ const id=String(raw.id||'').slice(0,70);
+ if(!/^[a-z0-9_-]{8,70}$/i.test(id))return null;
+ return {id,number,title:String(raw.title||'').slice(0,70),carrier:Number(raw.carrier)||0,cardIds:Array.isArray(raw.cardIds)?[...new Set(raw.cardIds.filter(x=>typeof x==='string'&&x.length<50))].slice(0,60):[],seenEventIds:Array.isArray(raw.seenEventIds)?[...new Set(raw.seenEventIds.filter(x=>typeof x==='string'&&x.length<100))].slice(0,200):[],initialized:raw.initialized===true,createdAt:Number(raw.createdAt)||0};
+}
+function getProgress(){normalizeOrders();return {owned:{...state.owned},wish:{...state.wish},removedWish:{...state.removedWish},conditions:{...state.conditions},notes:{...state.notes},purchasePrices:{...state.purchasePrices},firstEdition:{...state.firstEdition},ownedAddedAt:{...state.ownedAddedAt},shipments:state.shipments.map(x=>({...x,cardIds:[...x.cardIds],seenEventIds:[...x.seenEventIds]})),binderExcluded:{...state.binderExcluded},binderIncludeWish:state.binderIncludeWish,binderOrder:[...state.binderOrder],wishOrder:[...state.wishOrder]}}
 function validPart(raw){return raw&&typeof raw==='object'&&!Array.isArray(raw)?raw:{}}
-function adoptProgress(value){for(const k of ['owned','wish','removedWish','conditions','notes','purchasePrices','firstEdition','ownedAddedAt','binderExcluded'])state[k]={...validPart(value?.[k])};for(const id of Object.keys(state.removedWish))delete state.wish[id];state.ownedAddedAt={...validPart(value?.ownedAddedAt)};state.binderIncludeWish=typeof value?.binderIncludeWish==='boolean'?value.binderIncludeWish:true;for(const k of ['binderOrder','wishOrder'])state[k]=Array.isArray(value?.[k])?[...value[k]]:[];normalizeOrders();renderAll();}
+function adoptProgress(value){for(const k of ['owned','wish','removedWish','conditions','notes','purchasePrices','firstEdition','ownedAddedAt','binderExcluded'])state[k]={...validPart(value?.[k])};for(const id of Object.keys(state.removedWish))delete state.wish[id];state.ownedAddedAt={...validPart(value?.ownedAddedAt)};state.shipments=Array.isArray(value?.shipments)?value.shipments.map(normalizeShipment).filter(Boolean).slice(0,80):[];state.binderIncludeWish=typeof value?.binderIncludeWish==='boolean'?value.binderIncludeWish:true;for(const k of ['binderOrder','wishOrder'])state[k]=Array.isArray(value?.[k])?[...value[k]]:[];normalizeOrders();renderAll();}
 function ensureCloudEdit(){if(window.VintageCloud?.canEdit?.())return true;
  toast('כדי לשמור שינויים צריך להתחבר ל־Google ולהמתין לטעינת האוסף.');
  const dialog=$('cloudDialog');if(dialog&&!dialog.open)dialog.showModal();return false;}
@@ -2248,10 +2305,10 @@ function placeBinder(id,page,slot){
  state.binderPage=Math.floor(dest/9);renderCollections();
  toast('הקלף הועבר לעמוד '+(state.binderPage+1)+', כיס '+((dest%9)+1));
 }
-function showView(view,doScroll=true){if(!['catalog','owned','binder','wishlist','deals'].includes(view))return;state.view=view;
- $('catalogShell').hidden=view!=='catalog';$('ownedPage').hidden=view!=='owned';$('binderPage').hidden=view!=='binder';$('wishPage').hidden=view!=='wishlist';$('dealsPage').hidden=view!=='deals';
+function showView(view,doScroll=true){if(!['catalog','owned','binder','wishlist','shipments','deals'].includes(view))return;state.view=view;
+ $('catalogShell').hidden=view!=='catalog';$('ownedPage').hidden=view!=='owned';$('binderPage').hidden=view!=='binder';$('wishPage').hidden=view!=='wishlist';$('dealsPage').hidden=view!=='deals';$('shipmentsPage').hidden=view!=='shipments';
  document.querySelectorAll('[data-view-btn]').forEach(b=>{const a=b.dataset.viewBtn===view;b.classList.toggle('active',a);b.setAttribute('aria-pressed',String(a));});
- if(view!=='catalog')renderCollections();if(view==='deals')window.VintageEbayLive?.open?.();if(doScroll)window.scrollTo({top:0,behavior:'smooth'});
+ if(view!=='catalog')renderCollections();if(view==='deals')window.VintageEbayLive?.open?.();if(view==='shipments')refreshShipments();if(doScroll)window.scrollTo({top:0,behavior:'smooth'});
 }
 function sortedOwnedCards(){
  const own=state.cards.filter(c=>state.owned[c.id]), mode=$('ownedSort').value;
@@ -2322,7 +2379,7 @@ function dealAuctionUrl(c,precise){
  return 'https://www.ebay.com/sch/i.html?'+new URLSearchParams({_nkw:query,LH_Auction:'1'});
 }
 function renderDeals(){ window.VintageDealsDashboard?.render?.(); window.VintageEbayLive?.refreshCards?.(); }
-function renderCollections(){if(!state.ready)return;normalizeOrders();
+function renderCollections(){if(!state.ready)return;normalizeOrders();renderShipments();
  $('binderCountTab').textContent=state.binderOrder.length+' קלפים';$('wishCountTab').textContent=state.wishOrder.length;
  $('binderCount').textContent=state.binderOrder.filter(id=>state.owned[id]).length+' באוסף · '+state.binderOrder.filter(id=>!state.owned[id]&&state.wish[id]).length+' משאלות';
  $('wishCount').textContent=state.wishOrder.length+' משאלות';
@@ -2873,7 +2930,7 @@ const oldKeys=['pokemon-vintage-binder-cards-v1'];
 function setStatus(a,b){status.textContent=a;detail.textContent=b||'';}
 function say(m){message.textContent=m||'';}
 function cleanOld(){try{const keys=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&(k.startsWith(legacyPrefix)||k.startsWith('vintage-binder-firebase-')||oldKeys.includes(k)))keys.push(k);}for(const k of keys)localStorage.removeItem(k);}catch(e){console.warn('Could not purge old collection cache',e);}}
-function clean(p){const out={};for(const k of ['owned','wish','removedWish','conditions','notes','purchasePrices','firstEdition','ownedAddedAt','binderExcluded']){const v=p?.[k];out[k]=v&&typeof v==='object'&&!Array.isArray(v)?{...v}:{}}for(const k of ['binderOrder','wishOrder'])out[k]=Array.isArray(p?.[k])?[...new Set(p[k].filter(v=>typeof v==='string'))]:[];out.binderIncludeWish=typeof p?.binderIncludeWish==='boolean'?p.binderIncludeWish:true;for(const id of Object.keys(out.removedWish))delete out.wish[id];for(const id of Object.keys(out.owned))if(out.owned[id])delete out.wish[id];out.wishOrder=out.wishOrder.filter(id=>!!out.wish[id]&&!out.removedWish[id]);return out;}
+function clean(p){const out={};for(const k of ['owned','wish','removedWish','conditions','notes','purchasePrices','firstEdition','ownedAddedAt','binderExcluded']){const v=p?.[k];out[k]=v&&typeof v==='object'&&!Array.isArray(v)?{...v}:{}}for(const k of ['binderOrder','wishOrder'])out[k]=Array.isArray(p?.[k])?[...new Set(p[k].filter(v=>typeof v==='string'))]:[];out.binderIncludeWish=typeof p?.binderIncludeWish==='boolean'?p.binderIncludeWish:true;for(const id of Object.keys(out.removedWish))delete out.wish[id];for(const id of Object.keys(out.owned))if(out.owned[id])delete out.wish[id];out.wishOrder=out.wishOrder.filter(id=>!!out.wish[id]&&!out.removedWish[id]);out.shipments=Array.isArray(p?.shipments)?p.shipments.map(x=>({id:String(x.id||''),number:String(x.number||''),title:String(x.title||''),carrier:Number(x.carrier)||0,cardIds:Array.isArray(x.cardIds)?x.cardIds.filter(y=>typeof y==='string').slice(0,60):[],seenEventIds:Array.isArray(x.seenEventIds)?x.seenEventIds.filter(y=>typeof y==='string').slice(0,200):[],initialized:x.initialized===true,createdAt:Number(x.createdAt)||0})).filter(x=>/^[A-Z0-9-]{5,50}$/.test(x.number)&&/^[a-z0-9_-]{8,70}$/i.test(x.id)).slice(0,80):[];return out;}
 function authError(e){switch(e?.code){case 'auth/unauthorized-domain':return 'צריך לאשר את '+location.hostname+' תחת Firebase Authentication → Settings → Authorized domains.';case 'auth/popup-blocked':return 'הדפדפן חסם את החלון. הפעל חלונות קופצים ב־Safari ונסה שוב.';case 'auth/popup-closed-by-user':return 'חלון ההתחברות נסגר לפני שהתחברת.';case 'permission-denied':return 'Firestore חסם את הגישה. בדוק את Security Rules תחת users/{uid}.';}return e?.message||String(e);}
 function resetSession(){updateAccount(null);shareEnabled=false;shareId=null;shareLoaded=false;shareIncludeWish=false;shareUpdateFailed=false;renderShare();session++;if(stopListening){stopListening();stopListening=null;}clearTimeout(flushTimer);flushTimer=null;user=null;docRef=null;ready=false;pending=false;writing=false;changeSeq=0;lastServerUpdate=0;serverRevision=0;lastWrittenRevision=0;}
 async function loadSdk(){if(sdk)return sdk;const ver='13.1.0';const [a,b,c]=await Promise.all([import('https://www.gstatic.com/firebasejs/'+ver+'/firebase-app.js'),import('https://www.gstatic.com/firebasejs/'+ver+'/firebase-auth.js'),import('https://www.gstatic.com/firebasejs/'+ver+'/firebase-firestore.js')]);sdk={...a,...b,...c};return sdk;}
@@ -2923,7 +2980,7 @@ async function activate(u){
   }
   // We never restore from browser storage; purge only this application's old keys.
   cleanOld();
-  ready=true;$('cloudSyncNow').hidden=false;
+  ready=true;$('cloudSyncNow').hidden=false;window.VintageBinder?.refreshShipments?.();
   loadSharing(token);
   setStatus('☁️ מחובר ל־'+(u.email||'Google'),'השינויים נשמרים ב־Firestore בלבד.');
   say('מחובר. Firestore הוא מקור הנתונים היחיד.');
@@ -2944,7 +3001,7 @@ async function init(config){
   },e=>{setStatus('בעיה בהתחברות',authError(e));say(authError(e));});
  }catch(e){setStatus('⚠️ Firebase אינו זמין', 'לא נשמר מידע בדפדפן.');say(authError(e));}
 }
-window.VintageCloud={canEdit:()=>Boolean(user&&ready),onChange:({immediate=false}={})=>{
+window.VintageCloud={canEdit:()=>Boolean(user&&ready),getIdToken:async()=>user&&ready?await sdk.getIdToken(user):null,onChange:({immediate=false}={})=>{
  if(!user||!ready)return;
  changeSeq++;pending=true;setStatus('☁️ ממתין לשמירה…',user.email||'Google');
  clearTimeout(flushTimer);flushTimer=setTimeout(flush,immediate?0:350);
