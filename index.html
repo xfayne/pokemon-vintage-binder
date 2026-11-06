@@ -525,7 +525,7 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
 .shipment-entry{border:1px solid #e1e7f1;border-radius:13px;background:#fff;padding:13px;min-width:0}
 .shipment-entry-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
 .shipment-entry-title{font-size:15px;font-weight:800;margin:0 0 5px}.shipment-tracking-number{font-size:12px;direction:ltr;unicode-bidi:isolate;color:#697792}
-.shipment-label{font-size:12px;color:#687792}.shipment-status{font-size:11px;color:#385d92;background:#edf3fc;border:1px solid #d6e2f3;border-radius:8px;padding:5px 8px;font-weight:750;white-space:nowrap}
+.shipment-label{font-size:12px;color:#687792}.shipment-status{font-size:12px;color:#385d92;background:#edf3fc;border:1px solid #d6e2f3;border-radius:8px;padding:7px 9px;font-weight:750;max-width:min(56%,270px);min-width:0;text-align:start;overflow-wrap:anywhere;line-height:1.45}.shipment-status time{display:block;font-size:11px;font-weight:500;color:#697b9a;margin-top:3px;direction:ltr;text-align:start}
 .shipment-card-images{display:flex;gap:5px;margin-top:10px;align-items:center}.shipment-card-images img{width:35px;height:48px;object-fit:contain;border-radius:4px;background:#f5f7fb}
 .shipment-actions{display:flex;align-items:center;gap:6px;margin-top:12px;flex-wrap:wrap}.shipment-actions button{padding:6px 10px;font-size:12px}.shipment-actions .shipment-remove{margin-inline-start:auto;color:#a14d61}
 .shipment-entry.is-new{border-color:#c3b3dc}.shipment-new{font-size:11px;font-weight:800;color:#8a3b91}
@@ -2342,12 +2342,14 @@ function renderShipments(){
  $('shipmentList').innerHTML=state.shipments.length?state.shipments.map(item=>{
   const live=shipmentLive.get(item.id),unread=shipmentNewEvents(item).length,expanded=shipmentExpandedId===item.id;
   const cards=item.cardIds.map(id=>lookup.get(id)).filter(Boolean);
+  const latestEvent=Array.isArray(live?.events)?live.events[0]:null;
   const status=live?.error?'אין עדכון':shipmentStatus(live?.status);
+  const statusContent=latestEvent?.description?`${esc(latestEvent.description)}${latestEvent.time?`<time>${esc(shipmentEventTime(latestEvent.time))}</time>`:''}`:esc(status);
   const images=cards.slice(0,6).map(c=>`<img src="${esc(c.image)}" alt="${esc(c.name)}" loading="lazy" title="${esc(c.name)}">`).join('');
   const events=live?.events||[];
   const timeline=expanded?`<div class="shipment-timeline">${live?.error?`<p class="shipment-label">${esc(live.error.message||'אין עדיין נתוני מעקב')}</p>`:events.length?events.map(event=>`<div class="shipment-event"><span class="shipment-dot" aria-hidden="true"></span><div class="shipment-event-main"><strong>${esc(event.description||shipmentStatus(event.stage))}</strong><small>${esc([shipmentEventTime(event.time),event.location].filter(Boolean).join(' · '))}</small></div></div>`).join(''):'<p class="shipment-label">עדיין אין אירועי מעקב זמינים. נסה לרענן בהמשך.</p>'}</div>`:'';
   return `<article class="shipment-entry ${unread?'is-new':''}">
-   <div class="shipment-entry-top"><div><h3 class="shipment-entry-title">${esc(item.title||'משלוח')}</h3><div class="shipment-tracking-number" dir="ltr">${esc(item.number)}</div><div class="shipment-label">${cards.length} קלפים משויכים${live?.lastUpdated?' · '+esc(shipmentEventTime(live.lastUpdated)):''}</div></div><span class="shipment-status">${esc(status)}</span></div>
+   <div class="shipment-entry-top"><div><h3 class="shipment-entry-title">${esc(item.title||'משלוח')}</h3><div class="shipment-tracking-number" dir="ltr">${esc(item.number)}</div><div class="shipment-label">${cards.length} קלפים משויכים${live?.lastUpdated?' · '+esc(shipmentEventTime(live.lastUpdated)):''}</div></div><span class="shipment-status">${statusContent}</span></div>
    ${cards.length?`<div class="shipment-card-images">${images}${cards.length>6?`<span class="shipment-label">+${cards.length-6}</span>`:''}</div>`:''}
    <div class="shipment-actions"><button class="btn sm" type="button" data-ship-open="${esc(item.id)}" aria-expanded="${expanded}">${expanded?'סגור עדכונים':'עדכונים'} ${unread?`<span class="shipment-new">${unread} חדשים</span>`:''}</button>
    <button type="button" class="btn sm" data-ship-edit="${esc(item.id)}">עריכה</button>
