@@ -10,12 +10,12 @@ function reply(data,status,cors) {
  return new Response(JSON.stringify(data),{status:status||200,headers:Object.assign({'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff'},cors)});
 }
 function allowedOrigin(origin,env) {
- return !!origin && origin.replace(/\\/+$/,'')===String(env.ALLOWED_ORIGIN||'https://xfayne.github.io').replace(/\\/+$/,'');
+ return !!origin && origin.replace(/\/+$/,'')===String(env.ALLOWED_ORIGIN||'https://xfayne.github.io').replace(/\/+$/,'');
 }
 function cors(origin,env) {
  return {'access-control-allow-origin':allowedOrigin(origin,env)?origin:'null','access-control-allow-methods':'GET,POST,OPTIONS','access-control-allow-headers':'content-type','access-control-max-age':'600',vary:'origin'};
 }
-function clean(x,max) {return String(x==null?'':x).replace(/[\\u0000-\\u001f]/g,' ').trim().slice(0,max||90)}
+function clean(x,max) {return String(x==null?'':x).replace(/[\u0000-\u001f]/g,' ').trim().slice(0,max||90)}
 function cardInput(raw) {
  if (!raw || typeof raw!=='object') return null;
  const c={id:clean(raw.id,40),name:clean(raw.name,80),setName:clean(raw.setName,80),number:clean(raw.number,15),firstEdition:raw.firstEdition===true};
@@ -33,21 +33,21 @@ async function bearer(env) {
  tokenCache={value:x.access_token,expires:Date.now()+Math.max(120,Number(x.expires_in)||7200)*1000};
  return tokenCache.value;
 }
-const normalized=s=>String(s||'').normalize('NFKD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim().replace(/\\s+/g,' ');
+const normalized=s=>String(s||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim().replace(/\s+/g,' ');
 function titleMatch(raw,card) {
  const t=normalized(raw),name=normalized(card.name),set=normalized(card.setName),num=normalized(card.number);
  if(!(' '+t+' ').includes(' '+name+' '))return null;
- if(/\\b(proxy|reprint|replica|orica|fake|custom|facsimile|psa|bgs|cgc|graded|slab)\\b/.test(t))return null;
- if(!card.firstEdition && /\\b(1st|first) edition\\b/.test(t))return null;
+ if(/\b(proxy|reprint|replica|orica|fake|custom|facsimile|psa|bgs|cgc|graded|slab)\b/.test(t))return null;
+ if(!card.firstEdition && /\b(1st|first) edition\b/.test(t))return null;
  const warnings=[];let confidence=45;
  if((' '+t+' ').includes(' '+set+' '))confidence+=28;else warnings.push('שם הסדרה אינו מופיע בכותרת');
  if(num && (' '+t+' ').includes(' '+num+' ')) confidence+=18;else warnings.push('מספר הקלף לא אומת');
  if(card.firstEdition) {
-  if(/\\b(1st|first) edition\\b/.test(t))confidence+=9;else warnings.push('הדפסת 1st Edition לא אומתה');
+  if(/\b(1st|first) edition\b/.test(t))confidence+=9;else warnings.push('הדפסת 1st Edition לא אומתה');
  } else warnings.push('Unlimited לא אומתה');
- if(/\\b(lot|bundle|set of|multiple cards)\\b/.test(t)){warnings.push('ייתכן שמדובר באוסף ולא בקלף יחיד');confidence-=20}
- if(/\\b(crease|creased|fold|bent|damaged|dmg|heavily played)\\b/.test(t))warnings.push('תיאור מציין נזק פיזי');
- if(/\\b(non holo|nonholo|reverse holo)\\b/.test(t))warnings.push('בדוק התאמת סוג Holo');
+ if(/\b(lot|bundle|set of|multiple cards)\b/.test(t)){warnings.push('ייתכן שמדובר באוסף ולא בקלף יחיד');confidence-=20}
+ if(/\b(crease|creased|fold|bent|damaged|dmg|heavily played)\b/.test(t))warnings.push('תיאור מציין נזק פיזי');
+ if(/\b(non holo|nonholo|reverse holo)\b/.test(t))warnings.push('בדוק התאמת סוג Holo');
  return {confidence:Math.max(0,Math.min(100,confidence)),warnings};
 }
 function cash(x) {const n=Number(x?.value);return x&&Number.isFinite(n)&&n>=0&&/^[A-Z]{3}$/.test(String(x.currency))?{value:n,currency:String(x.currency)}:null}
@@ -55,13 +55,13 @@ function mapItem(item,card,market) {
  if(!Array.isArray(item?.buyingOptions)||!item.buyingOptions.includes('AUCTION'))return null;
  const match=titleMatch(item.title,card);if(!match)return null;
  const price=cash(item.currentBidPrice)||cash(item.price);if(!price)return null;
- const url=String(item.itemWebUrl||'');if(!/^https:\\/\\/(www\\.)?ebay\\.[a-z.]+\\/itm\\//i.test(url))return null;
+ const url=String(item.itemWebUrl||'');if(!/^https:\/\/(www\.)?ebay\.[a-z.]+\/itm\//i.test(url))return null;
  const shipping=Array.isArray(item.shippingOptions)?item.shippingOptions.map(x=>cash(x.shippingCost)).find(Boolean)||null:null;
  const fb=Number(item.seller?.feedbackPercentage);
  const img=String(item.image?.imageUrl||'');
  return {
   cardId:card.id,itemId:clean(item.itemId,90),title:clean(item.title,200),
-  url,image:/^https:\\/\\//.test(img)?img:null,
+  url,image:/^https:\/\//.test(img)?img:null,
   currentBid:price,shipping,bidCount:Number.isInteger(item.bidCount)?item.bidCount:null,
   endTime:item.itemEndDate||null,sellerFeedback:Number.isFinite(fb)&&fb>=0&&fb<=100?fb:null,
   sellerName:clean(item.seller?.username,70),condition:clean(item.condition,60),
