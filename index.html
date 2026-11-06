@@ -360,11 +360,17 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
  .owned-meta-row .info-pill{font-size:10px;padding:4px}
  .owned-sort select{max-width:98px;width:98px}
 }
+
+/* v16 refinement: a single unobtrusive top bar */
+.hero .hero-inner{display:block}
+.hero .hero-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.hero h1{margin:0;font-size:clamp(19px,2.5vw,28px);line-height:1.22;min-width:0}
+@media(max-width:650px){.hero h1{font-size:19px}}
+@media(max-width:360px){.hero h1{font-size:17px}.hero-top{gap:8px}}
 </style>
 </head>
 <body>
-<header class="hero"><div class="hero-inner">
-<div class="hero-top"><div class="eyebrow">THE ORIGINAL WOTC ERA · 1999–2002 · v16</div>
+<header class="hero"><div class="hero-inner"><div class="hero-top"><h1>Pokémon Vintage Binder <span aria-hidden="true">✦</span></h1>
  <div class="account-area">
   <button type="button" id="accountTrigger" class="account-trigger" aria-haspopup="menu" aria-expanded="false" aria-label="התחברות"><span id="accountAvatar" class="account-avatar" aria-hidden="true">👤</span><span id="accountName">התחברות</span><span class="account-chevron" aria-hidden="true">⌄</span></button>
   <div class="account-menu" id="accountMenu" role="menu" hidden>
@@ -373,10 +379,7 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
    <div class="account-separator"></div>
    <button type="button" id="accountSignOut" role="menuitem">התנתקות</button>
   </div>
- </div>
-</div>
-<h1>Pokémon Vintage Binder <span aria-hidden="true">✦</span></h1>
-</div></header>
+ </div></div></header>
 
 <dialog id="cloudDialog" class="dialog cloud-config" aria-label="חיבור Firebase">
  <div class="modal-inner">
