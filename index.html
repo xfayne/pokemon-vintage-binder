@@ -1932,9 +1932,21 @@ function renderAll(){renderSide();renderStats();renderCards();renderCollections(
 function toast(msg){const e=$('toast');e.textContent=msg;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',2800)}
 function toggleOwned(id){
  if(!ensureCloudEdit())return;
- if(state.owned[id]){delete state.owned[id];delete state.ownedAddedAt[id];}
- else{state.owned[id]=true;const max=Object.values(state.ownedAddedAt).reduce((n,t)=>Math.max(n,Number(t)||0),0);state.ownedAddedAt[id]=Math.max(Date.now(),max+1);}
- normalizeOrders();save();renderAll();
+ if(state.owned[id]){
+  delete state.owned[id];
+  delete state.ownedAddedAt[id];
+ }else{
+  state.owned[id]=true;
+  const max=Object.values(state.ownedAddedAt).reduce((n,t)=>Math.max(n,Number(t)||0),0);
+  state.ownedAddedAt[id]=Math.max(Date.now(),max+1);
+  // Owned and Wishlist are mutually exclusive. Persist the removal in the same cloud write.
+  if(state.wish[id]||state.wishOrder.includes(id)){
+   delete state.wish[id];
+   state.wishOrder=state.wishOrder.filter(cardId=>cardId!==id);
+   state.removedWish[id]=Date.now();
+  }
+ }
+ normalizeOrders();save(true);renderAll();
 }
 function removeWish(id){
  if(!ensureCloudEdit())return;
@@ -1947,6 +1959,7 @@ function removeWish(id){
 }
 function toggleWish(id){
  if(!ensureCloudEdit())return;
+ if(state.owned[id]){toast('הקלף כבר נמצא באוסף שלך');return;}
  if(state.wish[id]){removeWish(id);return;}
  state.wish[id]=true;delete state.removedWish[id];
  normalizeOrders();save(true);renderAll();
@@ -2032,6 +2045,8 @@ function normalizeOrders(){
  legacyIds.forEach((id,i)=>{if(!Number.isFinite(Number(state.ownedAddedAt[id]))||Number(state.ownedAddedAt[id])<=0)state.ownedAddedAt[id]=i+1;});
  for(const id of Object.keys(state.ownedAddedAt))if(!state.owned[id])delete state.ownedAddedAt[id];
  for(const id of Object.keys(state.removedWish||{}))delete state.wish[id];
+ // Normalize older cloud backups that previously allowed both states.
+ for(const id of Object.keys(state.owned))if(state.owned[id])delete state.wish[id];
  const keys = new Set(state.cards.map(c=>c.id));
  const valid = (arr,predicate) => [...new Set((Array.isArray(arr)?arr:[]).filter(id=>keys.has(id)&&predicate(id)))];
  const bySet=state.cards.map(c=>c.id);
@@ -2164,6 +2179,8 @@ function addToBinder(id){
  normalizeOrders();save();toast('הקלף נוסף לבינדר');
 }
 function openMovePicker(id){
+ if(!ensureCloudEdit())return;
+ if(!state.owned[id]&&!state.wish[id])return;
  if(!state.binderOrder.includes(id))addToBinder(id);
  showView('binder',false);
  selectBinder(id);
@@ -2565,7 +2582,7 @@ const oldKeys=['pokemon-vintage-binder-cards-v1'];
 function setStatus(a,b){status.textContent=a;detail.textContent=b||'';}
 function say(m){message.textContent=m||'';}
 function cleanOld(){try{const keys=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&(k.startsWith(legacyPrefix)||k.startsWith('vintage-binder-firebase-')||oldKeys.includes(k)))keys.push(k);}for(const k of keys)localStorage.removeItem(k);}catch(e){console.warn('Could not purge old collection cache',e);}}
-function clean(p){const out={};for(const k of ['owned','wish','removedWish','conditions','notes','purchasePrices','firstEdition','ownedAddedAt','binderExcluded']){const v=p?.[k];out[k]=v&&typeof v==='object'&&!Array.isArray(v)?{...v}:{}}for(const k of ['binderOrder','wishOrder'])out[k]=Array.isArray(p?.[k])?[...new Set(p[k].filter(v=>typeof v==='string'))]:[];out.binderIncludeWish=typeof p?.binderIncludeWish==='boolean'?p.binderIncludeWish:true;for(const id of Object.keys(out.removedWish))delete out.wish[id];out.wishOrder=out.wishOrder.filter(id=>!!out.wish[id]&&!out.removedWish[id]);return out;}
+function clean(p){const out={};for(const k of ['owned','wish','removedWish','conditions','notes','purchasePrices','firstEdition','ownedAddedAt','binderExcluded']){const v=p?.[k];out[k]=v&&typeof v==='object'&&!Array.isArray(v)?{...v}:{}}for(const k of ['binderOrder','wishOrder'])out[k]=Array.isArray(p?.[k])?[...new Set(p[k].filter(v=>typeof v==='string'))]:[];out.binderIncludeWish=typeof p?.binderIncludeWish==='boolean'?p.binderIncludeWish:true;for(const id of Object.keys(out.removedWish))delete out.wish[id];for(const id of Object.keys(out.owned))if(out.owned[id])delete out.wish[id];out.wishOrder=out.wishOrder.filter(id=>!!out.wish[id]&&!out.removedWish[id]);return out;}
 function authError(e){switch(e?.code){case 'auth/unauthorized-domain':return 'צריך לאשר את '+location.hostname+' תחת Firebase Authentication → Settings → Authorized domains.';case 'auth/popup-blocked':return 'הדפדפן חסם את החלון. הפעל חלונות קופצים ב־Safari ונסה שוב.';case 'auth/popup-closed-by-user':return 'חלון ההתחברות נסגר לפני שהתחברת.';case 'permission-denied':return 'Firestore חסם את הגישה. בדוק את Security Rules תחת users/{uid}.';}return e?.message||String(e);}
 function resetSession(){updateAccount(null);shareEnabled=false;shareId=null;shareLoaded=false;shareIncludeWish=false;shareUpdateFailed=false;renderShare();session++;if(stopListening){stopListening();stopListening=null;}clearTimeout(flushTimer);flushTimer=null;user=null;docRef=null;ready=false;pending=false;writing=false;changeSeq=0;lastServerUpdate=0;serverRevision=0;lastWrittenRevision=0;}
 async function loadSdk(){if(sdk)return sdk;const ver='13.1.0';const [a,b,c]=await Promise.all([import('https://www.gstatic.com/firebasejs/'+ver+'/firebase-app.js'),import('https://www.gstatic.com/firebasejs/'+ver+'/firebase-auth.js'),import('https://www.gstatic.com/firebasejs/'+ver+'/firebase-firestore.js')]);sdk={...a,...b,...c};return sdk;}
