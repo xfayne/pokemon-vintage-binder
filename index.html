@@ -510,6 +510,14 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
   white-space:nowrap;
  }
 }
+
+.value-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:16px 0}
+.value-stat{border:1px solid #e0e6f0;border-radius:13px;background:#f8faff;padding:14px;min-width:0}
+.value-stat small{display:block;color:#697792;margin-bottom:8px}.value-stat strong{font-size:clamp(17px,2.5vw,26px);direction:ltr;display:block;text-align:right}
+.value-chart{display:grid;gap:12px;margin:15px 0 25px}.value-bar-row{display:grid;grid-template-columns:minmax(95px,1fr) minmax(90px,3fr) 75px;gap:10px;align-items:center;font-size:12px}
+.value-bar-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.value-bar-track{height:17px;border-radius:5px;background:#edf0f8;overflow:hidden}.value-bar-fill{height:100%;background:linear-gradient(90deg,#6575d9,#b46ca0);border-radius:5px}.value-bar-price{text-align:left;direction:ltr;font-weight:700}
+.value-rows{display:grid;gap:7px}.value-row{display:flex;align-items:center;gap:12px;border:1px solid #e3e8f1;border-radius:10px;padding:9px;background:#fff}.value-row img{width:36px;height:50px;object-fit:contain}.value-row-info{flex:1;min-width:0}.value-row-info strong,.value-row-info small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.value-row-info small{color:#78839a}.value-row-price{direction:ltr;font-weight:750;white-space:nowrap}
+@media(max-width:600px){.value-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.value-bar-row{grid-template-columns:minmax(72px,1fr) minmax(60px,2fr) 62px;gap:6px;font-size:11px}}
 </style>
 <link rel="stylesheet" href="deal-finder/live.css?v=20261106-clean-1">
 </head>
@@ -530,6 +538,7 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
   <button type="button" data-view-btn="owned" aria-pressed="false">✅ הקלפים שלי <span class="nav-number" id="ownedCountTab"></span></button>
   <button type="button" data-view-btn="binder" aria-pressed="false">📖 הבינדר שלי <span class="nav-number" id="binderCountTab"></span></button>
   <button type="button" data-view-btn="wishlist" aria-pressed="false">💜 Wishlist <span class="nav-number" id="wishCountTab"></span></button>
+  <button type="button" data-view-btn="value" aria-pressed="false">💰 שווי האוסף</button>
   <button type="button" data-view-btn="deals" aria-pressed="false">🔎 מציאות</button>
 </nav>
 </div>
@@ -552,6 +561,21 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
 <input id="fileInput" type="file" accept=".json,application/json" hidden />
 
 
+<section class="collection-page" id="valuePage" hidden aria-label="שווי האוסף">
+ <div class="collection-panel">
+  <div class="collection-heading"><div><h2>💰 שווי האוסף</h2><div class="subtle">מחירי שוק משוערים בדולרים לפי מצב הקלף וההדפסה שנבחרו</div></div></div>
+  <div class="value-summary">
+   <div class="value-stat"><small>שווי שוק ידוע</small><strong id="valueTotal">—</strong></div>
+   <div class="value-stat"><small>קלפים עם מחיר</small><strong id="valuePriced">—</strong></div>
+   <div class="value-stat"><small>עלות רכישה מדווחת</small><strong id="valueCost">—</strong></div>
+  </div>
+  <p id="valueNotice" class="subtle" aria-live="polite"></p>
+  <h3>שמונת הקלפים היקרים באוסף</h3>
+  <div id="valueChart" class="value-chart" role="img" aria-label="גרף עמודות של הקלפים היקרים באוסף"></div>
+  <h3>שווי לפי קלף</h3>
+  <div id="valueRows" class="value-rows"></div>
+ </div>
+</section>
 <section class="collection-page" id="ownedPage" hidden aria-label="הקלפים שלי ברשימה">
  <div class="collection-panel">
   <div class="collection-heading owned-heading">
@@ -2242,8 +2266,8 @@ function placeBinder(id,page,slot){
  state.binderPage=Math.floor(dest/9);renderCollections();
  toast('הקלף הועבר לעמוד '+(state.binderPage+1)+', כיס '+((dest%9)+1));
 }
-function showView(view,doScroll=true){if(!['catalog','owned','binder','wishlist','deals'].includes(view))return;state.view=view;
- $('catalogShell').hidden=view!=='catalog';$('ownedPage').hidden=view!=='owned';$('binderPage').hidden=view!=='binder';$('wishPage').hidden=view!=='wishlist';$('dealsPage').hidden=view!=='deals';
+function showView(view,doScroll=true){if(!['catalog','owned','binder','wishlist','deals','value'].includes(view))return;state.view=view;
+ $('catalogShell').hidden=view!=='catalog';$('ownedPage').hidden=view!=='owned';$('binderPage').hidden=view!=='binder';$('wishPage').hidden=view!=='wishlist';$('dealsPage').hidden=view!=='deals';$('valuePage').hidden=view!=='value';
  document.querySelectorAll('[data-view-btn]').forEach(b=>{const a=b.dataset.viewBtn===view;b.classList.toggle('active',a);b.setAttribute('aria-pressed',String(a));});
  if(view!=='catalog')renderCollections();if(view==='deals')window.VintageEbayLive?.open?.();if(doScroll)window.scrollTo({top:0,behavior:'smooth'});
 }
@@ -2265,14 +2289,45 @@ function sortedOwnedCards(){
 let ownedRenderTimer=null;
 function refreshOwned(){
  // Market data is shared by My Cards and Wishlist; either list must update when prices arrive.
- if(!['owned','wishlist','deals'].includes(state.view)||ownedRenderTimer)return;
+ if(!['owned','wishlist','deals','value'].includes(state.view)||ownedRenderTimer)return;
  ownedRenderTimer=setTimeout(()=>{
   ownedRenderTimer=null;
-  if(state.view==='owned')renderOwnedList();
+  if(state.view==='owned')renderOwnedList();else if(state.view==='value')renderValueDashboard();
   else if(state.view==='wishlist'||state.view==='deals')renderCollections();
  },120);
 }
 window.VintageBinder.refreshOwned=refreshOwned;
+function renderValueDashboard(){
+ const usd=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n);
+ const cards=state.cards.filter(c=>state.owned[c.id]);
+ const rows=cards.map(c=>{
+  const condition=state.conditions[c.id]||'';
+  const price=condition?window.VintageMarketPrices?.getOwnedPrice?.(c,MAP.get(c.set)?.name||'',condition,!!state.firstEdition[c.id]):null;
+  return {c,condition,price};
+ });
+ const priced=rows.filter(r=>typeof r.price==='number'&&Number.isFinite(r.price));
+ const total=priced.reduce((n,r)=>n+r.price,0);
+ $('valueTotal').textContent=usd(total);
+ $('valuePriced').textContent=priced.length+' / '+cards.length;
+ // Purchase prices are recorded in their original currency; only USD can be summed safely.
+ const paid=rows.map(r=>state.purchasePrices[r.c.id]).filter(p=>p&&Number.isFinite(Number(p.amount))&&Number(p.amount)>=0);
+ const paidUSD=paid.filter(p=>String(p.currency||'USD').toUpperCase()==='USD');
+ $('valueCost').textContent=paidUSD.length?usd(paidUSD.reduce((n,p)=>n+Number(p.amount),0)):'—';
+ const missingCondition=rows.filter(r=>!r.condition).length;
+ const pending=rows.filter(r=>r.price===undefined).length;
+ const unavailable=rows.filter(r=>r.condition&&r.price===null).length;
+ $('valueNotice').textContent=[
+  missingCondition?missingCondition+' קלפים ללא מצב נבחר':'',
+  pending?pending+' מחירים בטעינה':'',
+  unavailable?unavailable+' מחירים לא זמינים':'',
+  paid.length!==paidUSD.length?'עלות רכישה במטבעות אחרים לא נכללה בסיכום':'',
+  'השווי הכולל כולל רק קלפים עם מחיר זמין; אין עדיין נתוני היסטוריה לגרף שינוי לאורך זמן.'
+ ].filter(Boolean).join(' · ');
+ const sorted=priced.sort((a,b)=>b.price-a.price);
+ const top=sorted.slice(0,8),max=top[0]?.price||1;
+ $('valueChart').innerHTML=top.length?top.map(r=>`<div class="value-bar-row"><span class="value-bar-name" title="${esc(r.c.name)}">${esc(r.c.name)}</span><div class="value-bar-track"><div class="value-bar-fill" style="width:${Math.max(1,r.price/max*100)}%"></div></div><span class="value-bar-price">${esc(usd(r.price))}</span></div>`).join(''):'<p class="subtle">הגרף יופיע כשיהיו מחירי שוק זמינים לקלפים שלך.</p>';
+ $('valueRows').innerHTML=[...sorted,...rows.filter(r=>typeof r.price!=='number')].map(r=>`<div class="value-row"><img loading="lazy" src="${esc(r.c.image)}" alt=""><div class="value-row-info"><strong>${esc(r.c.name)}</strong><small>${esc(MAP.get(r.c.set)?.name||'')} · ${esc(r.condition||'מצב לא נבחר')}${state.firstEdition[r.c.id]?' · 1st Edition':''}</small></div><span class="value-row-price">${typeof r.price==='number'?esc(usd(r.price)):'—'}</span></div>`).join('')||'<p class="subtle">עדיין אין קלפים באוסף.</p>';
+}
 function renderOwnedList(){
  const own=sortedOwnedCards();
  $('ownedCountTab').textContent=own.length;
@@ -2300,7 +2355,7 @@ function dealAuctionUrl(c,precise){
  return 'https://www.ebay.com/sch/i.html?'+new URLSearchParams({_nkw:query,LH_Auction:'1'});
 }
 function renderDeals(){ window.VintageDealsDashboard?.render?.(); window.VintageEbayLive?.refreshCards?.(); }
-function renderCollections(){if(!state.ready)return;normalizeOrders();
+function renderCollections(){if(!state.ready)return;normalizeOrders();if(state.view==='value')renderValueDashboard();
  $('binderCountTab').textContent=state.binderOrder.length+' קלפים';$('wishCountTab').textContent=state.wishOrder.length;
  $('binderCount').textContent=state.binderOrder.filter(id=>state.owned[id]).length+' באוסף · '+state.binderOrder.filter(id=>!state.owned[id]&&state.wish[id]).length+' משאלות';
  $('wishCount').textContent=state.wishOrder.length+' משאלות';
