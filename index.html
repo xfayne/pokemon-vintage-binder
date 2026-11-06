@@ -2154,7 +2154,7 @@ function placeBinder(id,page,slot){
 function showView(view,doScroll=true){if(!['catalog','owned','binder','wishlist'].includes(view))return;state.view=view;
  $('catalogShell').hidden=view!=='catalog';$('ownedPage').hidden=view!=='owned';$('binderPage').hidden=view!=='binder';$('wishPage').hidden=view!=='wishlist';
  document.querySelectorAll('[data-view-btn]').forEach(b=>{const a=b.dataset.viewBtn===view;b.classList.toggle('active',a);b.setAttribute('aria-pressed',String(a));});
- if(view!=='catalog')renderCollections();if(doScroll)window.scrollTo({top:document.querySelector('.main-nav').offsetTop-10,behavior:'smooth'});
+ if(view!=='catalog')renderCollections();if(doScroll)window.scrollTo({top:0,behavior:'smooth'});
 }
 function sortedOwnedCards(){
  const own=state.cards.filter(c=>state.owned[c.id]), mode=$('ownedSort').value;
@@ -2173,8 +2173,13 @@ function sortedOwnedCards(){
 }
 let ownedRenderTimer=null;
 function refreshOwned(){
- if(state.view!=='owned'||ownedRenderTimer)return;
- ownedRenderTimer=setTimeout(()=>{ownedRenderTimer=null;renderOwnedList();},120);
+ // Market data is shared by My Cards and Wishlist; either list must update when prices arrive.
+ if(!['owned','wishlist'].includes(state.view)||ownedRenderTimer)return;
+ ownedRenderTimer=setTimeout(()=>{
+  ownedRenderTimer=null;
+  if(state.view==='owned')renderOwnedList();
+  else if(state.view==='wishlist')renderCollections();
+ },120);
 }
 window.VintageBinder.refreshOwned=refreshOwned;
 function renderOwnedList(){
@@ -2216,12 +2221,25 @@ function renderCollections(){if(!state.ready)return;normalizeOrders();
  $('binderBook').hidden=list.length===0;$('binderPager').hidden=list.length===0;$('binderEmpty').hidden=list.length!==0;
  $('binderPageLabel').textContent='עמוד '+(state.binderPage+1)+' מתוך '+pageCount;
  $('binderPrev').disabled=state.binderPage===0;$('binderNext').disabled=state.binderPage>=pageCount-1;
- $('wishlistItems').innerHTML=state.wishOrder.length?state.wishOrder.map((id,i)=>{const c=cardLookup.get(id);if(!c)return '';
- const owned=!!state.owned[id],inBinder=state.binderOrder.includes(id);
- return `<article class="wish-item" role="listitem" data-order-kind="wishlist" data-order-index="${i}">
- <span class="wish-rank">${i+1}</span><img loading="lazy" decoding="async" src="${esc(c.image)}" alt="${esc(c.name)} — לחץ לפרטים או גרור לשינוי סדר" data-preview="${esc(id)}" data-drag-kind="wishlist" data-drag-index="${i}" title="החזק וגרור לסידור" draggable="false"><div class="wish-copy"><strong>${esc(c.name)}</strong><small>${esc(MAP.get(c.set)?.name||'')} · #${esc(cardNumber(c))}${owned?' · ✓ יש לי':''}</small></div>
- <div class="wishlist-actions"><button type="button" class="btn sm" data-preview="${esc(id)}" aria-label="פרטים על ${esc(c.name)}">פרטים</button><div class="reorder-row"><button type="button" data-move-kind="wishlist" data-move-index="${i}" data-move-delta="-1" ${i===0?'disabled':''} aria-label="מעלה עדיפות">↑</button><button type="button" class="drag-handle" data-drag-kind="wishlist" data-drag-index="${i}" aria-label="גרור שינוי עדיפות">⋮⋮ גרור</button><button type="button" data-move-kind="wishlist" data-move-index="${i}" data-move-delta="1" ${i===state.wishOrder.length-1?'disabled':''} aria-label="מוריד עדיפות">↓</button></div><button type="button" class="btn sm wish-move-action" data-wish-move="${esc(id)}" aria-label="העבר את ${esc(c.name)} למיקום אחר ברשימת המשאלות">↗ העבר</button><button type="button" class="btn sm" data-owned-binder="${esc(id)}">${inBinder?'↗ העבר בבינדר':'＋ לבינדר'}</button><button class="wish-remove" type="button" data-remove-wish="${esc(id)}" aria-label="מחק משאלה מהרשימה">✕ הסר משאלה</button></div></article>`}).join(''):
- `<div class="no-cards">רשימת המשאלות עדיין ריקה. סמן ☆ ליד קלף בקטלוג כדי להוסיף אותו. <button type="button" class="btn sm primary" data-view-btn="catalog">לקטלוג</button></div>`;
+ $('wishlistItems').innerHTML=state.wishOrder.length?state.wishOrder.map((id,i)=>{
+  const c=cardLookup.get(id);if(!c)return '';
+  const condition=state.conditions[id]||'';
+  const market=condition?window.VintageMarketPrices?.getOwnedPrice?.(c,MAP.get(c.set)?.name||'',condition,!!state.firstEdition[id]):null;
+  const amount=typeof market==='number'?new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(market):'';
+  return `<article class="wish-item" role="listitem" data-open-wish="${esc(id)}" tabindex="0" aria-label="פרטים על ${esc(c.name)}">
+   <span class="wish-rank">${i+1}</span>
+   <img loading="lazy" decoding="async" src="${esc(c.image)}" alt="${esc(c.name)}">
+   <div class="wish-copy"><strong>${esc(c.name)}</strong><small>${esc(MAP.get(c.set)?.name||'')} · #${esc(cardNumber(c))}</small></div>
+   <div class="wish-side">
+    ${condition?`<div class="wish-market">
+     ${amount?`<span class="owned-price">${esc(amount)}</span>`:market===undefined?'<span class="owned-price pending">טוען…</span>':''}
+     <span class="owned-condition">${esc(condition)}${state.firstEdition[id]?' · 1st':''}</span>
+    </div>`:''}
+    <button type="button" class="btn sm wish-move-action" data-wish-move="${esc(id)}" aria-label="שנה מיקום של ${esc(c.name)} ב־Wishlist">↗ העבר</button>
+   </div>
+  </article>`;
+ }).join(''):
+ `<div class="no-cards">Wishlist עדיין ריקה. סמן ☆ ליד קלף בקטלוג כדי להוסיף אותו. <button type="button" class="btn sm primary" data-view-btn="catalog">לקטלוג</button></div>`;
  renderOwnedList();
 }
 function reorder(kind,from,to){if(!ensureCloudEdit())return;normalizeOrders();const arr=kind==='wishlist'?[...state.wishOrder]:binderVisible();if(from<0||to<0||from>=arr.length||to>=arr.length||from===to)return;
@@ -2292,8 +2310,11 @@ function applyWishMove(target){
 function attachCollections(){
  document.addEventListener('click',e=>{
   const view=e.target.closest('[data-view-btn]');if(view){showView(view.dataset.viewBtn);return;}
-  const openOwned=e.target.closest('[data-open-owned]');
-  if(openOwned&&!e.target.closest('button,a,input,select')){showModal(openOwned.dataset.openOwned);return;}
+  const openCard=e.target.closest('[data-open-owned],[data-open-wish]');
+  if(openCard&&!e.target.closest('button,a,input,select')){
+   showModal(openCard.dataset.openOwned||openCard.dataset.openWish);
+   return;
+  }
   const pick=e.target.closest('[data-pick-binder]');if(pick){selectBinder(pick.dataset.pickBinder);return;}
   const moveBinder=e.target.closest('[data-binder-move]');if(moveBinder){openMovePicker(moveBinder.dataset.binderMove);return;}
   const removeBinder=e.target.closest('[data-binder-remove]');if(removeBinder){removeFromBinder(removeBinder.dataset.binderRemove);return;}
@@ -2306,7 +2327,7 @@ function attachCollections(){
  $('wishMoveCancel').onclick=()=>$('wishMoveDialog').close();
  $('wishMoveDialog').addEventListener('close',()=>{wishMoveSelectedId=null;});
  $('wishMovePosition').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();applyWishMove(e.target.value);}});
- document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-open-owned]')){e.preventDefault();showModal(e.target.dataset.openOwned);}});
+ document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-open-owned],[data-open-wish]')){e.preventDefault();showModal(e.target.dataset.openOwned||e.target.dataset.openWish);}});
   $('binderFind').addEventListener('input',searchBinder);$('ownedFind').addEventListener('input',renderOwnedList);
   $('ownedSort').addEventListener('change',renderOwnedList);
   $('copyWishlist').addEventListener('click',copyWishlist);
@@ -2377,7 +2398,7 @@ function attachCollections(){
  document.addEventListener('click',e=>{if(preventNextClick&&e.target.closest('[data-order-kind]')){e.preventDefault();e.stopImmediatePropagation();preventNextClick=false;}},true);
 }
 
-function attach(){document.addEventListener('click',e=>{const own=e.target.closest('[data-own]');if(own)return toggleOwned(own.dataset.own);const removeWishBtn=e.target.closest('[data-remove-wish]');if(removeWishBtn){removeWish(removeWishBtn.dataset.removeWish);return;}const wish=e.target.closest('[data-wish]');if(wish)return toggleWish(wish.dataset.wish);const preview=e.target.closest('[data-preview]');if(preview)return showModal(preview.dataset.preview);const set=e.target.closest('[data-set]');if(set){state.active=set.dataset.set;if(MAP.get(state.active)?.group==='Extra'){state.extras=true;$('extrasEnabled').checked=true;}state.limit=96;renderAll();window.scrollTo({top:document.querySelector('.shell').offsetTop-12,behavior:'smooth'});}});
+function attach(){document.addEventListener('click',e=>{const own=e.target.closest('[data-own]');if(own)return toggleOwned(own.dataset.own);const removeWishBtn=e.target.closest('[data-remove-wish]');if(removeWishBtn){removeWish(removeWishBtn.dataset.removeWish);return;}const wish=e.target.closest('[data-wish]');if(wish)return toggleWish(wish.dataset.wish);const preview=e.target.closest('[data-preview]');if(preview)return showModal(preview.dataset.preview);const set=e.target.closest('[data-set]');if(set){state.active=set.dataset.set;if(MAP.get(state.active)?.group==='Extra'){state.extras=true;$('extrasEnabled').checked=true;}state.limit=96;renderAll();const sticky=document.querySelector('.sticky-sitebar');const shell=document.querySelector('.shell');window.scrollTo({top:Math.max(0,shell.getBoundingClientRect().top+window.scrollY-(sticky?.offsetHeight||0)-12),behavior:'smooth'});}});
  $('search').addEventListener('input',e=>{state.query=e.target.value.trim();state.limit=96;if(state.query){state.active='all';state.status='all';state.holoOnly=false;state.pokemonOnly=false;$('statusSelect').value='all';$('holoOnly').checked=false;$('pokemonOnly').checked=false;}renderAll()});$('statusSelect').onchange=e=>{state.status=e.target.value;state.limit=96;renderCards()};$('sortSelect').onchange=e=>{state.sort=e.target.value;state.limit=96;renderCards()};$('holoOnly').onchange=e=>{state.holoOnly=e.target.checked;state.limit=96;renderCards()};$('pokemonOnly').onchange=e=>{state.pokemonOnly=e.target.checked;state.limit=96;renderCards()};$('extrasEnabled').onchange=e=>{state.extras=e.target.checked;if(!state.extras&&MAP.get(state.active)?.group==='Extra')state.active='all';state.limit=96;renderAll()};$('loadMore').onclick=()=>{state.limit+=96;renderCards()};$('showOwned').onclick=()=>{state.status='owned';$('statusSelect').value='owned';state.limit=96;renderCards()};$('showHolo').onclick=()=>{state.holoOnly=true;$('holoOnly').checked=true;state.limit=96;renderCards()};$('resetFilters').onclick=()=>{state.query='';state.status='all';state.sort='num';state.holoOnly=false;state.pokemonOnly=false;state.limit=96;$('search').value='';$('statusSelect').value='all';$('sortSelect').value='num';$('holoOnly').checked=false;$('pokemonOnly').checked=false;renderCards()};$('exportJSON').onclick=backup;$('exportCSV').onclick=exportCSV;$('importJSON').onclick=()=>$('fileInput').click();$('fileInput').onchange=e=>{importBackup(e.target.files[0]);e.target.value=''};$('closeModal').onclick=()=>$('modal').close();$('modal').addEventListener('click',e=>{if(e.target===$('modal'))$('modal').close()});attachCollections();}
 attach();loadEmbeddedData();
 })();
