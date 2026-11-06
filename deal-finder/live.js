@@ -4,12 +4,13 @@
  const page=document.querySelector('#dealsPage .collection-panel');
  const bridge=()=>window.VintageDealBridge;
  if(!page || !page.querySelector('.deal-summary'))return;
+ const DEFAULT_WORKER_URL='https://pokemon-vintage-ebay-deals.xfayne.workers.dev';
  const key='pokemon-ebay-worker-endpoint-v1';
  const $=id=>document.getElementById(id);
  const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const money=v=>{if(!v || !Number.isFinite(Number(v.value)) || !/^[A-Z]{3}$/.test(String(v.currency)))return '—';try{return new Intl.NumberFormat('en-US',{style:'currency',currency:v.currency,maximumFractionDigits:2}).format(Number(v.value));}catch(_){return String(v.value)+' '+String(v.currency)}};
- const state={endpoint:'',status:'setup',error:'',items:[],searched:0,done:false,loading:false,seen:new Set(),fetchedAt:null,errors:[]};
- try{state.endpoint=localStorage.getItem(key)||'';}catch(_){}
+ const state={endpoint:DEFAULT_WORKER_URL,status:'setup',error:'',items:[],searched:0,done:false,loading:false,seen:new Set(),fetchedAt:null,errors:[]};
+ // The public endpoint is fixed in code, not a per-device setup step.
 
  const ui=document.createElement('section');
  ui.className='live-auctions';
@@ -57,16 +58,17 @@
  function render(){
   const total=list().length;
   const badge=$('liveBadge');
-  badge.textContent=state.status==='ready'?'eBay · API':state.status==='loading'?'מחפש…':state.status==='error'?'שגיאת חיבור':'טרם חובר';
+  badge.textContent=state.status==='ready'?'eBay · API':state.status==='loading'?'מתחבר…':state.status==='awaiting-keys'?'ממתין למפתחות eBay':state.status==='error'?'שגיאת חיבור':'טרם חובר';
   badge.className='live-badge'+(state.status==='ready'?' ready':'');
   $('liveReload').disabled=state.loading || !state.endpoint;
   $('liveMore').disabled=state.loading;
   $('liveMore').hidden=state.loading || state.done || state.status!=='ready' || state.searched>=total;
-  $('liveSettings').open=!state.endpoint || state.status==='error';
+  $('liveSettings').open=false;
   let status='';
   if(!state.endpoint)status='כדי לקבל מכרזים חיים צריך לחבר שרת eBay. התשתית קיימת; כרגע אין כתובת שרת מוגדרת.';
   else if(state.loading)status='בודקת מכרזים ומחירי משלוח עבור קלפים מרשימת הרצונות…';
   else if(state.error)status=state.error;
+  else if(state.status==='awaiting-keys')status='השרת מחובר, אך ממתינים למפתחות eBay Production. אין צורך להגדיר את כתובת השרת ידנית.';
   else if(state.fetchedAt)status='מקור: eBay Browse API · נבדקו '+state.searched+' מתוך '+total+' קלפים · עודכן: '+new Date(state.fetchedAt).toLocaleString('he-IL')+(state.errors.length?' · היו '+state.errors.length+' שגיאות חלקיות':'');
   else if(state.status==='ready')status='מחובר ל־eBay. ניתן להתחיל חיפוש אוטומטי.';
   else status='בדיקת חיבור לשרת eBay…';
@@ -116,7 +118,8 @@
   try {
    const response=await fetch(state.endpoint+'/health',{cache:'no-store'});
    const json=await response.json();
-   if(!response.ok||!json.ready)throw Error(json.ready===false?'שרת ה־eBay קיים, אבל מפתחות הגישה עדיין לא הוגדרו.':'שרת eBay לא זמין או מחזיר שגיאה.');
+   if(!response.ok)throw Error('שרת eBay לא זמין או מחזיר שגיאה.');
+   if(!json.ready){state.status='awaiting-keys';state.error='';render();return false;}
    state.status='ready';state.error='';render();return true;
   }catch(error){state.status='error';state.error='אי אפשר להתחבר לשרת: '+String(error.message||error);render();return false}
  }
