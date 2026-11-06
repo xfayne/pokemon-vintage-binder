@@ -1,0 +1,7 @@
+name = "pokemon-vintage-ebay-deals"
+main = "./index.js"
+compatibility_date = "2026-11-06"
+workers_dev = true
+
+[vars]
+ALLOWED_ORIGIN = "https://xfayne.github.io"
