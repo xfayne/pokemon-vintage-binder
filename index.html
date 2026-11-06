@@ -23,7 +23,7 @@
 .static-catalog{display:block}.js-ready .static-catalog{display:none}
 .hero .stats,.hero .hero-actions,.side,.toolbar,.list-header,#cards,#loadMore,#fetchStatus{display:none}
 .js-ready .hero .stats{display:grid}.js-ready .hero .hero-actions{display:flex}
-.js-ready .side{display:block}.js-ready .toolbar{display:block}.js-ready .list-header{display:flex}.js-ready #cards{display:grid}.js-ready #fetchStatus{display:block}
+.js-ready .side{display:block}.js-ready .toolbar{display:block}.js-ready .list-header{display:flex}.js-ready #cards{display:grid}.js-ready #fetchStatus{display:block}#fetchStatus[hidden]{display:none!important}
 .js-ready #loadMore:not([hidden]){display:block}
 .static-callout{background:#f0f4ff;border:1px solid #d2ddf6;padding:16px 17px;border-radius:14px;line-height:1.7;margin-bottom:16px;font-size:14px}
 .static-callout b{color:#24375b}.static-callout p{margin:7px 0 0}.static-callout p:last-child{color:#5b657b;font-size:12px}
@@ -202,7 +202,7 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
 .reader-spread{width:100%;flex:1;min-height:0;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:clamp(4px,.8vw,16px);perspective:1100px}
 .reader-book{height:min(calc(100dvh - 65px),calc((100vw - 66px) / .74));width:auto;aspect-ratio:.74;background:linear-gradient(130deg,#18263f,#263a59);border:2px solid #445775;border-radius:14px;box-shadow:0 14px 42px #0008,inset 0 0 0 2px #16223a;position:relative;padding:clamp(6px,1.6vw,16px);display:flex;align-items:center;justify-content:center;flex:0 0 auto;min-width:0;overflow:hidden}
 .reader-book::after{position:absolute;content:'';right:5px;top:10px;bottom:10px;border-right:2px dotted #a8bad141;pointer-events:none}
-.reader-grid{width:100%;height:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));gap:clamp(3px,1vw,9px)}
+.reader-grid{direction:rtl;width:100%;height:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));gap:clamp(3px,1vw,9px)}
 .reader-pocket{border-radius:6px;border:1px solid #bac8dd5b;background:linear-gradient(145deg,#cdd7ec14,#b8c5de09);min-width:0;min-height:0;display:flex;align-items:center;justify-content:center;position:relative;padding:3px;overflow:hidden}
 .reader-pocket img{height:100%;width:100%;object-fit:contain;pointer-events:none;filter:drop-shadow(0 3px 4px #0007)}
 .reader-pocket.wish img{opacity:.56;filter:grayscale(.18)}
@@ -223,10 +223,23 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
 @media (max-width:600px) and (orientation:portrait){.reader-stage{padding:5px 27px 4px}.reader-book{height:min(calc(100dvh - 58px),calc((100vw - 56px) / .74));padding:7px}.reader-pocket{padding:2px;border-radius:4px}}
 
 </style>
+<script>
+// External card scan fallback: Bulbagarden images may block hotlinking.
+document.addEventListener('error', event => {
+  const img = event.target;
+  if (img instanceof HTMLImageElement &&
+      img.src === 'https://storage.googleapis.com/images.pricecharting.com/3glxxjcy56axpsah/1600.jpg' &&
+      !img.dataset.ancientMewFallback) {
+    img.dataset.ancientMewFallback = '1';
+    img.addEventListener('load', () => { img.style.opacity = ''; }, { once: true });
+    img.src = 'https://t206cards.com/content/wotc-promo/images/fronts/ancient-mew/international-2000.jpg';
+  }
+}, true);
+</script>
 </head>
 <body>
 <header class="hero"><div class="hero-inner">
-<div class="eyebrow">THE ORIGINAL WOTC ERA · 1999–2002 · v10</div>
+<div class="eyebrow">THE ORIGINAL WOTC ERA · 1999–2002 · v11</div>
 <h1>Pokémon Vintage Binder <span aria-hidden="true">✦</span></h1>
 <p>כל הקלפים מהילדות, במקום אחד. רשימה מלאה של Base, Jungle, Fossil, Team Rocket, Gym וכל סדרות Neo, עם סימון ברור של Holo ו־Shining.</p>
 <div class="stats">
@@ -317,7 +330,7 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
   <div class="aside-note">הרשימה מתעדת את הקלף לפי סדרה ומספר, לא את כל וריאציות ההדפסה (1st Edition, Shadowless וכו׳). הפרומואים ו־Legendary Collection אופציונליים.</div>
  </aside>
  <main class="main">
-<div class="site-tip"><b>התמונות לא מופיעות בתצוגה המקדימה של האייפון?</b> הכתובות עצמן תקינות, אבל התצוגה עלולה לחסום תמונות חיצוניות. <a href="https://images.pokemontcg.io/base1/1.png" target="_blank" rel="noopener">בדוק תמונה לדוגמה ↗</a>. כשפותחים את הקטלוג מאתר HTTPS רגיל, התמונות אמורות להיטען.</div>
+
 <section id="staticCatalog" class="static-catalog" aria-label="רשימת קלפים מלאה">
   <div class="static-callout"><b>הקטלוג המלא מופיע כאן — גם בתצוגת האייפון ✅</b><p>פתח סדרה כדי לראות את כל הקלפים. ✨ מציין Holo ו־🌟 מציין Shining. אם התמונות חסומות בתצוגת הקבצים, לחץ על ״פתח תמונה ↗״ ליד כל קלף. כדי לראות את התמונות ישירות בתוך הקטלוג, פתח אותו כאתר רגיל ב־Safari.</p><p><strong>חשוב:</strong> בתצוגת הקבצים באייפון סימון התיבות עלול לא להישמר לאחר סגירה. למעקב קבוע השתמש בקובץ Excel/Numbers שמצורף לצד הקטלוג. בדפדפן שמפעיל JavaScript יופיעו החיפוש והגיבוי.</p></div>
   <nav class="static-jumps" aria-label="קפיצה לסדרה">
@@ -1615,9 +1628,9 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
 <article class="static-card"><div class="static-img"><a href="https://images.pokemontcg.io/base6/109.png" target="_blank" rel="noopener" aria-label="פתח תמונה של Mysterious Fossil"><img loading="lazy" decoding="async" src="https://images.pokemontcg.io/base6/109.png" alt="Mysterious Fossil"/><span class="open-photo">פתח תמונה ↗</span></a></div><div class="static-card-info"><strong dir="auto">Mysterious Fossil</strong><span class="static-number" dir="ltr">#109/110</span><span class="static-finish ">◇ רגיל</span><label class="static-own"><input type="checkbox" /> יש לי</label></div></article>
 <article class="static-card"><div class="static-img"><a href="https://images.pokemontcg.io/base6/110.png" target="_blank" rel="noopener" aria-label="פתח תמונה של Potion"><img loading="lazy" decoding="async" src="https://images.pokemontcg.io/base6/110.png" alt="Potion"/><span class="open-photo">פתח תמונה ↗</span></a></div><div class="static-card-info"><strong dir="auto">Potion</strong><span class="static-number" dir="ltr">#110/110</span><span class="static-finish ">◇ רגיל</span><label class="static-own"><input type="checkbox" /> יש לי</label></div></article>
 </div></details>
-<details id="static-movie2000" class="static-set"><summary><b>Movie Promo 2000 · Ancient Mew</b><small>2000 · 1 קלף · ✨ Holo</small></summary><div class="static-grid"><article class="static-card"><div class="static-img"><a href="https://archives.bulbagarden.net/media/upload/b/b3/AncientMewThePowerofOnepromo.jpg" target="_blank" rel="noopener"><img loading="lazy" src="https://archives.bulbagarden.net/media/upload/b/b3/AncientMewThePowerofOnepromo.jpg" alt="Ancient Mew"/><span class="open-photo">פתח תמונה ↗</span></a></div><div class="static-card-info"><strong>Ancient Mew</strong><span class="static-number">ללא מספר · Movie Promo 2000</span><span class="static-finish">✨ Holo</span></div></article></div></details>
+<details id="static-movie2000" class="static-set"><summary><b>Movie Promo 2000 · Ancient Mew</b><small>2000 · 1 קלף · ✨ Holo</small></summary><div class="static-grid"><article class="static-card"><div class="static-img"><a href="https://storage.googleapis.com/images.pricecharting.com/3glxxjcy56axpsah/1600.jpg" target="_blank" rel="noopener"><img loading="lazy" src="https://storage.googleapis.com/images.pricecharting.com/3glxxjcy56axpsah/1600.jpg" alt="Ancient Mew"/><span class="open-photo">פתח תמונה ↗</span></a></div><div class="static-card-info"><strong>Ancient Mew</strong><span class="static-number">ללא מספר · Movie Promo 2000</span><span class="static-finish">✨ Holo</span></div></article></div></details>
 </section>
-  <div class="notice" id="fetchStatus">📚 רשימת הקלפים המלאה מובנית בקובץ — אין צורך באינטרנט לטעינת השמות והסימונים. תמונות נטענות בנפרד מהרשת.</div>
+  <div class="notice" id="fetchStatus" hidden></div>
   <div class="toolbar">
    <div class="toolbar-top"><div><h2 id="sectionTitle">כל הסדרות</h2><small id="sectionSub">רשימות קלפים מקוריות באנגלית</small></div><button class="btn sm" id="resetFilters">איפוס סינון ↺</button></div>
    <div class="filters">
@@ -1696,7 +1709,7 @@ function embeddedCards(){
   }
   if(names.length!==i)throw Error('Incomplete embedded set '+set.id);
  }
- cards.push({id:'movie2000-ancient-mew',set:'movie2000',name:'Ancient Mew',number:'ללא מספר',total:null,rarity:'Movie Promo Holo',finish:'holo',kind:'Pokémon',image:'https://archives.bulbagarden.net/media/upload/b/b3/AncientMewThePowerofOnepromo.jpg',large:'https://archives.bulbagarden.net/media/upload/b/b3/AncientMewThePowerofOnepromo.jpg'});
+ cards.push({id:'movie2000-ancient-mew',set:'movie2000',name:'Ancient Mew',number:'ללא מספר',total:null,rarity:'Movie Promo Holo',finish:'holo',kind:'Pokémon',image:'https://storage.googleapis.com/images.pricecharting.com/3glxxjcy56axpsah/1600.jpg',large:'https://storage.googleapis.com/images.pricecharting.com/3glxxjcy56axpsah/1600.jpg'});
  return cards;
 }
 
@@ -1730,7 +1743,7 @@ function loadEmbeddedData(){
   document.documentElement.classList.add('js-ready');
  }catch(error){
   console.error('Could not initialize offline catalog',error);
-  $('fetchStatus').classList.add('error');
+  $('fetchStatus').hidden=false;$('fetchStatus').classList.add('error');
   $('fetchStatus').textContent='אירעה תקלה בטעינת הרשימה המובנית: '+error.message;
  }
 }
