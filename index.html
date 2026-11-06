@@ -389,9 +389,65 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
  .owned-meta .owned-price{font-size:12px}
  .owned-meta .owned-condition{font-size:10px}
 }
+
+/* v18: keep the site title and main tabs accessible throughout long pages */
+.sticky-sitebar{position:sticky;top:0;z-index:600;background:var(--bg);box-shadow:0 3px 14px #182a4514;isolation:isolate}
+.sticky-sitebar .main-nav{margin:0 auto;padding:8px 20px 9px;max-width:1310px}
+.sticky-sitebar .main-nav button{padding:9px 15px}
+.collection-page,.shell,.binder-place,.static-set{scroll-margin-top:130px}
+@media(max-width:650px){
+ .sticky-sitebar .main-nav{padding:7px 10px 9px;gap:5px;grid-template-columns:repeat(4,minmax(0,1fr))}
+ .sticky-sitebar .main-nav button{min-width:0;padding:9px 2px;font-size:11px;gap:3px}
+ .sticky-sitebar .main-nav .nav-number{display:none}
+}
+/* Compact Wishlist: price and condition on the left, one reorder action only */
+.wishlist-items{gap:7px}
+.wishlist-items .wish-item{display:flex;align-items:center;gap:10px;padding:8px 10px;min-height:0;border-radius:13px;cursor:pointer;transition:background .15s,border-color .15s,box-shadow .15s}
+.wishlist-items .wish-item:hover{background:#f5f7ff;border-color:#b8c5e5;box-shadow:0 4px 12px #1626440d}
+.wishlist-items .wish-item:focus-visible{outline:3px solid #8b9cf4;outline-offset:2px}
+.wishlist-items .wish-rank{min-width:24px;font-size:14px;line-height:1.2;text-align:center}
+.wishlist-items .wish-item>img{width:46px;height:65px;flex:none;border-radius:6px;object-fit:contain}
+.wishlist-items .wish-copy{flex:1;min-width:0;overflow-wrap:anywhere}
+.wishlist-items .wish-copy strong{font-size:14px;line-height:1.2}
+.wishlist-items .wish-copy small{font-size:11px;line-height:1.3;margin-top:3px}
+.wish-side{flex:0 0 90px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-width:0}
+.wish-side .wish-move-action{width:100%;min-height:29px;padding:5px 7px;white-space:nowrap;border-color:#bfcceb;background:#edf1ff;color:#3c5099;font-size:12px}
+.wish-side .wish-move-action:hover{background:#e3eaff}
+.wish-side .wish-market{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:5px;max-width:100%;line-height:1.2;direction:ltr;font-variant-numeric:tabular-nums}
+.wish-side .wish-market .owned-price{font-size:13px;font-weight:800;color:#247962;white-space:nowrap}
+.wish-side .wish-market .owned-price.pending{font-size:10px;font-weight:500;color:#8691a5;white-space:normal}
+.wish-side .wish-market .owned-condition{font-size:10px;font-weight:800;padding:3px 6px;border-radius:6px;background:#ebeffd;color:#40527e;white-space:nowrap}
+@media(max-width:650px){
+ .wishlist-items{gap:7px}
+ .wishlist-items .wish-item{display:flex;gap:8px;padding:8px;min-height:0}
+ .wishlist-items .wish-rank{min-width:18px;font-size:12px}
+ .wishlist-items .wish-item>img{width:44px;height:63px;grid-column:auto;grid-row:auto}
+ .wishlist-items .wish-copy{grid-column:auto;grid-row:auto}
+ .wishlist-items .wish-copy strong{font-size:13px}
+ .wishlist-items .wish-copy small{font-size:10px}
+ .wish-side{flex-basis:80px;gap:4px}
+ .wish-side .wish-move-action{font-size:11px;min-height:29px;padding:5px}
+ .wish-side .wish-market{gap:3px}
+ .wish-side .wish-market .owned-price{font-size:12px}
+ .wish-side .wish-market .owned-condition{font-size:10px}
+}
+@media(max-width:360px){
+ .sticky-sitebar .hero h1{font-size:16px;white-space:nowrap}
+ .sticky-sitebar .hero h1 span[aria-hidden]{display:none}
+ .sticky-sitebar .main-nav button{font-size:10px;white-space:nowrap}
+ .wishlist-items .wish-item{gap:6px}
+ .wishlist-items .wish-rank{min-width:15px}
+ .wishlist-items .wish-item>img{width:40px;height:57px}
+ .wish-side{flex-basis:70px}
+ .wish-side .wish-market .owned-price{font-size:11px}
+}
+@media(min-width:901px){
+ .side{top:calc(var(--sticky-sitebar-height, 120px) + 12px);max-height:calc(100dvh - var(--sticky-sitebar-height, 120px) - 24px)}
+}
 </style>
 </head>
 <body>
+<div class="sticky-sitebar" aria-label="ניווט האתר">
 <header class="hero"><div class="hero-inner"><div class="hero-top"><h1>Pokémon Vintage Binder <span aria-hidden="true">✦</span></h1>
  <div class="account-area">
   <button type="button" id="accountTrigger" class="account-trigger" aria-haspopup="menu" aria-expanded="false" aria-label="התחברות"><span id="accountAvatar" class="account-avatar" aria-hidden="true">👤</span><span id="accountName">התחברות</span><span class="account-chevron" aria-hidden="true">⌄</span></button>
@@ -402,6 +458,13 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
    <button type="button" id="accountSignOut" role="menuitem">התנתקות</button>
   </div>
  </div></div></div></header>
+<nav class="main-nav" aria-label="ניווט בין הקטלוג, הבינדר ו־Wishlist">
+  <button type="button" class="active" data-view-btn="catalog" aria-pressed="true">📚 קטלוג</button>
+  <button type="button" data-view-btn="owned" aria-pressed="false">✅ הקלפים שלי <span class="nav-number" id="ownedCountTab"></span></button>
+  <button type="button" data-view-btn="binder" aria-pressed="false">📖 הבינדר שלי <span class="nav-number" id="binderCountTab"></span></button>
+  <button type="button" data-view-btn="wishlist" aria-pressed="false">💜 Wishlist <span class="nav-number" id="wishCountTab"></span></button>
+</nav>
+</div>
 
 <dialog id="cloudDialog" class="dialog cloud-config" aria-label="חיבור Firebase">
  <div class="modal-inner">
@@ -420,12 +483,7 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
 
 <input id="fileInput" type="file" accept=".json,application/json" hidden />
 
-<nav class="main-nav" aria-label="ניווט בין הקטלוג, הבינדר ו־Wishlist">
-  <button type="button" class="active" data-view-btn="catalog" aria-pressed="true">📚 קטלוג</button>
-  <button type="button" data-view-btn="owned" aria-pressed="false">✅ הקלפים שלי <span class="nav-number" id="ownedCountTab"></span></button>
-  <button type="button" data-view-btn="binder" aria-pressed="false">📖 הבינדר שלי <span class="nav-number" id="binderCountTab"></span></button>
-  <button type="button" data-view-btn="wishlist" aria-pressed="false">💜 Wishlist <span class="nav-number" id="wishCountTab"></span></button>
-</nav>
+
 <section class="collection-page" id="ownedPage" hidden aria-label="הקלפים שלי ברשימה">
  <div class="collection-panel">
   <div class="collection-heading owned-heading">
@@ -2102,7 +2160,7 @@ function placeBinder(id,page,slot){
 function showView(view,doScroll=true){if(!['catalog','owned','binder','wishlist'].includes(view))return;state.view=view;
  $('catalogShell').hidden=view!=='catalog';$('ownedPage').hidden=view!=='owned';$('binderPage').hidden=view!=='binder';$('wishPage').hidden=view!=='wishlist';
  document.querySelectorAll('[data-view-btn]').forEach(b=>{const a=b.dataset.viewBtn===view;b.classList.toggle('active',a);b.setAttribute('aria-pressed',String(a));});
- if(view!=='catalog')renderCollections();if(doScroll)window.scrollTo({top:document.querySelector('.main-nav').offsetTop-10,behavior:'smooth'});
+ if(view!=='catalog')renderCollections();if(doScroll)window.scrollTo({top:0,behavior:'smooth'});
 }
 function sortedOwnedCards(){
  const own=state.cards.filter(c=>state.owned[c.id]), mode=$('ownedSort').value;
@@ -2121,8 +2179,13 @@ function sortedOwnedCards(){
 }
 let ownedRenderTimer=null;
 function refreshOwned(){
- if(state.view!=='owned'||ownedRenderTimer)return;
- ownedRenderTimer=setTimeout(()=>{ownedRenderTimer=null;renderOwnedList();},120);
+ // Market data is shared by My Cards and Wishlist; either list must update when prices arrive.
+ if(!['owned','wishlist'].includes(state.view)||ownedRenderTimer)return;
+ ownedRenderTimer=setTimeout(()=>{
+  ownedRenderTimer=null;
+  if(state.view==='owned')renderOwnedList();
+  else if(state.view==='wishlist')renderCollections();
+ },120);
 }
 window.VintageBinder.refreshOwned=refreshOwned;
 function renderOwnedList(){
@@ -2164,12 +2227,25 @@ function renderCollections(){if(!state.ready)return;normalizeOrders();
  $('binderBook').hidden=list.length===0;$('binderPager').hidden=list.length===0;$('binderEmpty').hidden=list.length!==0;
  $('binderPageLabel').textContent='עמוד '+(state.binderPage+1)+' מתוך '+pageCount;
  $('binderPrev').disabled=state.binderPage===0;$('binderNext').disabled=state.binderPage>=pageCount-1;
- $('wishlistItems').innerHTML=state.wishOrder.length?state.wishOrder.map((id,i)=>{const c=cardLookup.get(id);if(!c)return '';
- const owned=!!state.owned[id],inBinder=state.binderOrder.includes(id);
- return `<article class="wish-item" role="listitem" data-order-kind="wishlist" data-order-index="${i}">
- <span class="wish-rank">${i+1}</span><img loading="lazy" decoding="async" src="${esc(c.image)}" alt="${esc(c.name)} — לחץ לפרטים או גרור לשינוי סדר" data-preview="${esc(id)}" data-drag-kind="wishlist" data-drag-index="${i}" title="החזק וגרור לסידור" draggable="false"><div class="wish-copy"><strong>${esc(c.name)}</strong><small>${esc(MAP.get(c.set)?.name||'')} · #${esc(cardNumber(c))}${owned?' · ✓ יש לי':''}</small></div>
- <div class="wishlist-actions"><button type="button" class="btn sm" data-preview="${esc(id)}" aria-label="פרטים על ${esc(c.name)}">פרטים</button><div class="reorder-row"><button type="button" data-move-kind="wishlist" data-move-index="${i}" data-move-delta="-1" ${i===0?'disabled':''} aria-label="מעלה עדיפות">↑</button><button type="button" class="drag-handle" data-drag-kind="wishlist" data-drag-index="${i}" aria-label="גרור שינוי עדיפות">⋮⋮ גרור</button><button type="button" data-move-kind="wishlist" data-move-index="${i}" data-move-delta="1" ${i===state.wishOrder.length-1?'disabled':''} aria-label="מוריד עדיפות">↓</button></div><button type="button" class="btn sm wish-move-action" data-wish-move="${esc(id)}" aria-label="העבר את ${esc(c.name)} למיקום אחר ברשימת המשאלות">↗ העבר</button><button type="button" class="btn sm" data-owned-binder="${esc(id)}">${inBinder?'↗ העבר בבינדר':'＋ לבינדר'}</button><button class="wish-remove" type="button" data-remove-wish="${esc(id)}" aria-label="מחק משאלה מהרשימה">✕ הסר משאלה</button></div></article>`}).join(''):
- `<div class="no-cards">רשימת המשאלות עדיין ריקה. סמן ☆ ליד קלף בקטלוג כדי להוסיף אותו. <button type="button" class="btn sm primary" data-view-btn="catalog">לקטלוג</button></div>`;
+ $('wishlistItems').innerHTML=state.wishOrder.length?state.wishOrder.map((id,i)=>{
+  const c=cardLookup.get(id);if(!c)return '';
+  const condition=state.conditions[id]||'';
+  const market=condition?window.VintageMarketPrices?.getOwnedPrice?.(c,MAP.get(c.set)?.name||'',condition,!!state.firstEdition[id]):null;
+  const amount=typeof market==='number'?new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(market):'';
+  return `<article class="wish-item" role="listitem" data-open-wish="${esc(id)}" tabindex="0" aria-label="פרטים על ${esc(c.name)}">
+   <span class="wish-rank">${i+1}</span>
+   <img loading="lazy" decoding="async" src="${esc(c.image)}" alt="${esc(c.name)}">
+   <div class="wish-copy"><strong>${esc(c.name)}</strong><small>${esc(MAP.get(c.set)?.name||'')} · #${esc(cardNumber(c))}</small></div>
+   <div class="wish-side">
+    ${condition?`<div class="wish-market">
+     ${amount?`<span class="owned-price">${esc(amount)}</span>`:market===undefined?'<span class="owned-price pending">טוען…</span>':''}
+     <span class="owned-condition">${esc(condition)}${state.firstEdition[id]?' · 1st':''}</span>
+    </div>`:''}
+    <button type="button" class="btn sm wish-move-action" data-wish-move="${esc(id)}" aria-label="שנה מיקום של ${esc(c.name)} ב־Wishlist">↗ העבר</button>
+   </div>
+  </article>`;
+ }).join(''):
+ `<div class="no-cards">Wishlist עדיין ריקה. סמן ☆ ליד קלף בקטלוג כדי להוסיף אותו. <button type="button" class="btn sm primary" data-view-btn="catalog">לקטלוג</button></div>`;
  renderOwnedList();
 }
 function reorder(kind,from,to){if(!ensureCloudEdit())return;normalizeOrders();const arr=kind==='wishlist'?[...state.wishOrder]:binderVisible();if(from<0||to<0||from>=arr.length||to>=arr.length||from===to)return;
@@ -2240,8 +2316,11 @@ function applyWishMove(target){
 function attachCollections(){
  document.addEventListener('click',e=>{
   const view=e.target.closest('[data-view-btn]');if(view){showView(view.dataset.viewBtn);return;}
-  const openOwned=e.target.closest('[data-open-owned]');
-  if(openOwned&&!e.target.closest('button,a,input,select')){showModal(openOwned.dataset.openOwned);return;}
+  const openCard=e.target.closest('[data-open-owned],[data-open-wish]');
+  if(openCard&&!e.target.closest('button,a,input,select')){
+   showModal(openCard.dataset.openOwned||openCard.dataset.openWish);
+   return;
+  }
   const pick=e.target.closest('[data-pick-binder]');if(pick){selectBinder(pick.dataset.pickBinder);return;}
   const moveBinder=e.target.closest('[data-binder-move]');if(moveBinder){openMovePicker(moveBinder.dataset.binderMove);return;}
   const removeBinder=e.target.closest('[data-binder-remove]');if(removeBinder){removeFromBinder(removeBinder.dataset.binderRemove);return;}
@@ -2254,7 +2333,7 @@ function attachCollections(){
  $('wishMoveCancel').onclick=()=>$('wishMoveDialog').close();
  $('wishMoveDialog').addEventListener('close',()=>{wishMoveSelectedId=null;});
  $('wishMovePosition').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();applyWishMove(e.target.value);}});
- document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-open-owned]')){e.preventDefault();showModal(e.target.dataset.openOwned);}});
+ document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-open-owned],[data-open-wish]')){e.preventDefault();showModal(e.target.dataset.openOwned||e.target.dataset.openWish);}});
   $('binderFind').addEventListener('input',searchBinder);$('ownedFind').addEventListener('input',renderOwnedList);
   $('ownedSort').addEventListener('change',renderOwnedList);
   $('copyWishlist').addEventListener('click',copyWishlist);
@@ -2325,9 +2404,17 @@ function attachCollections(){
  document.addEventListener('click',e=>{if(preventNextClick&&e.target.closest('[data-order-kind]')){e.preventDefault();e.stopImmediatePropagation();preventNextClick=false;}},true);
 }
 
-function attach(){document.addEventListener('click',e=>{const own=e.target.closest('[data-own]');if(own)return toggleOwned(own.dataset.own);const removeWishBtn=e.target.closest('[data-remove-wish]');if(removeWishBtn){removeWish(removeWishBtn.dataset.removeWish);return;}const wish=e.target.closest('[data-wish]');if(wish)return toggleWish(wish.dataset.wish);const preview=e.target.closest('[data-preview]');if(preview)return showModal(preview.dataset.preview);const set=e.target.closest('[data-set]');if(set){state.active=set.dataset.set;if(MAP.get(state.active)?.group==='Extra'){state.extras=true;$('extrasEnabled').checked=true;}state.limit=96;renderAll();window.scrollTo({top:document.querySelector('.shell').offsetTop-12,behavior:'smooth'});}});
+function attach(){document.addEventListener('click',e=>{const own=e.target.closest('[data-own]');if(own)return toggleOwned(own.dataset.own);const removeWishBtn=e.target.closest('[data-remove-wish]');if(removeWishBtn){removeWish(removeWishBtn.dataset.removeWish);return;}const wish=e.target.closest('[data-wish]');if(wish)return toggleWish(wish.dataset.wish);const preview=e.target.closest('[data-preview]');if(preview)return showModal(preview.dataset.preview);const set=e.target.closest('[data-set]');if(set){state.active=set.dataset.set;if(MAP.get(state.active)?.group==='Extra'){state.extras=true;$('extrasEnabled').checked=true;}state.limit=96;renderAll();const sticky=document.querySelector('.sticky-sitebar');const shell=document.querySelector('.shell');window.scrollTo({top:Math.max(0,shell.getBoundingClientRect().top+window.scrollY-(sticky?.offsetHeight||0)-12),behavior:'smooth'});}});
  $('search').addEventListener('input',e=>{state.query=e.target.value.trim();state.limit=96;if(state.query){state.active='all';state.status='all';state.holoOnly=false;state.pokemonOnly=false;$('statusSelect').value='all';$('holoOnly').checked=false;$('pokemonOnly').checked=false;}renderAll()});$('statusSelect').onchange=e=>{state.status=e.target.value;state.limit=96;renderCards()};$('sortSelect').onchange=e=>{state.sort=e.target.value;state.limit=96;renderCards()};$('holoOnly').onchange=e=>{state.holoOnly=e.target.checked;state.limit=96;renderCards()};$('pokemonOnly').onchange=e=>{state.pokemonOnly=e.target.checked;state.limit=96;renderCards()};$('extrasEnabled').onchange=e=>{state.extras=e.target.checked;if(!state.extras&&MAP.get(state.active)?.group==='Extra')state.active='all';state.limit=96;renderAll()};$('loadMore').onclick=()=>{state.limit+=96;renderCards()};$('showOwned').onclick=()=>{state.status='owned';$('statusSelect').value='owned';state.limit=96;renderCards()};$('showHolo').onclick=()=>{state.holoOnly=true;$('holoOnly').checked=true;state.limit=96;renderCards()};$('resetFilters').onclick=()=>{state.query='';state.status='all';state.sort='num';state.holoOnly=false;state.pokemonOnly=false;state.limit=96;$('search').value='';$('statusSelect').value='all';$('sortSelect').value='num';$('holoOnly').checked=false;$('pokemonOnly').checked=false;renderCards()};$('exportJSON').onclick=backup;$('exportCSV').onclick=exportCSV;$('importJSON').onclick=()=>$('fileInput').click();$('fileInput').onchange=e=>{importBackup(e.target.files[0]);e.target.value=''};$('closeModal').onclick=()=>$('modal').close();$('modal').addEventListener('click',e=>{if(e.target===$('modal'))$('modal').close()});attachCollections();}
 attach();loadEmbeddedData();
+// Keep the desktop set sidebar below the sticky title/tabs, including when the header changes height.
+const stickySitebar=document.querySelector('.sticky-sitebar');
+if(stickySitebar){
+ const syncStickyOffset=()=>document.documentElement.style.setProperty('--sticky-sitebar-height',Math.ceil(stickySitebar.getBoundingClientRect().height)+'px');
+ syncStickyOffset();
+ if(typeof ResizeObserver!=='undefined')new ResizeObserver(syncStickyOffset).observe(stickySitebar);
+ else window.addEventListener('resize',syncStickyOffset);
+}
 })();
 </script>
 
