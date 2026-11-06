@@ -458,6 +458,29 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
 .wishlist-items .wish-item{cursor:grab}
 .wishlist-items .wish-item.drag-origin{cursor:grabbing}
 .wishlist-items .wish-side button{cursor:pointer}
+
+.deals-notice{border-radius:10px;background:#eef2fd;border:1px solid #d7e1f6;padding:12px;margin:12px 0;color:#465979;font-size:12px;line-height:1.7}
+.deals-label{display:block;margin:12px 0 6px;font-size:12px;font-weight:700;color:#566781}
+.deals-items{display:grid;gap:8px;margin-top:13px}
+.deal-item{display:flex;gap:12px;align-items:center;border:1px solid #e1e7f1;border-radius:13px;background:#fbfcff;padding:10px}
+.deal-rank{flex:0 0 23px;text-align:center;color:#7b88a0;font-weight:800}
+.deal-image{height:78px;width:57px;object-fit:contain;flex:none;border-radius:5px}
+.deal-body{min-width:0;flex:1}
+.deal-body strong{display:block;text-align:right;direction:ltr;font-size:15px;overflow-wrap:anywhere}
+.deal-body small{display:block;color:#697a95;margin:4px 0;font-size:11px}
+.deal-ref{color:#137b60;font-size:12px;font-weight:700}
+.deal-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:7px}
+.deal-actions a{border:1px solid #cbd5ef;border-radius:8px;text-decoration:none;padding:7px 9px;font-weight:750;font-size:12px;background:#edf1ff;color:#3a4f9d}
+.deal-actions a.deal-wide{background:#fff;color:#63718b}
+@media(max-width:650px){
+ .sticky-sitebar .main-nav{grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;padding:7px 6px 9px}
+ .sticky-sitebar .main-nav button{min-width:0;padding:9px 1px;font-size:10px;line-height:1.2;white-space:normal}
+ .deal-item{gap:8px;padding:8px}
+ .deal-rank{flex-basis:18px}
+ .deal-image{width:47px;height:67px}
+ .deal-body strong{font-size:13px}
+ .deal-actions a{padding:6px 7px;font-size:11px}
+}
 </style>
 </head>
 <body>
@@ -477,6 +500,7 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
   <button type="button" data-view-btn="owned" aria-pressed="false">✅ הקלפים שלי <span class="nav-number" id="ownedCountTab"></span></button>
   <button type="button" data-view-btn="binder" aria-pressed="false">📖 הבינדר שלי <span class="nav-number" id="binderCountTab"></span></button>
   <button type="button" data-view-btn="wishlist" aria-pressed="false">💜 Wishlist <span class="nav-number" id="wishCountTab"></span></button>
+  <button type="button" data-view-btn="deals" aria-pressed="false">🔎 מציאות</button>
 </nav>
 </div>
 
@@ -537,6 +561,14 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
     <div class="collection-heading"><div><h2>💜 Wishlist</h2><div class="subtle">לחץ ״↗ העבר״ כדי לבחור מיקום מדויק או לעבור ישר לראש הרשימה. אפשר גם לגרור לסידור קצר.</div></div><div class="wishlist-heading-actions"><span id="wishCount" class="info-pill"></span><button id="copyWishlist" type="button" class="btn sm">⧉ העתק רשימה</button></div></div>
     <div id="wishlistItems" class="wishlist-items" role="list"></div>
   </div>
+</section>
+<section class="collection-page" id="dealsPage" hidden aria-label="חיפוש מציאות בקלפים">
+ <div class="collection-panel">
+  <div class="collection-heading"><div><h2>🔎 מציאות</h2><div class="subtle">חיפוש מכרזים מתוך ה־Wishlist שלך, לפי סדר העדיפויות שלך.</div></div><span class="info-pill" id="dealsCount"></span></div>
+  <div class="deals-notice">החיפוש פותח מכרזים ב־eBay. איתור ומיון אוטומטי של מודעות עדיין לא מחובר. בדוק מצב ומשלוח לישראל לפני הצעה.</div>
+  <label class="deals-label" for="dealsFind">חפש קלף או סדרה</label><input id="dealsFind" class="binder-place-search" type="search" placeholder="למשל Espeon או Neo Discovery">
+  <div id="dealsItems" class="deals-items" role="list"></div>
+ </div>
 </section>
 <dialog id="wishMoveDialog" class="wish-move-dialog" aria-labelledby="wishMoveTitle">
  <h3 id="wishMoveTitle">העברת קלף ברשימת המשאלות</h3>
@@ -2171,8 +2203,8 @@ function placeBinder(id,page,slot){
  state.binderPage=Math.floor(dest/9);renderCollections();
  toast('הקלף הועבר לעמוד '+(state.binderPage+1)+', כיס '+((dest%9)+1));
 }
-function showView(view,doScroll=true){if(!['catalog','owned','binder','wishlist'].includes(view))return;state.view=view;
- $('catalogShell').hidden=view!=='catalog';$('ownedPage').hidden=view!=='owned';$('binderPage').hidden=view!=='binder';$('wishPage').hidden=view!=='wishlist';
+function showView(view,doScroll=true){if(!['catalog','owned','binder','wishlist','deals'].includes(view))return;state.view=view;
+ $('catalogShell').hidden=view!=='catalog';$('ownedPage').hidden=view!=='owned';$('binderPage').hidden=view!=='binder';$('wishPage').hidden=view!=='wishlist';$('dealsPage').hidden=view!=='deals';
  document.querySelectorAll('[data-view-btn]').forEach(b=>{const a=b.dataset.viewBtn===view;b.classList.toggle('active',a);b.setAttribute('aria-pressed',String(a));});
  if(view!=='catalog')renderCollections();if(doScroll)window.scrollTo({top:0,behavior:'smooth'});
 }
@@ -2194,11 +2226,11 @@ function sortedOwnedCards(){
 let ownedRenderTimer=null;
 function refreshOwned(){
  // Market data is shared by My Cards and Wishlist; either list must update when prices arrive.
- if(!['owned','wishlist'].includes(state.view)||ownedRenderTimer)return;
+ if(!['owned','wishlist','deals'].includes(state.view)||ownedRenderTimer)return;
  ownedRenderTimer=setTimeout(()=>{
   ownedRenderTimer=null;
   if(state.view==='owned')renderOwnedList();
-  else if(state.view==='wishlist')renderCollections();
+  else if(state.view==='wishlist'||state.view==='deals')renderCollections();
  },120);
 }
 window.VintageBinder.refreshOwned=refreshOwned;
@@ -2220,6 +2252,41 @@ function renderOwnedList(){
       <span class="owned-condition">${esc(condition)}${state.firstEdition[c.id]?' · 1st':''}</span>
     </div>`:''}
   </article>`}).join(''):`<div class="no-cards">${own.length?'לא נמצאו קלפים מתאימים לחיפוש.':'עוד אין קלפים ברשימה. אפשר לסמן ״יש לי״ בקטלוג.'}</div>`;
+}
+
+function dealAuctionUrl(c,precise){
+ const setName=MAP.get(c.set)?.name||'';
+ const edition=state.firstEdition[c.id]?'1st edition':'';
+ const query=[c.name,setName,precise?cardNumber(c):'',edition,'pokemon'].filter(Boolean).join(' ');
+ return 'https://www.ebay.com/sch/i.html?'+new URLSearchParams({_nkw:query,LH_Auction:'1'});
+}
+function renderDeals(){
+ if(!state.ready)return;
+ normalizeOrders();
+ const wanted=state.wishOrder.filter(id=>state.wish[id]&&!state.owned[id]);
+ $('dealsCount').textContent=nf(wanted.length)+' קלפים';
+ const lookup=new Map(state.cards.map(c=>[c.id,c]));
+ const q=$('dealsFind').value.trim().toLowerCase();
+ const match=wanted.map((id,i)=>({c:lookup.get(id),rank:i+1})).filter(({c})=>c&&
+  (c.name+' '+(MAP.get(c.set)?.name||'')+' '+cardNumber(c)).toLowerCase().includes(q));
+ $('dealsItems').innerHTML=!wanted.length?'<div class="no-cards">ה־Wishlist שלך ריקה כרגע. הוסף קלפים מהקטלוג כדי לחפש מציאות.</div>':
+ !match.length?'<div class="no-cards">לא נמצאו קלפים שמתאימים לחיפוש.</div>':
+ match.map(({c,rank})=>{
+  const setName=MAP.get(c.set)?.name||'';
+  const grade=state.conditions[c.id]||'';
+  const first=!!state.firstEdition[c.id];
+  const reference=grade?window.VintageMarketPrices?.getOwnedPrice?.(c,setName,grade,first):null;
+  const amount=typeof reference==='number'&&Number.isFinite(reference)?new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(reference):'';
+  return `<article class="deal-item" role="listitem">
+   <span class="deal-rank">${rank}</span>
+   <img class="deal-image" src="${esc(c.image)}" alt="${esc(c.name)}" loading="lazy">
+   <div class="deal-body"><strong>${esc(c.name)}</strong><small>${esc(setName)} · #${esc(cardNumber(c))} · ${first?'1st Edition':'Unlimited'}${grade?' · '+esc(grade):''}</small>
+    ${amount?`<span class="deal-ref">${esc(amount)} · שווי ייחוס לפי מצב</span>`:''}
+    <div class="deal-actions"><a href="${esc(dealAuctionUrl(c,true))}" target="_blank" rel="noopener noreferrer">🔎 חיפוש מדויק</a>
+    <a class="deal-wide" href="${esc(dealAuctionUrl(c,false))}" target="_blank" rel="noopener noreferrer">חיפוש רחב</a></div>
+   </div>
+  </article>`;
+ }).join('');
 }
 function renderCollections(){if(!state.ready)return;normalizeOrders();
  $('binderCountTab').textContent=state.binderOrder.length+' קלפים';$('wishCountTab').textContent=state.wishOrder.length;
@@ -2261,6 +2328,7 @@ function renderCollections(){if(!state.ready)return;normalizeOrders();
  }).join(''):
  `<div class="no-cards">Wishlist עדיין ריקה. סמן ☆ ליד קלף בקטלוג כדי להוסיף אותו. <button type="button" class="btn sm primary" data-view-btn="catalog">לקטלוג</button></div>`;
  renderOwnedList();
+ if(state.view==='deals')renderDeals();
 }
 function reorder(kind,from,to){if(!ensureCloudEdit())return;normalizeOrders();const arr=kind==='wishlist'?[...state.wishOrder]:binderVisible();if(from<0||to<0||from>=arr.length||to>=arr.length||from===to)return;
  const [moved]=arr.splice(from,1);arr.splice(to,0,moved);
@@ -2481,6 +2549,8 @@ function attachCollections(){
 
 function attach(){document.addEventListener('click',e=>{const own=e.target.closest('[data-own]');if(own)return toggleOwned(own.dataset.own);const removeWishBtn=e.target.closest('[data-remove-wish]');if(removeWishBtn){removeWish(removeWishBtn.dataset.removeWish);return;}const wish=e.target.closest('[data-wish]');if(wish)return toggleWish(wish.dataset.wish);const preview=e.target.closest('[data-preview]');if(preview)return showModal(preview.dataset.preview);const set=e.target.closest('[data-set]');if(set){state.active=set.dataset.set;if(MAP.get(state.active)?.group==='Extra'){state.extras=true;$('extrasEnabled').checked=true;}state.limit=96;renderAll();const sticky=document.querySelector('.sticky-sitebar');const shell=document.querySelector('.shell');window.scrollTo({top:Math.max(0,shell.getBoundingClientRect().top+window.scrollY-(sticky?.offsetHeight||0)-12),behavior:'smooth'});}});
  $('search').addEventListener('input',e=>{state.query=e.target.value.trim();state.limit=96;if(state.query){state.active='all';state.status='all';state.holoOnly=false;state.pokemonOnly=false;$('statusSelect').value='all';$('holoOnly').checked=false;$('pokemonOnly').checked=false;}renderAll()});$('statusSelect').onchange=e=>{state.status=e.target.value;state.limit=96;renderCards()};$('sortSelect').onchange=e=>{state.sort=e.target.value;state.limit=96;renderCards()};$('holoOnly').onchange=e=>{state.holoOnly=e.target.checked;state.limit=96;renderCards()};$('pokemonOnly').onchange=e=>{state.pokemonOnly=e.target.checked;state.limit=96;renderCards()};$('extrasEnabled').onchange=e=>{state.extras=e.target.checked;if(!state.extras&&MAP.get(state.active)?.group==='Extra')state.active='all';state.limit=96;renderAll()};$('loadMore').onclick=()=>{state.limit+=96;renderCards()};$('showOwned').onclick=()=>{state.status='owned';$('statusSelect').value='owned';state.limit=96;renderCards()};$('showHolo').onclick=()=>{state.holoOnly=true;$('holoOnly').checked=true;state.limit=96;renderCards()};$('resetFilters').onclick=()=>{state.query='';state.status='all';state.sort='num';state.holoOnly=false;state.pokemonOnly=false;state.limit=96;$('search').value='';$('statusSelect').value='all';$('sortSelect').value='num';$('holoOnly').checked=false;$('pokemonOnly').checked=false;renderCards()};$('exportJSON').onclick=backup;$('exportCSV').onclick=exportCSV;$('importJSON').onclick=()=>$('fileInput').click();$('fileInput').onchange=e=>{importBackup(e.target.files[0]);e.target.value=''};$('closeModal').onclick=()=>$('modal').close();$('modal').addEventListener('click',e=>{if(e.target===$('modal'))$('modal').close()});attachCollections();}
+
+ $('dealsFind').addEventListener('input',renderDeals);
 attach();loadEmbeddedData();
 // Keep the desktop set sidebar below the sticky title/tabs, including when the header changes height.
 const stickySitebar=document.querySelector('.sticky-sitebar');
