@@ -168,7 +168,7 @@ function trackSummary(row){
   }
  }
  const latest=info.latest_event;
- if(latest){const e=trackEvent(latest,String(row.carrier||''));if(e.description&&!dedup.has(e.id))dedup.set(e.id,e);}
+ if(latest&&!dedup.size){const e=trackEvent(latest,String(row.carrier||''));if(e.description)dedup.set(e.id,e);}
  const events=[...dedup.values()].sort((a,b)=>b.time.localeCompare(a.time)).slice(0,150);
  return {number:row.number,carrier:row.carrier||null,
   status:clean(info.latest_status?.status||'NotFound',40),
