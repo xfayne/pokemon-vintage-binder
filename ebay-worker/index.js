@@ -89,11 +89,119 @@ async function searchBatch(cards,env){
  return {source:'eBay Browse API',fetchedAt:new Date().toISOString(),searchedCards:cards.length,
   items:items.filter(x=>{const k=x.itemId||x.url;if(unique.has(k))return false;unique.add(k);return true}).sort((a,b)=>b.matchConfidence-a.matchConfidence).slice(0,120),errors};
 }
+
+/* SHIPMENT_API: 17TRACK V2.4 integration.
+   Keep the 17TRACK key server-side. Verify Firebase ID tokens (not just Origin)
+   and restrict the account email so public sign-ups cannot exhaust credits. */
+const TRACK_BASE='https://api.17track.net/track/v2.4';
+const FIREBASE_PROJECT='pokemon-vintage-binder';
+const FIREBASE_JWKS='https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com';
+let firebaseKeys=null, firebaseKeysUntil=0;
+function base64urlBytes(str){
+ const pad=str.replace(/-/g,'+').replace(/_/g,'/');
+ const raw=atob(pad+'='.repeat((4-pad.length%4)%4));
+ return Uint8Array.from(raw,c=>c.charCodeAt(0));
+}
+function decodeJwtPart(str){return JSON.parse(new TextDecoder().decode(base64urlBytes(str)));}
+async function verifyFirebaseBearer(request,env){
+ const auth=request.headers.get('authorization')||'';
+ if(!/^Bearer [A-Za-z0-9_.-]+$/.test(auth))return false;
+ const parts=auth.slice(7).split('.');
+ if(parts.length!==3)return false;
+ let header,claims;
+ try{header=decodeJwtPart(parts[0]);claims=decodeJwtPart(parts[1]);}catch{return false;}
+ const now=Math.floor(Date.now()/1000);
+ if(header.alg!=='RS256'||!header.kid||claims.aud!==FIREBASE_PROJECT||
+    claims.iss!=='https://securetoken.google.com/'+FIREBASE_PROJECT||
+    !claims.sub||claims.sub.length>128||claims.exp<=now||claims.iat>now+60||
+    claims.auth_time>now+60)return false;
+ // 17TRACK credits are private. A public Firebase project permits new Google sign-ins,
+ // so enforce a configured owner-email allowlist in addition to the signed token.
+ if(!env.TRACK17_OWNER_EMAIL||String(claims.email||'').toLowerCase()!==String(env.TRACK17_OWNER_EMAIL).trim().toLowerCase()||claims.email_verified!==true)return false;
+ if(!firebaseKeys||Date.now()>firebaseKeysUntil){
+  const r=await fetch(FIREBASE_JWKS);
+  if(!r.ok)throw Error('FIREBASE_KEYS_UNAVAILABLE');
+  firebaseKeys=await r.json();
+  firebaseKeysUntil=Date.now()+Math.min(3600,Number((r.headers.get('cache-control')||'').match(/max-age=(\d+)/)?.[1]||1800))*1000;
+ }
+ const key=firebaseKeys.keys?.find(k=>k.kid===header.kid);
+ if(!key)return false;
+ const cryptoKey=await crypto.subtle.importKey('jwk',key,{name:'RSASSA-PKCS1-v1_5',hash:'SHA-256'},false,['verify']);
+ return crypto.subtle.verify('RSASSA-PKCS1-v1_5',cryptoKey,base64urlBytes(parts[2]),new TextEncoder().encode(parts[0]+'.'+parts[1]));
+}
+function trackItem(raw){
+ const number=String(raw?.number||'').trim().toUpperCase();
+ if(!/^[A-Z0-9-]{5,50}$/.test(number))return null;
+ const carrier=Number(raw?.carrier)||0;
+ if(carrier&&(carrier<1||!Number.isInteger(carrier)))return null;
+ return carrier?{number,carrier}:{number};
+}
+function trackError(row){
+ return {code:Number(row?.error?.code)||0,message:clean(row?.error?.message||'Tracking information unavailable',160)};
+}
+async function call17track(route,items,env){
+ const r=await fetch(TRACK_BASE+'/'+route,{method:'POST',headers:{'content-type':'application/json','17token':env.TRACK17_API_KEY},body:JSON.stringify(items)});
+ if(!r.ok)throw Error('17TRACK_HTTP_'+r.status);
+ const j=await r.json();
+ if(j.code!==0||!j.data||!Array.isArray(j.data.accepted))throw Error('17TRACK_API_'+String(j.code||'ERROR'));
+ return j.data;
+}
+function trackEvent(raw,provider){
+ const time=String(raw.time_utc||raw.time_iso||raw.time_raw?.date||'').slice(0,40);
+ const description=clean(raw.description_translation?.description||raw.description||raw.stage||'',240);
+ const location=clean(raw.location||raw.address?.city||'',90);
+ const stage=clean(raw.stage||raw.sub_status||'',60);
+ // Stable event identity; it is only used for a read marker, never treated as a price/history cache.
+ const stable=[time,description,location,provider].join('|');
+ let hash=2166136261;for(const char of stable){hash=Math.imul(hash^char.charCodeAt(0),16777619);}
+ return {id:(hash>>>0).toString(36),time,description,location,stage};
+}
+function trackSummary(row){
+ const info=row?.track_info||{},tracking=info.tracking||{};
+ const providers=Array.isArray(tracking.providers)?tracking.providers:[];
+ const dedup=new Map();
+ for(const p of providers){
+  const carrier=String(p?.provider?.key||p?.provider?.name||'');
+  for(const item of (Array.isArray(p.events)?p.events:[])){
+   const e=trackEvent(item,carrier);
+   if(e.description&&!dedup.has(e.id))dedup.set(e.id,e);
+  }
+ }
+ const latest=info.latest_event;
+ if(latest){const e=trackEvent(latest,String(row.carrier||''));if(e.description&&!dedup.has(e.id))dedup.set(e.id,e);}
+ const events=[...dedup.values()].sort((a,b)=>b.time.localeCompare(a.time)).slice(0,150);
+ return {number:row.number,carrier:row.carrier||null,
+  status:clean(info.latest_status?.status||'NotFound',40),
+  lastUpdated:events[0]?.time||null,events};
+}
+async function shipmentsApi(request,env,corsHeaders,u){
+ if(request.method==='GET'&&u.pathname==='/api/shipments/health'){
+  return reply({provider:'17TRACK',configured:Boolean(env.TRACK17_API_KEY&&env.TRACK17_OWNER_EMAIL)},200,corsHeaders);
+ }
+ if(request.method!=='POST'||!['/api/shipments/register','/api/shipments/track'].includes(u.pathname))return reply({error:'Not found'},404,corsHeaders);
+ if(!env.TRACK17_API_KEY||!env.TRACK17_OWNER_EMAIL)return reply({error:'TRACKING_NOT_CONFIGURED'},503,corsHeaders);
+ if(!(await verifyFirebaseBearer(request,env)))return reply({error:'TRACKING_AUTH_REQUIRED'},403,corsHeaders);
+ if(Number(request.headers.get('content-length')||0)>5000)return reply({error:'Payload too large'},413,corsHeaders);
+ let body;try{body=await request.json()}catch{return reply({error:'Invalid JSON'},400,corsHeaders)}
+ const isRegister=u.pathname.endsWith('/register');
+ const source=isRegister?[body]:body?.shipments;
+ if(!Array.isArray(source)||!source.length||source.length>(isRegister?1:12))return reply({error:'Expected 1–12 shipment numbers'},400,corsHeaders);
+ const list=source.map(trackItem);
+ if(list.some(x=>!x)||new Set(list.map(x=>x.number)).size!==list.length)return reply({error:'Invalid or duplicate tracking number'},400,corsHeaders);
+ try{
+  const data=await call17track(isRegister?'register':'gettrackinfo',isRegister?list.map(x=>({...x,lang:'en'})):list,env);
+  const accepted=(data.accepted||[]).map(x=>isRegister?{number:x.number,carrier:x.carrier||null,registered:true}:trackSummary(x));
+  const rejected=(data.rejected||[]).map(x=>({number:x.number,carrier:x.carrier||null,registered:isRegister&&Number(x.error?.code)===-18019901,error:trackError(x)}));
+  return reply({source:'17TRACK',fetchedAt:new Date().toISOString(),shipments:[...accepted,...rejected]},200,corsHeaders);
+ }catch(e){return reply({error:String(e.message||'TRACKING_UNAVAILABLE').slice(0,110)},503,corsHeaders)}
+}
+
 export default {
  async fetch(request,env){
   const origin=request.headers.get('origin')||'';const headers=cors(origin,env);const u=new URL(request.url);
   if(request.method==='OPTIONS')return new Response(null,{status:204,headers});
   if(!allowedOrigin(origin,env))return reply({error:'Origin not allowed'},403,headers);
+  if(u.pathname.startsWith('/api/shipments/'))return shipmentsApi(request,env,headers,u);
   if(request.method==='GET'&&u.pathname==='/health')return reply({ready:!!(env.EBAY_CLIENT_ID&&env.EBAY_CLIENT_SECRET),provider:'eBay Browse API'},200,headers);
   if(request.method!=='POST'||u.pathname!=='/api/search')return reply({error:'Not found'},404,headers);
   if(Number(request.headers.get('content-length')||0)>6000)return reply({error:'Payload too large'},413,headers);
