@@ -82,7 +82,8 @@
   if(sort==='match')enriched.sort((a,b)=>b.item.matchConfidence-a.item.matchConfidence);
   $('liveListings').innerHTML=enriched.length ? enriched.map(({item,card,score})=>{
    const pct=score.discount!==null?Math.round(score.discount*100):null;
-   const flag=pct!==null&&pct>=35&&item.matchConfidence>=70&&item.shipping!==null;
+   const target=Number($('dealDiscount')?.value||35);
+   const flag=pct!==null&&pct>=target&&item.matchConfidence>=70&&item.shipping!==null;
    const dt=Number.isFinite(new Date(item.endTime).getTime())?timeLabel(item.endTime):'זמן סיום לא ידוע';
    const amount=score.allIn===null?'—':'$'+score.allIn.toFixed(2);
    const name=card?card.name+' · '+card.setName:'קלף לא מזוהה';
