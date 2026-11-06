@@ -483,6 +483,7 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
 }
 </style>
 <link rel="stylesheet" href="deal-finder/dashboard.css">
+<link rel="stylesheet" href="deal-finder/live.css">
 </head>
 <body>
 <div class="sticky-sitebar" aria-label="ניווט האתר">
@@ -2221,7 +2222,7 @@ function placeBinder(id,page,slot){
 function showView(view,doScroll=true){if(!['catalog','owned','binder','wishlist','deals'].includes(view))return;state.view=view;
  $('catalogShell').hidden=view!=='catalog';$('ownedPage').hidden=view!=='owned';$('binderPage').hidden=view!=='binder';$('wishPage').hidden=view!=='wishlist';$('dealsPage').hidden=view!=='deals';
  document.querySelectorAll('[data-view-btn]').forEach(b=>{const a=b.dataset.viewBtn===view;b.classList.toggle('active',a);b.setAttribute('aria-pressed',String(a));});
- if(view!=='catalog')renderCollections();if(doScroll)window.scrollTo({top:0,behavior:'smooth'});
+ if(view!=='catalog')renderCollections();if(view==='deals')window.VintageEbayLive?.open?.();if(doScroll)window.scrollTo({top:0,behavior:'smooth'});
 }
 function sortedOwnedCards(){
  const own=state.cards.filter(c=>state.owned[c.id]), mode=$('ownedSort').value;
@@ -2275,7 +2276,7 @@ function dealAuctionUrl(c,precise){
  const query=[c.name,setName,precise?cardNumber(c):'',edition,'pokemon'].filter(Boolean).join(' ');
  return 'https://www.ebay.com/sch/i.html?'+new URLSearchParams({_nkw:query,LH_Auction:'1'});
 }
-function renderDeals(){ window.VintageDealsDashboard?.render?.(); }
+function renderDeals(){ window.VintageDealsDashboard?.render?.(); window.VintageEbayLive?.refreshCards?.(); }
 function renderCollections(){if(!state.ready)return;normalizeOrders();
  $('binderCountTab').textContent=state.binderOrder.length+' קלפים';$('wishCountTab').textContent=state.wishOrder.length;
  $('binderCount').textContent=state.binderOrder.filter(id=>state.owned[id]).length+' באוסף · '+state.binderOrder.filter(id=>!state.owned[id]&&state.wish[id]).length+' משאלות';
@@ -2957,4 +2958,5 @@ if(publicShareId){
 </script>
 <script defer src="deal-finder/dashboard-template.js"></script>
 <script defer src="deal-finder/dashboard.js"></script>
+<script defer src="deal-finder/live.js"></script>
 </body></html>
