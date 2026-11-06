@@ -1,48 +1,39 @@
-# Pokémon Deal Finder
+# 🔎 מציאות — Live eBay auction discovery
 
-This feature is now part of the existing binder under **🔎 מציאות**.
+The Deals tab intentionally displays **only live eBay auction search** and its results.
 
-## What works today
+## Visible UI
 
-- **Firebase Wishlist integration (read-only)**: list cards in their saved priority order, including print edition and per-card condition where present. The existing drag & drop, collection and Firestore documents remain untouched.
-- **Grade-specific market references**: reuse the site's existing TCGTracking/TCGplayer data (USD) for NM, LP, MP, HP and DMG; reference prices are indicative and can be unavailable.
-- **Bid targets**: choose a target discount (default 35%) and an estimated shipping budget in USD. Display the maximum all-in card cost and the bid ceiling after assumed shipping.
-- **Tracked auctions**: paste an eBay listing URL and manually enter bid, shipping to Israel, estimated grade, currency, optional title, seller feedback and closing time. The dashboard ranks tracked candidates by calculated discount and flags suspicious titles, unknown shipping and missing price references.
-- **Exchange rates**: Frankfurter public mid-market USD-base quotes for EUR, GBP and ILS with displayed rate date. If FX is unavailable, no FX-dependent recommendation is made.
-- **eBay shortcuts**: narrow and broad auction-search links per Wishlist card, plus an auction-search link in the existing card-details modal.
-- **Storage**: manual auction tracking is **browser-only localStorage** (not shared with Firestore or across devices).
+- While eBay Production keys are pending: a short connection-status message. No duplicate Wishlist table, bid-target slider or manual auction-input form.
+- Once connected: automatically load auctions for the first four cards on the authenticated user's existing Firebase Wishlist. Search subsequent cards in four-card batches.
+- Show live current bid, bid count, end time, shipping to Israel when known, seller feedback and the eBay listing link.
+- Sort by estimated discount, closing soonest, fewest bids or title-match confidence. Compare against a selected **assumed** NM/LP/MP/HP/DMG condition. Unknown shipping or FX rates mean no reliable all-in estimate.
+- The app's card-details modal retains a quick eBay auction-search link for one-off manual searches.
 
-## What is **not** implemented
+## Backend
 
-The dashboard does **not** retrieve current eBay listings, shipping quotes or bid counts automatically. The manually entered listing metadata is not verified against eBay, and the image / condition / authenticity are not AI-inspected. No auto-bidding, purchasing, scheduled checks or alerts are implemented. It does not include duties, currency conversion fees or sold-comparable verification.
+The source for the Cloudflare Worker is at `../ebay-worker/`. Its public URL is configured directly in `live.js`:
 
-Do not label an auction as guaranteed under market, because grade and edition can be misidentified, and eBay bids can change before close.
+`https://pokemon-vintage-ebay-deals.xfayne.workers.dev`
 
-## How to enable actual live eBay discovery later
+Credentials are **not** stored in the GitHub Pages source. Put approved eBay Production App ID / Client ID and Cert ID / Client Secret into Cloudflare Worker secrets:
 
-1. Create an eBay Developers **Production** application keyset and verify that Browse API production access is enabled.
-2. Add a secure serverless backend (Cloudflare Worker / Firebase Function) that acquires an application OAuth token using the **client credentials grant** and calls `GET /buy/browse/v1/item_summary/search` using `filter=buyingOptions:{AUCTION}`.
-3. Keep `client_secret` **only** in the backend secret manager, never in the public GitHub Pages source or a web form.
-4. Request delivery context for Israel, and mark shipping as unknown if the result is incomplete; only rank listings whose exact set, edition and condition are sufficiently verified.
-5. Add pagination/caching/rate controls and source freshness metadata. Surfaced results should show bid count and closing time; ranking must clearly distinguish high-confidence vs unverified listings.
+- `EBAY_CLIENT_ID`
+- `EBAY_CLIENT_SECRET`
 
-Official docs: https://developer.ebay.com/develop/api/buy/browse_api
+The worker's `GET /health` reports whether those secrets are configured and `POST /api/search` searches live US and German eBay marketplaces for auction listings shipping to Israel.
 
-## Architecture
+## Accuracy and safety
 
-- `../index.html` — native navigation, read-only `VintageDealBridge` and card-detail shortcut.
-- `dashboard-template.js` — native Deals tab content.
-- `dashboard.js` — client-side analytics, eBay links, manually tracked auctions and mid-market FX.
-- `dashboard.css` — responsive styling that does not modify the existing Wishlist drag behavior.
-- `scoring.js` — reusable minimal pure scoring utility from the initial prototype.
+- No fake or cached sample auctions are shown as real.
+- Title matching does not prove edition, authenticity or card condition.
+- Missing shipping is not treated as free.
+- No automatic bids, purchases, scheduled alerts or image grading.
+- The historical `scoring.js` and `dashboard-template.js` files are not currently loaded by the app.
 
-## QA checklist
+## Test
 
-1. Login → compare Wishlist count and order in Deals with Wishlist.
-2. Change a Wishlist card's grade / first-edition setting, revisit Deals, and confirm pricing appropriately updates.
-3. Check an LP listing priced in EUR against an LP reference; shipping must be included and USD conversion dated.
-4. Leave shipping blank: the item should be flagged **needs review**, not treated as free shipping.
-5. Enter suspicious title `proxy` / `creased`, or low seller rating: review flags must appear.
-6. Reorder cards with iOS long-press in Wishlist, refresh, confirm order and Firebase persistence remain intact.
-7. Reload app: manually tracked auctions should persist in the **same browser** only.
-8. Check small viewport and iPad that the new controls do not overflow the card container.
+- Open the live website with keys absent and verify only the waiting message appears.
+- Add keys and confirm the first four Wishlist cards search; load more and verify matching and currency handling.
+- Confirm Wishlist drag-and-drop, Firestore collection updates and all other tabs are unchanged.
+- Worker integration tests: `node --test ebay-worker/worker.test.mjs`.

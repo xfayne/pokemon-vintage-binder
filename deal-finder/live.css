@@ -43,3 +43,7 @@
  .live-item-numbers{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
  .live-candidate{max-width:75px;white-space:normal}.live-card-text strong{font-size:12px}.live-footer{flex-wrap:wrap}
 }
+/* Keep the live filters truly hidden while the eBay credentials are pending. */
+.live-toolbar[hidden], .live-disclaimer[hidden], .live-more button[hidden]{display:none !important}
+.live-auctions{margin:12px 0;padding:14px 16px;background:#fbfcff}
+.live-status{font-size:13px;line-height:1.7}
