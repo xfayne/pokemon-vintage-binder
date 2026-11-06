@@ -8,7 +8,7 @@
 <style>
 :root{--ink:#172038;--muted:#6c778c;--navy:#111a2e;--navy2:#202c47;--card:#fff;--bg:#f5f7fb;--border:#e2e7f0;--pink:#ae5b8a;--yellow:#eac16c;--blue:#586bd1;--green:#14856a;--red:#b75261;--radius:16px}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;font-size:14px}button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.5;cursor:default}a{color:#5366d6}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #b2bbf5;outline-offset:2px}
-.hero{background:radial-gradient(circle at 13% -15%,#414b85 0,transparent 38%),radial-gradient(circle at 88% 20%,#314f61 0,transparent 36%),linear-gradient(110deg,#111a2e,#1d2844);color:white;padding:30px max(20px,calc((100vw - 1310px)/2));position:relative;overflow:hidden}.hero::after{content:'✦';font-size:210px;opacity:.045;position:absolute;left:2%;top:-80px;pointer-events:none}.hero-inner{position:relative;z-index:1}.eyebrow{font-size:12px;letter-spacing:2px;color:#c0c8ec;text-transform:uppercase;font-weight:700}.hero h1{font-size:clamp(25px,3.4vw,40px);line-height:1.15;margin:8px 0}.hero p{max-width:690px;color:#d7def0;line-height:1.75;margin:0 0 22px}.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px;max-width:770px}.stat{border:1px solid #ffffff25;border-radius:13px;padding:14px 16px;background:#ffffff0b}.stat b{font-size:24px;display:block;direction:ltr;text-align:right;letter-spacing:-.5px}.stat span{font-size:12px;color:#c7d2e7}.hero-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}.btn{border:1px solid var(--border);background:#fff;color:var(--ink);border-radius:10px;padding:10px 13px;display:inline-flex;gap:7px;align-items:center;justify-content:center;font-weight:650;white-space:nowrap}.btn:hover{background:#f4f6fd}.btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}.btn.primary:hover{background:#4356bd}.hero .btn{background:#ffffff15;color:#fff;border-color:#ffffff36}.hero .btn:hover{background:#ffffff26}.btn.sm{padding:6px 9px;font-size:12px}.btn.ghost{border:0;background:transparent}.btn.warn{color:var(--red)}
+.hero{background:radial-gradient(circle at 13% -15%,#414b85 0,transparent 38%),radial-gradient(circle at 88% 20%,#314f61 0,transparent 36%),linear-gradient(110deg,#111a2e,#1d2844);color:white;padding:30px max(20px,calc((100vw - 1310px)/2));position:relative;overflow:hidden}.hero::after{content:'✦';font-size:210px;opacity:.045;position:absolute;left:2%;top:-80px;pointer-events:none}.hero-inner{position:relative;z-index:1}.eyebrow{font-size:12px;letter-spacing:2px;color:#c0c8ec;text-transform:uppercase;font-weight:700}.hero h1{font-size:clamp(25px,3.4vw,40px);line-height:1.15;margin:8px 0}.hero p{max-width:690px;color:#d7def0;line-height:1.75;margin:0 0 22px}.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px;max-width:770px}.stat{border:1px solid #ffffff25;border-radius:13px;padding:14px 16px;background:#ffffff0b}.stat b{font-size:24px;display:block;direction:ltr;text-align:right;letter-spacing:-.5px}.stat span{font-size:12px;color:#c7d2e7}.hero-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}.btn{border:1px solid var(--border);background:#fff;color:var(--ink);border-radius:10px;padding:10px 13px;display:inline-flex;gap:7px;align-items:center;justify-content:center;font-weight:650;white-space:nowrap}.btn:hover{background:#f4f6fd}.btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}.btn.primary:hover{background:#4356bd}.hero .btn{background:#ffffff15;color:#fff;border-color:#ffffff36}.hero .btn:hover{background:#ffffff26}.btn.sm{padding:6px 9px;font-size:12px}.btn.ghost{border:0;background:transparent}.btn.warn{color:var(--red)}
 .shell{max-width:1310px;margin:0 auto;padding:24px 20px 70px;display:grid;grid-template-columns:248px minmax(0,1fr);gap:20px}.side{align-self:start;position:sticky;top:14px;max-height:calc(100vh - 30px);overflow:auto;background:#fff;border:1px solid var(--border);border-radius:16px;padding:14px}.side-title{font-weight:800;font-size:15px;padding:8px 10px 12px;display:flex;align-items:center;justify-content:space-between}.side-group{font-size:11px;text-transform:uppercase;color:#8b96a8;letter-spacing:.8px;font-weight:800;padding:18px 10px 6px}.set-btn{width:100%;display:flex;gap:7px;align-items:center;text-align:right;background:transparent;border:1px solid transparent;border-radius:9px;padding:9px 10px;color:var(--ink)}.set-btn:hover{background:#f4f6fa}.set-btn.active{background:#edf0ff;border-color:#cfd5ff;color:#3847a3;font-weight:800}.set-btn span:first-child{flex:1}.set-btn small{font-size:11px;color:#8993a8;direction:ltr}.mini-track{margin-top:4px;background:#e9edf5;border-radius:9px;height:4px;overflow:hidden}.mini-track i{display:block;height:100%;background:var(--green)}.aside-note{font-size:11px;color:var(--muted);line-height:1.65;border-top:1px solid var(--border);padding:13px 10px 3px;margin-top:10px}
 .main{min-width:0}.toolbar{background:white;border:1px solid var(--border);border-radius:15px;padding:17px;margin-bottom:14px}.toolbar-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.toolbar h2{margin:0;font-size:21px}.toolbar small{color:var(--muted)}.filters{display:grid;grid-template-columns:minmax(180px,1fr) 160px 155px;gap:10px;margin-top:14px}.search-wrap{position:relative}.search-wrap input{padding-left:32px}.search-wrap .search-icon{position:absolute;left:11px;top:10px;color:#9aa3b5}.field{width:100%;height:39px;padding:8px 11px;border:1px solid #d9deea;border-radius:10px;background:#fff;color:var(--ink);outline:none}.field:focus{border-color:#7d8ce9;box-shadow:0 0 0 3px #7d8ce918}.checks{display:flex;align-items:center;gap:9px 20px;flex-wrap:wrap;margin-top:14px}.check{display:inline-flex;align-items:center;gap:6px;color:#46516b;font-size:13px;cursor:pointer}.check input{accent-color:var(--blue);width:16px;height:16px}.info-pill{color:#69758c;font-size:12px;background:#f0f3f9;border-radius:7px;padding:5px 9px}.small-link{font-size:12px;border:0;background:none;color:#5366d6;text-decoration:underline;cursor:pointer}
 .list-header{display:flex;align-items:center;justify-content:space-between;padding:8px 2px 12px;gap:10px}.view-controls{display:flex;gap:6px}.list-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.poke-card{display:flex;min-width:0;gap:12px;align-items:center;background:var(--card);padding:10px;border-radius:13px;border:1px solid var(--border);transition:border-color .15s,box-shadow .15s}.poke-card:hover{border-color:#bec8e2;box-shadow:0 6px 20px #2736540b}.poke-card.owned{border-color:#93d2ba;background:#fbfffd}.card-img-wrap{flex:none;width:82px;height:114px;border-radius:8px;background:#e9eef7;display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:zoom-in}.card-img{max-height:100%;width:100%;object-fit:contain;display:block}.img-placeholder{font-size:25px;color:#aab2c1}.card-data{align-self:stretch;display:flex;flex-direction:column;justify-content:center;gap:6px;min-width:0;flex:1}.card-name{font-weight:800;font-size:15px;direction:ltr;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.card-sub{font-size:12px;color:var(--muted);direction:ltr;text-align:right;unicode-bidi:plaintext}.badges{display:flex;flex-wrap:wrap;gap:5px;align-items:center}.rarity-tag{font-size:11px;color:#616c80;border-radius:6px;background:#eef1f6;padding:3px 6px;font-weight:700}.rarity-tag.holo{color:#834179;background:#f8e8f2}.rarity-tag.shining{background:#fff1ce;color:#79500f}.rarity-tag.unknown{background:#faf0e6;color:#795d33}.own-btn{margin-right:auto;flex:none;width:36px;height:36px;border-radius:10px;display:grid;place-items:center;border:1px solid #d4dbe8;background:white;color:#9aa6b8;font-size:20px;transition:all .1s}.own-btn.on{background:var(--green);color:white;border-color:var(--green)}.own-btn:hover{border-color:var(--green)}.wish-btn{background:transparent;border:0;color:#b8bdcc;padding:0 4px;font-size:20px;line-height:1}.wish-btn.on{color:#e2a43f}.card-actions{display:flex;align-items:center;gap:7px;margin-top:3px}.card-actions .small-link{text-decoration:none}.btn-load{margin:19px auto 0;display:flex;width:190px}.empty{border:1px dashed #cbd3e1;border-radius:15px;text-align:center;padding:50px 14px;color:var(--muted);background:#fff}.empty strong{color:var(--ink);font-size:18px;display:block;margin-bottom:7px}.progress-line{height:7px;background:#e8edf5;border-radius:20px;overflow:hidden;margin:9px 0 0}.progress-line div{height:100%;background:linear-gradient(90deg,#77af9f,#3c967b);border-radius:20px}
@@ -16,7 +16,7 @@
 .dialog{border:0;border-radius:20px;box-shadow:0 30px 90px #0005;max-width:660px;width:calc(100% - 24px);padding:0;color:var(--ink);overflow:hidden}.dialog::backdrop{background:#0e152ab8;backdrop-filter:blur(3px)}.modal-inner{padding:20px}.modal-top{display:flex;align-items:center;justify-content:space-between;gap:8px}.modal-main{display:grid;grid-template-columns:210px minmax(0,1fr);gap:22px;margin-top:12px;align-items:start}.modal-img{width:100%;border-radius:10px;box-shadow:0 7px 25px #24324c28}.modal-data h3{font-size:23px;line-height:1.2;direction:ltr;text-align:right;margin:8px 0}.modal-data p{color:#6d7890;line-height:1.6}.modal-actions{margin-top:14px;display:grid;gap:10px}.modal-actions label{color:#5d6a83;font-size:12px;font-weight:700}.modal-actions textarea{min-height:74px;resize:vertical}.modal-actions select,.modal-actions textarea{width:100%;border:1px solid #d7ddea;border-radius:9px;padding:8px;background:white}.modal-own-row{display:flex;gap:9px;flex-wrap:wrap}.toast{position:fixed;bottom:22px;left:22px;z-index:100;background:#24334b;color:#fff;border-radius:11px;padding:11px 16px;box-shadow:0 15px 35px #0003;font-size:13px;max-width:min(380px,90vw);display:none}
 @media(min-width:1250px){.list-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.poke-card{gap:10px}.card-img-wrap{width:76px;height:106px}.card-name{font-size:14px}}
 @media(max-width:900px){.shell{grid-template-columns:1fr;gap:12px}.side{position:static;max-height:none;display:flex;overflow:auto;gap:6px;padding:9px;white-space:nowrap}.side-title,.side-group,.aside-note,.mini-track{display:none}.side>div[id^="side"]{display:contents}.set-btn{width:auto;flex:none;white-space:nowrap}.set-btn small{display:none}.set-btn span:first-child{flex:unset}.filters{grid-template-columns:1fr 130px 130px}}
-@media(max-width:650px){.hero{padding:26px 17px 24px}.hero h1{font-size:28px}.hero p{font-size:13px}.stats{grid-template-columns:repeat(2,1fr);gap:8px}.stat{padding:10px 12px}.stat b{font-size:21px}.shell{padding:12px 10px 45px}.side{border-radius:10px}.toolbar{padding:13px;border-radius:12px}.toolbar h2{font-size:18px}.filters{grid-template-columns:1fr 1fr}.search-wrap{grid-column:1/-1}.list-grid{grid-template-columns:1fr;gap:8px}.poke-card{padding:9px}.card-img-wrap{width:75px;height:104px}.modal-main{grid-template-columns:120px 1fr;gap:14px}.modal-inner{padding:14px}.modal-data h3{font-size:19px}.footer{padding:0 16px 50px}}
+@media(max-width:650px){.hero{padding:26px 17px 24px}.hero h1{font-size:28px}.hero p{font-size:13px}.stats{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.stat{padding:10px 12px}.stat b{font-size:21px}.shell{padding:12px 10px 45px}.side{border-radius:10px}.toolbar{padding:13px;border-radius:12px}.toolbar h2{font-size:18px}.filters{grid-template-columns:1fr 1fr}.search-wrap{grid-column:1/-1}.list-grid{grid-template-columns:1fr;gap:8px}.poke-card{padding:9px}.card-img-wrap{width:75px;height:104px}.modal-main{grid-template-columns:120px 1fr;gap:14px}.modal-inner{padding:14px}.modal-data h3{font-size:19px}.footer{padding:0 16px 50px}}
 @media print{.hero-actions,.side,.toolbar,.own-btn,.wish-btn,.card-actions,.btn-load{display:none!important}.shell{display:block}.list-grid{grid-template-columns:repeat(3,1fr)}.poke-card{break-inside:avoid}}
 
 /* JS-free iOS Files/Quick Look fallback: cards are fully present as ordinary HTML. */
@@ -285,40 +285,67 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
 .purchase-controls input{flex:0 1 130px;width:130px;min-width:0;height:37px;padding:6px 8px;font-size:15px}
 .purchase-controls select{flex:0 0 67px;width:67px;max-width:67px;height:37px;padding:5px 4px}
 @media(max-width:650px){.compact-market .market-value{font-size:18px}}
+
+/* v15: contextual tabs and an account menu on the top left */
+.hero-top{display:flex;align-items:center;justify-content:space-between;gap:12px;position:relative;margin-bottom:11px}
+.hero-top .eyebrow{min-width:0}
+.account-area{position:relative;flex-shrink:0}
+.account-trigger{display:flex;align-items:center;gap:7px;padding:5px 9px 5px 6px;border:1px solid #ffffff35;border-radius:999px;background:#ffffff13;color:#fff;font-size:12px;min-height:37px;font-weight:700}
+.account-trigger:hover{background:#ffffff28}
+.account-avatar{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:#ffffff25;font-size:13px}
+.account-chevron{font-size:15px;opacity:.85}
+.account-menu{position:absolute;left:0;top:calc(100% + 8px);min-width:184px;max-width:calc(100vw - 26px);background:#fff;color:#26334c;border:1px solid #dce4f1;box-shadow:0 16px 35px #0b163555;border-radius:13px;z-index:30;padding:5px;display:grid;gap:2px}
+.account-menu[hidden]{display:none}
+.account-menu button{border:0;background:transparent;border-radius:8px;color:#24324b;padding:11px;text-align:right;font-size:13px;font-weight:650;white-space:nowrap}
+.account-menu button:hover,.account-menu button:focus-visible{background:#eff2fe}
+.account-separator{height:1px;background:#e8ebf4;margin:3px 2px}
+.cloud-config .cloudmeta{margin:13px 0;color:#293952;display:grid;gap:3px}
+.cloud-config .cloudmeta small{color:#66758c}
+.owned-toolbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin:0 0 12px}
+.owned-toolbar label{display:flex;gap:8px;align-items:center;font-size:12px;font-weight:750;color:#64718a}
+.owned-toolbar select{max-width:210px;padding:8px 10px;background:#fff;border:1px solid #d5ddec;border-radius:9px;color:#273851}
+.owned-item[data-open-owned]{cursor:pointer;transition:border-color .15s,background .15s,box-shadow .15s}
+.owned-item[data-open-owned]:hover{border-color:#aebbef;background:#f5f7ff;box-shadow:0 4px 13px #172b4410}
+.owned-item[data-open-owned]:focus-visible{outline:3px solid #8b9cf4;outline-offset:2px}
+.owned-market{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:3px}
+.owned-condition{font-size:11px;font-weight:800;color:#455686;background:#e9eefe;border-radius:6px;padding:3px 6px}
+.owned-price{font-size:12px;font-weight:800;color:#20715c;direction:ltr;unicode-bidi:isolate}
+.owned-price.pending{font-weight:500;color:#8d98a8}
+.wishlist-heading-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+@media(max-width:650px){.hero-top{align-items:flex-start}.hero-top .eyebrow{font-size:10px;letter-spacing:.6px;line-height:1.7}.account-trigger{font-size:11px;max-width:145px}.account-trigger #accountName{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.account-chevron{display:none}.owned-toolbar{align-items:stretch}.owned-toolbar select{max-width:170px}.owned-item{gap:8px}.owned-price{font-size:11px}}
 </style>
 </head>
 <body>
 <header class="hero"><div class="hero-inner">
-<div class="eyebrow">THE ORIGINAL WOTC ERA · 1999–2002 · v14</div>
+<div class="hero-top"><div class="eyebrow">THE ORIGINAL WOTC ERA · 1999–2002 · v15</div>
+ <div class="account-area">
+  <button type="button" id="accountTrigger" class="account-trigger" aria-haspopup="menu" aria-expanded="false" aria-label="התחברות"><span id="accountAvatar" class="account-avatar" aria-hidden="true">👤</span><span id="accountName">התחברות</span><span class="account-chevron" aria-hidden="true">⌄</span></button>
+  <div class="account-menu" id="accountMenu" role="menu" hidden>
+   <button type="button" id="exportJSON" role="menuitem">⇩ הורדת גיבוי</button>
+   <button type="button" id="importJSON" role="menuitem">⇧ ייבוא גיבוי</button>
+   <div class="account-separator"></div>
+   <button type="button" id="accountSignOut" role="menuitem">התנתקות</button>
+  </div>
+ </div>
+</div>
 <h1>Pokémon Vintage Binder <span aria-hidden="true">✦</span></h1>
 <p>כל הקלפים מהילדות, במקום אחד. רשימה מלאה של Base, Jungle, Fossil, Team Rocket, Gym וכל סדרות Neo, עם סימון ברור של Holo ו־Shining.</p>
 <div class="stats">
  <div class="stat"><b id="statOwned">0</b><span>קלפים באוסף</span></div>
  <div class="stat"><b id="statTotal">1,070</b><span>קלפים בקטלוג הנבחר</span></div>
- <div class="stat"><b id="statHolo">0</b><span>Holo / Shining אצלך</span></div>
  <div class="stat"><b id="statProgress">0%</b><span>השלמת האוסף</span></div>
-</div>
-<div class="hero-actions">
- <button class="btn" id="exportJSON" title="שמור עותק גיבוי שתוכל לייבא בעתיד">⇩ גיבוי האוסף</button>
- <button class="btn" id="importJSON">⇧ ייבוא גיבוי</button>
- <button class="btn" id="exportCSV">▤ ייצוא לאקסל (CSV)</button>
 </div>
 </div></header>
 
-<section class="cloudbar" aria-label="סנכרון האוסף בענן">
- <div class="cloudbar-inner">
-  <span aria-hidden="true" style="font-size:23px">☁️</span>
-  <div class="cloudmeta"><strong id="cloudStatus">דרושה התחברות ל־Google</strong><small id="cloudDetail">הקלפים נשמרים ב־Firestore בלבד, ללא שמירה מקומית.</small></div>
-  <div class="cloud-actions"><button class="btn sm primary" id="cloudManage" type="button">🔐 התחברות / סנכרון</button><button class="btn sm" id="cloudSyncNow" type="button" hidden>↻ סנכרן עכשיו</button></div>
- </div>
-</section>
 <dialog id="cloudDialog" class="dialog cloud-config" aria-label="חיבור Firebase">
  <div class="modal-inner">
   <div class="modal-top"><strong style="font-size:21px">☁️ האוסף שלי בענן</strong><button class="btn sm" id="cloudClose" type="button">סגירה ✕</button></div>
   <p class="cloud-steps">התחבר עם Google כדי לטעון ולשמור את האוסף ב־Firestore. ללא התחברות אפשר לעיין בקלפים, אך לא לערוך את האוסף. כל משתמש רואה רק את האוסף הפרטי שלו.</p>
+  <div class="cloudmeta"><strong id="cloudStatus">דרושה התחברות ל־Google</strong><small id="cloudDetail">השינויים נשמרים ב־Firestore בלבד.</small></div>
   <div class="cloud-controls">
    <button class="btn primary" id="cloudSignIn" disabled type="button">התחבר עם Google</button>
    <button class="btn" id="cloudSignOut" hidden type="button">התנתק</button>
+   <button class="btn" id="cloudSyncNow" type="button" hidden>↻ סנכרן עכשיו</button>
   </div>
   <div class="cloud-message" id="cloudMessage" role="status"></div>
   <p class="cloud-detail"><b>פרטיות:</b> האוסף נשמר בענן בחשבון הפרטי שלך, עם הרשאות Firestore לפי המשתמש המחובר. גם גיבוי JSON נשאר זמין.</p>
@@ -336,7 +363,8 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
 <section class="collection-page" id="ownedPage" hidden aria-label="הקלפים שלי ברשימה">
  <div class="collection-panel">
   <div class="collection-heading"><div><h2>✅ הקלפים שלי</h2><div class="subtle">כל הקלפים שיש לך — כרשימה, גם אם הסרת אותם מהבינדר. מכאן אפשר להחזיר כל קלף לבינדר.</div></div><span class="info-pill" id="ownedCount"></span></div>
-  <input id="ownedFind" class="binder-place-search" type="search" placeholder="חיפוש בקלפים שלי: שם, סדרה או מספר..." aria-label="חיפוש בקלפים שיש לי" autocomplete="off">
+  <div class="owned-toolbar"><label for="ownedSort">מיון <select id="ownedSort" aria-label="מיין את הקלפים שלי"><option value="added">סדר הוספה (חדש קודם)</option><option value="holo">Holo / Shining קודם</option><option value="set">לפי סדרה</option><option value="price">מחיר שוק (גבוה קודם)</option></select></label><button class="btn sm" id="exportCSV" type="button">⇩ ייצוא הקלפים שלי (CSV)</button></div>
+   <input id="ownedFind" class="binder-place-search" type="search" placeholder="חיפוש בקלפים שלי: שם, סדרה או מספר..." aria-label="חיפוש בקלפים שיש לי" autocomplete="off">
   <div id="ownedItems" class="owned-items" role="list"></div>
  </div>
 </section>
@@ -364,7 +392,7 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
 </section>
 <section class="collection-page" id="wishPage" hidden aria-label="רשימת המשאלות">
   <div class="collection-panel">
-    <div class="collection-heading"><div><h2>💜 רשימת המשאלות</h2><div class="subtle">לחץ ״↗ העבר״ כדי לבחור מיקום מדויק או לעבור ישר לראש הרשימה. אפשר גם לגרור לסידור קצר.</div></div><span id="wishCount" class="info-pill"></span></div>
+    <div class="collection-heading"><div><h2>💜 רשימת המשאלות</h2><div class="subtle">לחץ ״↗ העבר״ כדי לבחור מיקום מדויק או לעבור ישר לראש הרשימה. אפשר גם לגרור לסידור קצר.</div></div><div class="wishlist-heading-actions"><span id="wishCount" class="info-pill"></span><button id="copyWishlist" type="button" class="btn sm">⧉ העתק רשימה</button></div></div>
     <div id="wishlistItems" class="wishlist-items" role="list"></div>
   </div>
 </section>
@@ -1775,10 +1803,10 @@ function embeddedCards(){
 }
 
 const $=id=>document.getElementById(id);
-const state={cards:[],owned:{},wish:{},removedWish:{},conditions:{},notes:{},purchasePrices:{},firstEdition:{},binderExcluded:{},binderOrder:[],wishOrder:[],binderIncludeWish:true,binderPage:0,view:'catalog',active:'all',extras:false,holoOnly:false,pokemonOnly:false,status:'all',sort:'num',query:'',limit:96,ready:false,failures:[]};
-function getProgress(){normalizeOrders();return {owned:{...state.owned},wish:{...state.wish},removedWish:{...state.removedWish},conditions:{...state.conditions},notes:{...state.notes},purchasePrices:{...state.purchasePrices},firstEdition:{...state.firstEdition},binderExcluded:{...state.binderExcluded},binderIncludeWish:state.binderIncludeWish,binderOrder:[...state.binderOrder],wishOrder:[...state.wishOrder]}}
+const state={cards:[],owned:{},wish:{},removedWish:{},conditions:{},notes:{},purchasePrices:{},firstEdition:{},ownedAddedAt:{},binderExcluded:{},binderOrder:[],wishOrder:[],binderIncludeWish:true,binderPage:0,view:'catalog',active:'all',extras:false,holoOnly:false,pokemonOnly:false,status:'all',sort:'num',query:'',limit:96,ready:false,failures:[]};
+function getProgress(){normalizeOrders();return {owned:{...state.owned},wish:{...state.wish},removedWish:{...state.removedWish},conditions:{...state.conditions},notes:{...state.notes},purchasePrices:{...state.purchasePrices},firstEdition:{...state.firstEdition},ownedAddedAt:{...state.ownedAddedAt},binderExcluded:{...state.binderExcluded},binderIncludeWish:state.binderIncludeWish,binderOrder:[...state.binderOrder],wishOrder:[...state.wishOrder]}}
 function validPart(raw){return raw&&typeof raw==='object'&&!Array.isArray(raw)?raw:{}}
-function adoptProgress(value){for(const k of ['owned','wish','removedWish','conditions','notes','purchasePrices','firstEdition','binderExcluded'])state[k]={...validPart(value?.[k])};for(const id of Object.keys(state.removedWish))delete state.wish[id];state.binderIncludeWish=typeof value?.binderIncludeWish==='boolean'?value.binderIncludeWish:true;for(const k of ['binderOrder','wishOrder'])state[k]=Array.isArray(value?.[k])?[...value[k]]:[];normalizeOrders();renderAll();}
+function adoptProgress(value){for(const k of ['owned','wish','removedWish','conditions','notes','purchasePrices','firstEdition','ownedAddedAt','binderExcluded'])state[k]={...validPart(value?.[k])};for(const id of Object.keys(state.removedWish))delete state.wish[id];state.ownedAddedAt={...validPart(value?.ownedAddedAt)};state.binderIncludeWish=typeof value?.binderIncludeWish==='boolean'?value.binderIncludeWish:true;for(const k of ['binderOrder','wishOrder'])state[k]=Array.isArray(value?.[k])?[...value[k]]:[];normalizeOrders();renderAll();}
 function ensureCloudEdit(){if(window.VintageCloud?.canEdit?.())return true;
  toast('כדי לשמור שינויים צריך להתחבר ל־Google ולהמתין לטעינת האוסף.');
  const dialog=$('cloudDialog');if(dialog&&!dialog.open)dialog.showModal();return false;}
@@ -1822,7 +1850,7 @@ function visible(){const q=searchKey(state.query);let arr=(q?state.cards:catalog
 function groups(){return [['Base','sideBase'],['Gym','sideGym'],['Neo','sideNeo'],['Extra','sideExtra']];}
 function renderSide(){for(const [g,id]of groups()){$(id).innerHTML=SETS.filter(s=>s.group===g).map(s=>{const own=state.cards.filter(c=>c.set===s.id&&state.owned[c.id]).length;const loaded=state.cards.some(c=>c.set===s.id);return `<button class="set-btn ${state.active===s.id?'active':''}" data-set="${s.id}" ${g==='Extra'&&!state.extras?'title="לחיצה תציג גם אוספים נוספים"':''}><span>${esc(s.name)}</span><small>${own}/${s.count}</small><span class="mini-track"><i style="width:${(own/s.count*100).toFixed(1)}%"></i></span></button>`}).join('')}
  $('side').querySelector('[data-set="all"]').classList.toggle('active',state.active==='all');$('allMini').textContent=nf(catalog().filter(c=>state.owned[c.id]).length)+'/'+nf(catalog().length);}
-function renderStats(){let c=catalog(),total=c.length||SETS.filter(s=>state.extras||s.group!=='Extra').reduce((a,s)=>a+s.count,0);let owned=c.filter(x=>state.owned[x.id]).length,holo=c.filter(x=>state.owned[x.id]&&showHolo(x)).length;$('statOwned').textContent=nf(owned);$('statTotal').textContent=nf(total);$('statHolo').textContent=nf(holo);$('statProgress').textContent=(total?Math.round(owned/total*100):0)+'%';}
+function renderStats(){let c=catalog(),total=c.length||SETS.filter(s=>state.extras||s.group!=='Extra').reduce((a,s)=>a+s.count,0);let owned=c.filter(x=>state.owned[x.id]).length,holo=c.filter(x=>state.owned[x.id]&&showHolo(x)).length;$('statOwned').textContent=nf(owned);$('statTotal').textContent=nf(total);$('statProgress').textContent=(total?Math.round(owned/total*100):0)+'%';}
 function rarityHtml(c){const t=c.finish==='holo'?'✨ Holo':c.finish==='shining'?'🌟 Shining':c.finish==='reverse'?'✨ Reverse Holo':c.finish==='unknown'?'? Promo (משתנה)':c.rarity==='Rare'?'◆ Rare':c.rarity==='Uncommon'?'◇ Uncommon':c.rarity==='Common'?'● Common':c.rarity==='Rare Secret'?'◆ Secret Rare':c.rarity||'רגיל';const cls=c.finish==='holo'||c.finish==='reverse'?'holo':c.finish==='shining'?'shining':c.finish==='unknown'?'unknown':'';return `<span class="rarity-tag ${cls}">${esc(t)}</span>`;}
 function cardHTML(c){const set=MAP.get(c.set);const isOwned=!!state.owned[c.id];return `<article class="poke-card ${isOwned?'owned':''}" role="listitem" data-id="${esc(c.id)}">
  <div class="card-img-wrap" data-preview="${esc(c.id)}" title="תמונה ופרטים"><img class="card-img" loading="lazy" decoding="async" src="${esc(c.image)}" alt="${esc(c.name)}" onerror="this.style.display='none';this.nextElementSibling.hidden=false"><span class="img-placeholder" hidden>✦</span></div>
@@ -1832,7 +1860,12 @@ function renderCards(){const arr=visible();const slice=arr.slice(0,state.limit);
  $('resultsCount').textContent=state.ready?`מציג ${nf(slice.length)} מתוך ${nf(arr.length)} קלפים`:'ממתין לנתונים';$('loadMore').hidden=arr.length<=state.limit;}
 function renderAll(){renderSide();renderStats();renderCards();renderCollections();$('sectionTitle').textContent=state.active==='all'?'כל הסדרות':MAP.get(state.active)?.name||'כל הסדרות';let arr=relevantSetCards(state.active);const owned=arr.filter(c=>state.owned[c.id]).length;$('sectionSub').textContent=state.ready?`${nf(owned)} מתוך ${nf(arr.length)} קלפים ברשותך`:'רשימות קלפים מקוריות באנגלית';}
 function toast(msg){const e=$('toast');e.textContent=msg;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',2800)}
-function toggleOwned(id){if(!ensureCloudEdit())return;state.owned[id]?delete state.owned[id]:state.owned[id]=true;normalizeOrders();save();renderAll();}
+function toggleOwned(id){
+ if(!ensureCloudEdit())return;
+ if(state.owned[id]){delete state.owned[id];delete state.ownedAddedAt[id];}
+ else{state.owned[id]=true;const max=Object.values(state.ownedAddedAt).reduce((n,t)=>Math.max(n,Number(t)||0),0);state.ownedAddedAt[id]=Math.max(Date.now(),max+1);}
+ normalizeOrders();save();renderAll();
+}
 function removeWish(id){
  if(!ensureCloudEdit())return;
  if(!state.wish[id]&&!state.wishOrder.includes(id))return;
@@ -1901,11 +1934,33 @@ function showModal(id){const c=state.cards.find(c=>c.id===id);if(!c)return;const
  if(!$('modal').open)$('modal').showModal();}
 function download(content,type,filename){const blob=new Blob([content],{type});const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download=filename;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),2500)}
 function backup(){const data={app:'pokemon-vintage-binder',version:4,date:new Date().toISOString(),...getProgress()};download(JSON.stringify(data,null,2),'application/json;charset=utf-8','pokemon-vintage-my-collection.json');toast('נוצר גיבוי. שמור את הקובץ במקום בטוח.')}
-function exportCSV(){if(!state.ready){toast('חכה שהרשימה תיטען');return;}const cols=['Set','Number','Name','Type','Holo','Owned','Wishlist','Condition','Notes','Purchase Price','Purchase Currency'];const rows=[cols,...catalog().map(c=>[MAP.get(c.set).name,cardNumber(c),c.name,c.kind,c.finish,state.owned[c.id]?'Yes':'No',state.wish[c.id]?'Yes':'No',state.conditions[c.id]||'',state.notes[c.id]||'',state.purchasePrices[c.id]?.amount??'',state.purchasePrices[c.id]?.currency||''])];const csv='\ufeff'+rows.map(r=>r.map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(',')).join('\r\n');download(csv,'text/csv;charset=utf-8','pokemon-vintage-checklist.csv');toast('הקובץ נוצר. אפשר לפתוח אותו ב־Excel או Google Sheets.')}
-async function importBackup(file){if(!file||!ensureCloudEdit())return;try{const data=JSON.parse(await file.text());if(data.app!=='pokemon-vintage-binder'||typeof data.owned!=='object'||!data.owned||Array.isArray(data.owned))throw Error('invalid file');if(!confirm('הייבוא יחליף את סימוני הקלפים שיש לך כרגע. להמשיך?'))return;for(const k of ['owned','wish','removedWish','conditions','notes','purchasePrices','firstEdition','binderExcluded'])state[k]=(data[k]&&typeof data[k]==='object'&&!Array.isArray(data[k]))?data[k]:{};for(const k of ['binderOrder','wishOrder'])state[k]=Array.isArray(data[k])?[...data[k]]:[];if(typeof data.binderIncludeWish==='boolean')state.binderIncludeWish=data.binderIncludeWish;normalizeOrders();save();renderAll();toast('הגיבוי יובא בהצלחה!')}catch(e){toast('לא ניתן לייבא: הקובץ אינו גיבוי תקין של האוסף.')}}
+async function copyWishlist(){
+ normalizeOrders();
+ if(!state.wishOrder.length){toast('רשימת המשאלות ריקה');return;}
+ const lookup=new Map(state.cards.map(c=>[c.id,c]));
+ const content=state.wishOrder.map(id=>{const card=lookup.get(id);return card?card.name+' — '+(MAP.get(card.set)?.name||'')+' #'+cardNumber(card):null;}).filter(Boolean).join('\n');
+ try{await navigator.clipboard.writeText(content);toast('רשימת המשאלות הועתקה ללוח');}
+ catch(error){const textarea=document.createElement('textarea');textarea.value=content;textarea.style.position='fixed';textarea.style.opacity='0';document.body.appendChild(textarea);textarea.select();const copied=document.execCommand('copy');textarea.remove();toast(copied?'רשימת המשאלות הועתקה ללוח':'לא ניתן להעתיק אוטומטית בדפדפן הזה');}
+}
+function exportCSV(){
+ if(!state.ready){toast('חכה שהרשימה תיטען');return;}
+ const cols=['Set','Number','Name','Type','Finish','Condition','1st Edition','Market Price USD','Purchase Price','Purchase Currency'];
+ const rows=[cols,...sortedOwnedCards().map(c=>{
+  const condition=state.conditions[c.id]||'';
+  const market=condition?window.VintageMarketPrices?.getOwnedPrice?.(c,MAP.get(c.set)?.name||'',condition,!!state.firstEdition[c.id]):null;
+  return [MAP.get(c.set)?.name||'',cardNumber(c),c.name,c.kind,c.finish,condition,state.firstEdition[c.id]?'Yes':'No',typeof market==='number'?market:'',state.purchasePrices[c.id]?.amount??'',state.purchasePrices[c.id]?.currency||''];
+ })];
+ const csv='\ufeff'+rows.map(r=>r.map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(',')).join('\r\n');
+ download(csv,'text/csv;charset=utf-8','pokemon-vintage-my-cards.csv');toast('קובץ הקלפים שלי נוצר.');
+}
+async function importBackup(file){if(!file||!ensureCloudEdit())return;try{const data=JSON.parse(await file.text());if(data.app!=='pokemon-vintage-binder'||typeof data.owned!=='object'||!data.owned||Array.isArray(data.owned))throw Error('invalid file');if(!confirm('הייבוא יחליף את סימוני הקלפים שיש לך כרגע. להמשיך?'))return;for(const k of ['owned','wish','removedWish','conditions','notes','purchasePrices','firstEdition','ownedAddedAt','binderExcluded'])state[k]=(data[k]&&typeof data[k]==='object'&&!Array.isArray(data[k]))?data[k]:{};for(const k of ['binderOrder','wishOrder'])state[k]=Array.isArray(data[k])?[...data[k]]:[];if(typeof data.binderIncludeWish==='boolean')state.binderIncludeWish=data.binderIncludeWish;normalizeOrders();save();renderAll();toast('הגיבוי יובא בהצלחה!')}catch(e){toast('לא ניתן לייבא: הקובץ אינו גיבוי תקין של האוסף.')}}
 
 // Collection organization: separate binder positions and wishlist priorities.
 function normalizeOrders(){
+ // Historic collections lack timestamps. Key order is the best available approximation.
+ const legacyIds=Object.keys(state.owned).filter(id=>state.owned[id]);
+ legacyIds.forEach((id,i)=>{if(!Number.isFinite(Number(state.ownedAddedAt[id]))||Number(state.ownedAddedAt[id])<=0)state.ownedAddedAt[id]=i+1;});
+ for(const id of Object.keys(state.ownedAddedAt))if(!state.owned[id])delete state.ownedAddedAt[id];
  for(const id of Object.keys(state.removedWish||{}))delete state.wish[id];
  const keys = new Set(state.cards.map(c=>c.id));
  const valid = (arr,predicate) => [...new Set((Array.isArray(arr)?arr:[]).filter(id=>keys.has(id)&&predicate(id)))];
@@ -1951,18 +2006,43 @@ function showView(view,doScroll=true){if(!['catalog','owned','binder','wishlist'
  document.querySelectorAll('[data-view-btn]').forEach(b=>{const a=b.dataset.viewBtn===view;b.classList.toggle('active',a);b.setAttribute('aria-pressed',String(a));});
  if(view!=='catalog')renderCollections();if(doScroll)window.scrollTo({top:document.querySelector('.main-nav').offsetTop-10,behavior:'smooth'});
 }
+function sortedOwnedCards(){
+ const own=state.cards.filter(c=>state.owned[c.id]), mode=$('ownedSort').value;
+ const setIndex=c=>SETS.findIndex(s=>s.id===c.set);
+ const added=(a,b)=>(Number(state.ownedAddedAt[b.id])||0)-(Number(state.ownedAddedAt[a.id])||0);
+ const price=c=>{
+  const condition=state.conditions[c.id];if(!condition)return -1;
+  const value=window.VintageMarketPrices?.getOwnedPrice?.(c,MAP.get(c.set)?.name||'',condition,!!state.firstEdition[c.id]);
+  return typeof value==='number'?value:-1;
+ };
+ if(mode==='holo')own.sort((a,b)=>Number(showHolo(b))-Number(showHolo(a))||added(a,b));
+ else if(mode==='set')own.sort((a,b)=>setIndex(a)-setIndex(b)||normalNum(a)-normalNum(b));
+ else if(mode==='price')own.sort((a,b)=>price(b)-price(a)||added(a,b));
+ else own.sort(added);
+ return own;
+}
+let ownedRenderTimer=null;
+function refreshOwned(){
+ if(state.view!=='owned'||ownedRenderTimer)return;
+ ownedRenderTimer=setTimeout(()=>{ownedRenderTimer=null;renderOwnedList();},120);
+}
+window.VintageBinder.refreshOwned=refreshOwned;
 function renderOwnedList(){
- const own=state.cards.filter(c=>state.owned[c.id]);
+ const own=sortedOwnedCards();
  $('ownedCountTab').textContent=own.length;
- $('ownedCount').textContent=own.length+' קלפים';
+ $('ownedCount').textContent=own.length+' קלפים · '+own.filter(showHolo).length+' Holo / Shining';
  const q=searchKey($('ownedFind').value);
  const matched=own.filter(c=>!q||searchText(c).includes(q));
  $('ownedItems').innerHTML=matched.length?matched.map(c=>{
-  const inBinder=state.binderOrder.includes(c.id);
-  return `<article class="owned-item" role="listitem">
-   <img loading="lazy" decoding="async" src="${esc(c.image)}" alt="${esc(c.name)}" data-preview="${esc(c.id)}">
-   <div class="owned-copy"><strong>${esc(c.name)}</strong><small>${esc(MAP.get(c.set)?.name||'')} · #${esc(cardNumber(c))}</small><div class="badges">${rarityHtml(c)}</div><span class="${inBinder?'binder-yes':'binder-no'}">${inBinder?'📖 בבינדר':'מחוץ לבינדר'}</span></div>
-   <div class="owned-actions"><button type="button" class="btn sm ${inBinder?'':'primary'}" data-owned-binder="${esc(c.id)}">${inBinder?'📍 העבר':'＋ לבינדר'}</button><button type="button" class="btn sm" data-preview="${esc(c.id)}">פרטים</button></div>
+  const inBinder=state.binderOrder.includes(c.id),condition=state.conditions[c.id]||'';
+  const market=condition?window.VintageMarketPrices?.getOwnedPrice?.(c,MAP.get(c.set)?.name||'',condition,!!state.firstEdition[c.id]):null;
+  const amount=typeof market==='number'?new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(market):'';
+  return `<article class="owned-item" role="listitem" tabindex="0" data-open-owned="${esc(c.id)}" aria-label="פרטים על ${esc(c.name)}">
+   <img loading="lazy" decoding="async" src="${esc(c.image)}" alt="${esc(c.name)}">
+   <div class="owned-copy"><strong>${esc(c.name)}</strong><small>${esc(MAP.get(c.set)?.name||'')} · #${esc(cardNumber(c))}</small><div class="badges">${rarityHtml(c)}</div>
+   ${condition?`<div class="owned-market"><span class="owned-condition">${esc(condition)}${state.firstEdition[c.id]?' · 1st':''}</span>${amount?`<span class="owned-price">${esc(amount)}</span>`:market===undefined?'<span class="owned-price pending">טוען מחיר…</span>':''}</div>`:''}
+   <span class="${inBinder?'binder-yes':'binder-no'}">${inBinder?'📖 בבינדר':'מחוץ לבינדר'}</span></div>
+   <div class="owned-actions"><button type="button" class="btn sm ${inBinder?'':'primary'}" data-owned-binder="${esc(c.id)}">${inBinder?'📍 העבר':'＋ לבינדר'}</button></div>
   </article>`}).join(''):`<div class="no-cards">${own.length?'לא נמצאו קלפים מתאימים לחיפוש.':'עוד אין קלפים ברשימה. אפשר לסמן ״יש לי״ בקטלוג.'}</div>`;
 }
 function renderCollections(){if(!state.ready)return;normalizeOrders();
@@ -2059,6 +2139,8 @@ function applyWishMove(target){
 function attachCollections(){
  document.addEventListener('click',e=>{
   const view=e.target.closest('[data-view-btn]');if(view){showView(view.dataset.viewBtn);return;}
+  const openOwned=e.target.closest('[data-open-owned]');
+  if(openOwned&&!e.target.closest('button,a,input,select')){showModal(openOwned.dataset.openOwned);return;}
   const pick=e.target.closest('[data-pick-binder]');if(pick){selectBinder(pick.dataset.pickBinder);return;}
   const moveBinder=e.target.closest('[data-binder-move]');if(moveBinder){openMovePicker(moveBinder.dataset.binderMove);return;}
   const removeBinder=e.target.closest('[data-binder-remove]');if(removeBinder){removeFromBinder(removeBinder.dataset.binderRemove);return;}
@@ -2071,7 +2153,10 @@ function attachCollections(){
  $('wishMoveCancel').onclick=()=>$('wishMoveDialog').close();
  $('wishMoveDialog').addEventListener('close',()=>{wishMoveSelectedId=null;});
  $('wishMovePosition').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();applyWishMove(e.target.value);}});
- $('binderFind').addEventListener('input',searchBinder);$('ownedFind').addEventListener('input',renderOwnedList);
+ document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-open-owned]')){e.preventDefault();showModal(e.target.dataset.openOwned);}});
+  $('binderFind').addEventListener('input',searchBinder);$('ownedFind').addEventListener('input',renderOwnedList);
+  $('ownedSort').addEventListener('change',renderOwnedList);
+  $('copyWishlist').addEventListener('click',copyWishlist);
  $('binderPlaceSelected').onclick=()=>{if(!binderSelectedId)return;placeBinder(binderSelectedId,Number($('binderTargetPage').value)||1,Number($('binderTargetSlot').value)||1);};
  $('binderIncludeWish').onchange=e=>{if(!ensureCloudEdit()){e.target.checked=state.binderIncludeWish;return;}state.binderIncludeWish=e.target.checked;save();};
  $('binderPrev').onclick=()=>{state.binderPage=Math.max(0,state.binderPage-1);renderCollections();};
@@ -2154,6 +2239,26 @@ attach();loadEmbeddedData();
 const BASE='https://openapi.tcgtracking.com/v1/3';
 const CONDITIONS=[['NM','Near Mint'],['LP','Lightly Played'],['MP','Moderately Played'],['HP','Heavily Played'],['DMG','Damaged']];
 const setPromise=new Map();
+const ownedPriceCache=new Map(),ownedPricePending=new Set();
+function getOwnedPrice(card,setName,condition,firstEdition=false){
+ if(!card||!condition)return null;
+ const key=card.id+'|'+condition+'|'+(firstEdition?'1st':'unlimited');
+ if(ownedPriceCache.has(key))return ownedPriceCache.get(key);
+ if(!ownedPricePending.has(key)){
+  ownedPricePending.add(key);
+  getSetData(setName).then(data=>{
+   const market=makeMarket(card,data);
+   const variant=market?bestVariant(card,market.variants.keys(),firstEdition):null;
+   const row=variant?market.variants.get(variant)?.get(condition):null;
+   const value=row?.mkt;
+   ownedPriceCache.set(key,typeof value==='number'&&Number.isFinite(value)&&value>=0?value:null);
+  }).catch(error=>{
+   console.warn('Owned-card market price temporarily unavailable:',error);
+   ownedPriceCache.set(key,null);
+  }).finally(()=>{ownedPricePending.delete(key);window.VintageBinder?.refreshOwned?.();});
+ }
+ return undefined;
+}
 let catalogPromise=null,requestId=0;
 const esc=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const nameKey=s=>String(s??'').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9♀♂]/g,'');
@@ -2267,7 +2372,7 @@ async function show(card,setInfo){
   document.getElementById('retryMarket')?.addEventListener('click',()=>show(card,setInfo));
  }
 }
-window.VintageMarketPrices={show,refresh};
+window.VintageMarketPrices={show,refresh,getOwnedPrice};
 })();
 </script>
 <script>
@@ -2389,9 +2494,9 @@ const oldKeys=['pokemon-vintage-binder-cards-v1'];
 function setStatus(a,b){status.textContent=a;detail.textContent=b||'';}
 function say(m){message.textContent=m||'';}
 function cleanOld(){try{const keys=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&(k.startsWith(legacyPrefix)||k.startsWith('vintage-binder-firebase-')||oldKeys.includes(k)))keys.push(k);}for(const k of keys)localStorage.removeItem(k);}catch(e){console.warn('Could not purge old collection cache',e);}}
-function clean(p){const out={};for(const k of ['owned','wish','removedWish','conditions','notes','purchasePrices','firstEdition','binderExcluded']){const v=p?.[k];out[k]=v&&typeof v==='object'&&!Array.isArray(v)?{...v}:{}}for(const k of ['binderOrder','wishOrder'])out[k]=Array.isArray(p?.[k])?[...new Set(p[k].filter(v=>typeof v==='string'))]:[];out.binderIncludeWish=typeof p?.binderIncludeWish==='boolean'?p.binderIncludeWish:true;for(const id of Object.keys(out.removedWish))delete out.wish[id];out.wishOrder=out.wishOrder.filter(id=>!!out.wish[id]&&!out.removedWish[id]);return out;}
+function clean(p){const out={};for(const k of ['owned','wish','removedWish','conditions','notes','purchasePrices','firstEdition','ownedAddedAt','binderExcluded']){const v=p?.[k];out[k]=v&&typeof v==='object'&&!Array.isArray(v)?{...v}:{}}for(const k of ['binderOrder','wishOrder'])out[k]=Array.isArray(p?.[k])?[...new Set(p[k].filter(v=>typeof v==='string'))]:[];out.binderIncludeWish=typeof p?.binderIncludeWish==='boolean'?p.binderIncludeWish:true;for(const id of Object.keys(out.removedWish))delete out.wish[id];out.wishOrder=out.wishOrder.filter(id=>!!out.wish[id]&&!out.removedWish[id]);return out;}
 function authError(e){switch(e?.code){case 'auth/unauthorized-domain':return 'צריך לאשר את '+location.hostname+' תחת Firebase Authentication → Settings → Authorized domains.';case 'auth/popup-blocked':return 'הדפדפן חסם את החלון. הפעל חלונות קופצים ב־Safari ונסה שוב.';case 'auth/popup-closed-by-user':return 'חלון ההתחברות נסגר לפני שהתחברת.';case 'permission-denied':return 'Firestore חסם את הגישה. בדוק את Security Rules תחת users/{uid}.';}return e?.message||String(e);}
-function resetSession(){shareEnabled=false;shareId=null;shareLoaded=false;shareIncludeWish=false;shareUpdateFailed=false;renderShare();session++;if(stopListening){stopListening();stopListening=null;}clearTimeout(flushTimer);flushTimer=null;user=null;docRef=null;ready=false;pending=false;writing=false;changeSeq=0;lastServerUpdate=0;serverRevision=0;lastWrittenRevision=0;}
+function resetSession(){updateAccount(null);shareEnabled=false;shareId=null;shareLoaded=false;shareIncludeWish=false;shareUpdateFailed=false;renderShare();session++;if(stopListening){stopListening();stopListening=null;}clearTimeout(flushTimer);flushTimer=null;user=null;docRef=null;ready=false;pending=false;writing=false;changeSeq=0;lastServerUpdate=0;serverRevision=0;lastWrittenRevision=0;}
 async function loadSdk(){if(sdk)return sdk;const ver='13.1.0';const [a,b,c]=await Promise.all([import('https://www.gstatic.com/firebasejs/'+ver+'/firebase-app.js'),import('https://www.gstatic.com/firebasejs/'+ver+'/firebase-auth.js'),import('https://www.gstatic.com/firebasejs/'+ver+'/firebase-firestore.js')]);sdk={...a,...b,...c};return sdk;}
 function stampOf(s){const t=s.data()?.updatedAt;return t&&typeof t.toMillis==='function'?t.toMillis():0;}
 function acceptServer(s,token){
@@ -2423,7 +2528,7 @@ async function flush(){
  finally{if(token===session){writing=false;if(seen!==changeSeq)flushTimer=setTimeout(flush,200);}}
 }
 async function activate(u){
- resetSession();const token=session;user=u;
+ resetSession();const token=session;user=u;updateAccount(u);
  $('cloudSignIn').hidden=true;$('cloudSignOut').hidden=false;
  setStatus('☁️ טוען מהענן…',u.email||'Google');
  try{
@@ -2465,7 +2570,25 @@ window.VintageCloud={canEdit:()=>Boolean(user&&ready),onChange:({immediate=false
  changeSeq++;pending=true;setStatus('☁️ ממתין לשמירה…',user.email||'Google');
  clearTimeout(flushTimer);flushTimer=setTimeout(flush,immediate?0:350);
 }};
-$('cloudManage').onclick=()=>dialog.showModal();
+const accountTrigger=$('accountTrigger'),accountMenu=$('accountMenu');
+function hideAccountMenu(){accountMenu.hidden=true;accountTrigger.setAttribute('aria-expanded','false');}
+function updateAccount(currentUser){
+ const label=currentUser?(currentUser.displayName?.trim().split(/\s+/)[0]||currentUser.email?.split('@')[0]||'החשבון שלי'):'התחברות';
+ $('accountName').textContent=label;
+ $('accountAvatar').textContent=currentUser?(label.charAt(0).toUpperCase()||'✓'):'👤';
+ accountTrigger.setAttribute('aria-label',currentUser?'תפריט חשבון '+(currentUser.email||''):'התחברות ל־Google');
+ hideAccountMenu();
+}
+accountTrigger.onclick=()=>{
+ if(!user){if(!dialog.open)dialog.showModal();return;}
+ accountMenu.hidden=!accountMenu.hidden;
+ accountTrigger.setAttribute('aria-expanded',String(!accountMenu.hidden));
+};
+$('accountSignOut').onclick=()=>{hideAccountMenu();$('cloudSignOut').click();};
+for(const id of ['exportJSON','importJSON'])$(id).addEventListener('click',hideAccountMenu);
+document.addEventListener('click',e=>{if(!e.target.closest('.account-area'))hideAccountMenu();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')hideAccountMenu();});
+updateAccount(null);
 $('cloudClose').onclick=()=>dialog.close();
 dialog.onclick=e=>{if(e.target===dialog)dialog.close();};
 $('cloudSignIn').onclick=()=>{if(!auth||!sdk){say('ספריות Firebase נטענות, נסה שוב.');return;}
