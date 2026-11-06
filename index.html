@@ -400,7 +400,7 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
  .sticky-sitebar .main-nav button{min-width:0;padding:9px 2px;font-size:11px;gap:3px}
  .sticky-sitebar .main-nav .nav-number{display:none}
 }
-/* Compact Wishlist: price and condition on the left, one reorder action only */
+/* Compact Wishlist: price and condition on the left, drag from image/rank or use one move button */
 .wishlist-items{gap:7px}
 .wishlist-items .wish-item{display:flex;align-items:center;gap:10px;padding:8px 10px;min-height:0;border-radius:13px;cursor:pointer;transition:background .15s,border-color .15s,box-shadow .15s}
 .wishlist-items .wish-item:hover{background:#f5f7ff;border-color:#b8c5e5;box-shadow:0 4px 12px #1626440d}
@@ -444,6 +444,11 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
 @media(min-width:901px){
  .side{top:calc(var(--sticky-sitebar-height, 120px) + 12px);max-height:calc(100dvh - var(--sticky-sitebar-height, 120px) - 24px)}
 }
+/* Restore direct drag reordering without bringing back visual controls. */
+.wishlist-items .wish-item>img[data-drag-kind],
+.wishlist-items .wish-rank[data-drag-kind]{touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none;-webkit-user-drag:none}
+.wishlist-items .wish-item>img[data-drag-kind]:active,
+.wishlist-items .wish-rank[data-drag-kind]:active{cursor:grabbing}
 </style>
 </head>
 <body>
@@ -2232,9 +2237,9 @@ function renderCollections(){if(!state.ready)return;normalizeOrders();
   const condition=state.conditions[id]||'';
   const market=condition?window.VintageMarketPrices?.getOwnedPrice?.(c,MAP.get(c.set)?.name||'',condition,!!state.firstEdition[id]):null;
   const amount=typeof market==='number'?new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(market):'';
-  return `<article class="wish-item" role="listitem" data-open-wish="${esc(id)}" tabindex="0" aria-label="פרטים על ${esc(c.name)}">
-   <span class="wish-rank">${i+1}</span>
-   <img loading="lazy" decoding="async" src="${esc(c.image)}" alt="${esc(c.name)}">
+  return `<article class="wish-item" role="listitem" data-order-kind="wishlist" data-order-index="${i}" data-open-wish="${esc(id)}" tabindex="0" aria-label="פרטים על ${esc(c.name)}">
+   <span class="wish-rank" data-drag-kind="wishlist" data-drag-index="${i}" title="גרור כדי לשנות את הסדר" aria-label="גרור כדי לשנות את הסדר">${i+1}</span>
+   <img loading="lazy" decoding="async" src="${esc(c.image)}" alt="${esc(c.name)}" data-drag-kind="wishlist" data-drag-index="${i}" title="גרור לשינוי הסדר · הקש לפתיחת פרטים" draggable="false">
    <div class="wish-copy"><strong>${esc(c.name)}</strong><small>${esc(MAP.get(c.set)?.name||'')} · #${esc(cardNumber(c))}</small></div>
    <div class="wish-side">
     ${condition?`<div class="wish-market">
