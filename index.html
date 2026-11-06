@@ -313,11 +313,64 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
 .owned-price.pending{font-weight:500;color:#8d98a8}
 .wishlist-heading-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 @media(max-width:650px){.hero-top{align-items:flex-start}.hero-top .eyebrow{font-size:10px;letter-spacing:.6px;line-height:1.7}.account-trigger{font-size:11px;max-width:145px}.account-trigger #accountName{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.account-chevron{display:none}.owned-toolbar{align-items:stretch}.owned-toolbar select{max-width:170px}.owned-item{gap:8px}.owned-price{font-size:11px}}
+
+/* v16: smaller masthead, compact owned controls and pricing on the left */
+.hero{overflow:visible;padding-top:17px;padding-bottom:17px}
+.hero::after{display:none}
+.hero-inner{display:flex;flex-direction:column;gap:6px}
+.hero-top{margin-bottom:0;align-items:center}
+.hero h1{margin:0;font-size:clamp(22px,3vw,31px)}
+.hero .stats,.hero p{display:none!important}
+.owned-heading{margin-bottom:7px;align-items:center}
+.owned-title-row{display:flex;gap:9px;align-items:center}
+.owned-title-row h2{margin:0}
+.owned-export{width:33px;height:33px;display:grid;place-items:center;border:1px solid #d9e0f0;border-radius:9px;background:#f8faff;color:#5366d6;flex:none}
+.owned-export:hover{background:#eff1ff;border-color:#acb9ee}
+.owned-meta-row{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 11px}
+.owned-meta-row .info-pill{font-size:12px;white-space:nowrap;padding:5px 7px}
+.owned-sort{display:flex;align-items:center;gap:6px;color:#64718a;font-size:12px;font-weight:750;flex:none}
+.owned-sort select{min-width:0;max-width:170px;height:34px;padding:5px 7px;border:1px solid #d5ddec;border-radius:9px;background:#fff;color:#273851}
+.owned-items{gap:7px;margin-top:10px}
+.owned-item{padding:7px 10px;gap:10px;min-height:0}
+.owned-item>img{width:48px;height:68px}
+.owned-copy{gap:2px}
+.owned-copy strong{font-size:15px}
+.owned-copy small{font-size:11px}
+.owned-actions{gap:4px;align-items:stretch;flex:none;min-width:78px}
+.owned-actions button{min-height:28px;padding:5px 7px}
+.owned-actions .owned-market{display:flex;align-items:flex-start;flex-direction:column;gap:3px;margin:0;line-height:1.2}
+.owned-actions .owned-price{font-size:12px}
+.owned-actions .owned-condition{font-size:10px;padding:2px 5px}
+@media(max-width:650px){
+ .hero{padding:15px 13px 16px}
+ .hero h1{font-size:24px;line-height:1.2}
+ .owned-title-row h2{font-size:21px}
+ .owned-meta-row .info-pill{font-size:10.5px;letter-spacing:-.15px}
+ .owned-sort{font-size:11px;gap:4px}
+ .owned-sort select{max-width:112px;width:112px;height:32px;font-size:11px;padding:3px 4px}
+ .owned-item{gap:8px;padding:7px 8px}
+ .owned-item>img{width:46px;height:65px}
+ .owned-copy strong{font-size:14px}
+ .owned-actions{min-width:68px;gap:4px}
+ .owned-actions button{font-size:10px;padding:5px 5px}
+ .owned-actions .owned-price{font-size:11px}
+}
+@media(max-width:360px){
+ .owned-meta-row{gap:4px}
+ .owned-meta-row .info-pill{font-size:10px;padding:4px}
+ .owned-sort select{max-width:98px;width:98px}
+}
+
+/* v16 refinement: a single unobtrusive top bar */
+.hero .hero-inner{display:block}
+.hero .hero-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.hero h1{margin:0;font-size:clamp(19px,2.5vw,28px);line-height:1.22;min-width:0}
+@media(max-width:650px){.hero h1{font-size:19px}}
+@media(max-width:360px){.hero h1{font-size:17px}.hero-top{gap:8px}}
 </style>
 </head>
 <body>
-<header class="hero"><div class="hero-inner">
-<div class="hero-top"><div class="eyebrow">THE ORIGINAL WOTC ERA · 1999–2002 · v15</div>
+<header class="hero"><div class="hero-inner"><div class="hero-top"><h1>Pokémon Vintage Binder <span aria-hidden="true">✦</span></h1>
  <div class="account-area">
   <button type="button" id="accountTrigger" class="account-trigger" aria-haspopup="menu" aria-expanded="false" aria-label="התחברות"><span id="accountAvatar" class="account-avatar" aria-hidden="true">👤</span><span id="accountName">התחברות</span><span class="account-chevron" aria-hidden="true">⌄</span></button>
   <div class="account-menu" id="accountMenu" role="menu" hidden>
@@ -326,16 +379,7 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
    <div class="account-separator"></div>
    <button type="button" id="accountSignOut" role="menuitem">התנתקות</button>
   </div>
- </div>
-</div>
-<h1>Pokémon Vintage Binder <span aria-hidden="true">✦</span></h1>
-<p>כל הקלפים מהילדות, במקום אחד. רשימה מלאה של Base, Jungle, Fossil, Team Rocket, Gym וכל סדרות Neo, עם סימון ברור של Holo ו־Shining.</p>
-<div class="stats">
- <div class="stat"><b id="statOwned">0</b><span>קלפים באוסף</span></div>
- <div class="stat"><b id="statTotal">1,070</b><span>קלפים בקטלוג הנבחר</span></div>
- <div class="stat"><b id="statProgress">0%</b><span>השלמת האוסף</span></div>
-</div>
-</div></header>
+ </div></div></div></header>
 
 <dialog id="cloudDialog" class="dialog cloud-config" aria-label="חיבור Firebase">
  <div class="modal-inner">
@@ -362,9 +406,13 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
 </nav>
 <section class="collection-page" id="ownedPage" hidden aria-label="הקלפים שלי ברשימה">
  <div class="collection-panel">
-  <div class="collection-heading"><div><h2>✅ הקלפים שלי</h2><div class="subtle">כל הקלפים שיש לך — כרשימה, גם אם הסרת אותם מהבינדר. מכאן אפשר להחזיר כל קלף לבינדר.</div></div><span class="info-pill" id="ownedCount"></span></div>
-  <div class="owned-toolbar"><label for="ownedSort">מיון <select id="ownedSort" aria-label="מיין את הקלפים שלי"><option value="added">סדר הוספה (חדש קודם)</option><option value="holo">Holo / Shining קודם</option><option value="set">לפי סדרה</option><option value="price">מחיר שוק (גבוה קודם)</option></select></label><button class="btn sm" id="exportCSV" type="button">⇩ ייצוא הקלפים שלי (CSV)</button></div>
-   <input id="ownedFind" class="binder-place-search" type="search" placeholder="חיפוש בקלפים שלי: שם, סדרה או מספר..." aria-label="חיפוש בקלפים שיש לי" autocomplete="off">
+  <div class="collection-heading owned-heading">
+  <div class="owned-title-row"><h2>✅ הקלפים שלי</h2><button class="owned-export" id="exportCSV" type="button" aria-label="ייצוא הקלפים שלי ל־CSV" title="ייצוא הקלפים שלי ל־CSV"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M4 16v4h16v-4"/></svg></button></div>
+ </div>
+ <div class="owned-meta-row"><span class="info-pill" id="ownedCount"></span>
+  <label class="owned-sort" for="ownedSort"><span>מיון</span><select id="ownedSort" aria-label="מיין את הקלפים שלי"><option value="added">סדר הוספה</option><option value="holo">Holo קודם</option><option value="set">לפי סדרה</option><option value="price">מחיר יורד</option></select></label>
+ </div>
+ <input id="ownedFind" class="binder-place-search" type="search" placeholder="חיפוש בקלפים שלי: שם, סדרה או מספר..." aria-label="חיפוש בקלפים שיש לי" autocomplete="off">
   <div id="ownedItems" class="owned-items" role="list"></div>
  </div>
 </section>
@@ -1850,7 +1898,7 @@ function visible(){const q=searchKey(state.query);let arr=(q?state.cards:catalog
 function groups(){return [['Base','sideBase'],['Gym','sideGym'],['Neo','sideNeo'],['Extra','sideExtra']];}
 function renderSide(){for(const [g,id]of groups()){$(id).innerHTML=SETS.filter(s=>s.group===g).map(s=>{const own=state.cards.filter(c=>c.set===s.id&&state.owned[c.id]).length;const loaded=state.cards.some(c=>c.set===s.id);return `<button class="set-btn ${state.active===s.id?'active':''}" data-set="${s.id}" ${g==='Extra'&&!state.extras?'title="לחיצה תציג גם אוספים נוספים"':''}><span>${esc(s.name)}</span><small>${own}/${s.count}</small><span class="mini-track"><i style="width:${(own/s.count*100).toFixed(1)}%"></i></span></button>`}).join('')}
  $('side').querySelector('[data-set="all"]').classList.toggle('active',state.active==='all');$('allMini').textContent=nf(catalog().filter(c=>state.owned[c.id]).length)+'/'+nf(catalog().length);}
-function renderStats(){let c=catalog(),total=c.length||SETS.filter(s=>state.extras||s.group!=='Extra').reduce((a,s)=>a+s.count,0);let owned=c.filter(x=>state.owned[x.id]).length,holo=c.filter(x=>state.owned[x.id]&&showHolo(x)).length;$('statOwned').textContent=nf(owned);$('statTotal').textContent=nf(total);$('statProgress').textContent=(total?Math.round(owned/total*100):0)+'%';}
+function renderStats(){/* Collection totals are shown only in the relevant tabs. */}
 function rarityHtml(c){const t=c.finish==='holo'?'✨ Holo':c.finish==='shining'?'🌟 Shining':c.finish==='reverse'?'✨ Reverse Holo':c.finish==='unknown'?'? Promo (משתנה)':c.rarity==='Rare'?'◆ Rare':c.rarity==='Uncommon'?'◇ Uncommon':c.rarity==='Common'?'● Common':c.rarity==='Rare Secret'?'◆ Secret Rare':c.rarity||'רגיל';const cls=c.finish==='holo'||c.finish==='reverse'?'holo':c.finish==='shining'?'shining':c.finish==='unknown'?'unknown':'';return `<span class="rarity-tag ${cls}">${esc(t)}</span>`;}
 function cardHTML(c){const set=MAP.get(c.set);const isOwned=!!state.owned[c.id];return `<article class="poke-card ${isOwned?'owned':''}" role="listitem" data-id="${esc(c.id)}">
  <div class="card-img-wrap" data-preview="${esc(c.id)}" title="תמונה ופרטים"><img class="card-img" loading="lazy" decoding="async" src="${esc(c.image)}" alt="${esc(c.name)}" onerror="this.style.display='none';this.nextElementSibling.hidden=false"><span class="img-placeholder" hidden>✦</span></div>
@@ -2039,10 +2087,11 @@ function renderOwnedList(){
   const amount=typeof market==='number'?new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(market):'';
   return `<article class="owned-item" role="listitem" tabindex="0" data-open-owned="${esc(c.id)}" aria-label="פרטים על ${esc(c.name)}">
    <img loading="lazy" decoding="async" src="${esc(c.image)}" alt="${esc(c.name)}">
-   <div class="owned-copy"><strong>${esc(c.name)}</strong><small>${esc(MAP.get(c.set)?.name||'')} · #${esc(cardNumber(c))}</small><div class="badges">${rarityHtml(c)}</div>
-   ${condition?`<div class="owned-market"><span class="owned-condition">${esc(condition)}${state.firstEdition[c.id]?' · 1st':''}</span>${amount?`<span class="owned-price">${esc(amount)}</span>`:market===undefined?'<span class="owned-price pending">טוען מחיר…</span>':''}</div>`:''}
-   <span class="${inBinder?'binder-yes':'binder-no'}">${inBinder?'📖 בבינדר':'מחוץ לבינדר'}</span></div>
-   <div class="owned-actions"><button type="button" class="btn sm ${inBinder?'':'primary'}" data-owned-binder="${esc(c.id)}">${inBinder?'📍 העבר':'＋ לבינדר'}</button></div>
+   <div class="owned-copy"><strong>${esc(c.name)}</strong><small>${esc(MAP.get(c.set)?.name||'')} · #${esc(cardNumber(c))}</small><div class="badges">${rarityHtml(c)}</div></div>
+   <div class="owned-actions">
+    <button type="button" class="btn sm ${inBinder?'':'primary'}" data-owned-binder="${esc(c.id)}">${inBinder?'📍 העבר':'＋ לבינדר'}</button>
+    ${condition?`<div class="owned-market"><span class="owned-condition">${esc(condition)}${state.firstEdition[c.id]?' · 1st':''}</span>${amount?`<span class="owned-price">${esc(amount)}</span>`:market===undefined?'<span class="owned-price pending">טוען…</span>':''}</div>`:''}
+   </div>
   </article>`}).join(''):`<div class="no-cards">${own.length?'לא נמצאו קלפים מתאימים לחיפוש.':'עוד אין קלפים ברשימה. אפשר לסמן ״יש לי״ בקטלוג.'}</div>`;
 }
 function renderCollections(){if(!state.ready)return;normalizeOrders();
