@@ -2239,6 +2239,26 @@ attach();loadEmbeddedData();
 const BASE='https://openapi.tcgtracking.com/v1/3';
 const CONDITIONS=[['NM','Near Mint'],['LP','Lightly Played'],['MP','Moderately Played'],['HP','Heavily Played'],['DMG','Damaged']];
 const setPromise=new Map();
+const ownedPriceCache=new Map(),ownedPricePending=new Set();
+function getOwnedPrice(card,setName,condition,firstEdition=false){
+ if(!card||!condition)return null;
+ const key=card.id+'|'+condition+'|'+(firstEdition?'1st':'unlimited');
+ if(ownedPriceCache.has(key))return ownedPriceCache.get(key);
+ if(!ownedPricePending.has(key)){
+  ownedPricePending.add(key);
+  getSetData(setName).then(data=>{
+   const market=makeMarket(card,data);
+   const variant=market?bestVariant(card,market.variants.keys(),firstEdition):null;
+   const row=variant?market.variants.get(variant)?.get(condition):null;
+   const value=row?.mkt;
+   ownedPriceCache.set(key,typeof value==='number'&&Number.isFinite(value)&&value>=0?value:null);
+  }).catch(error=>{
+   console.warn('Owned-card market price temporarily unavailable:',error);
+   ownedPriceCache.set(key,null);
+  }).finally(()=>{ownedPricePending.delete(key);window.VintageBinder?.refreshOwned?.();});
+ }
+ return undefined;
+}
 let catalogPromise=null,requestId=0;
 const esc=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const nameKey=s=>String(s??'').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9♀♂]/g,'');
@@ -2352,7 +2372,7 @@ async function show(card,setInfo){
   document.getElementById('retryMarket')?.addEventListener('click',()=>show(card,setInfo));
  }
 }
-window.VintageMarketPrices={show,refresh};
+window.VintageMarketPrices={show,refresh,getOwnedPrice};
 })();
 </script>
 <script>
