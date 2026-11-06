@@ -2497,7 +2497,8 @@ function attach(){document.addEventListener('click',e=>{const own=e.target.close
    const condition=progress.conditions[id]||'';
    const price=condition?window.VintageMarketPrices?.getOwnedPrice?.(c,setName,condition,!!progress.firstEdition[id]):null;
    return {id:c.id,name:c.name,set:setName,number:cardNumber(c),edition:progress.firstEdition[id]?'1st edition':'unlimited',
-    condition,marketUSD:typeof price==='number'&&Number.isFinite(price)?price:null};
+    condition,marketUSD:typeof price==='number'&&Number.isFinite(price)?price:null,
+    image:c.image?new URL(c.image,document.baseURI).href:''};
   }).filter(Boolean);
   try{
    sessionStorage.setItem('pokemon-deal-finder-import-v1',JSON.stringify({v:1,timestamp:Date.now(),items}));
