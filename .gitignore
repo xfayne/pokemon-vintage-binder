@@ -1,0 +1,9 @@
+# Never commit API secrets or local Cloudflare files
+.env
+.env.*
+!.env.example
+**/.dev.vars
+**/.dev.vars.*
+**/.wrangler/
+node_modules/
+.DS_Store
