@@ -1,24 +1,31 @@
-# Pokémon Deal Finder — first implementation slice
+# Pokémon Deals tab (work in progress)
 
-This repository currently serves a single large, static `index.html` with Firebase-backed collection and wishlist state; there is no Node/React build pipeline. The first slice deliberately leaves that file untouched to avoid breaking binder interactions.
+The existing app is a single-file, static Hebrew binder in `index.html`, backed by Firebase. **Deals is the fifth tab in the existing navigation**, alongside Catalog, My Cards, Binder and Wishlist. This implementation intentionally does not create a second site or require separate login.
 
-## Implemented
-- Dependency-free scoring module (`scoring.js`) for all five condition grades.
-- Shipping is included in the total.
-- Missing shipping, grade or reference price is flagged for review instead of producing a misleading discount.
-- Search term construction for individual wishlist cards.
+## What works now
+- The Deals view is native to `index.html`. It reads `state.wishOrder`, `state.wish` and card catalog data that are already synchronized from Firebase into the existing app.
+- Cards appear in the same priority order as Wishlist, and search filters by card name, set or collector number.
+- Each row links to eBay auction searches: a precise query with collector number, and a broad query that can surface overlooked listings.
+- Shows condition, Unlimited/1st Edition choice, and any condition-specific USD market reference already available in the binder.
+- Deals is read-only and doesn't modify Firebase, drag-and-drop logic, or wishlist ranking.
+- Prices are market references, **not verified prices of current eBay listings**. Unknown prices stay unknown.
 
-## Next integration steps
-1. Identify the existing wishlist state shape in `index.html` and expose a read-only adapter.
-2. Add a small Deals view in the existing navigation, initially with an explicit demo/empty state.
-3. Add a serverless proxy for eBay OAuth client credentials and Browse API. Never put client secrets in `index.html`.
-4. Search by name + set + collector number, include auction-only listings via `buyingOptions:{AUCTION}`, and set delivery country to IL where supported.
-5. Normalize currencies using a dated exchange rate and shipping to Israel. Never treat unknown shipping as free.
-6. Use existing market-price data where grade-specific prices exist. Mark grade guesses as unverified and avoid false deal claims.
-7. Add tests for condition/edition mismatches, bundles, reprints, missing shipping, and bid updates.
+## Not built yet
+- Live eBay API listing retrieval and automatic result ranking.
+- Combining live listing prices with Israel shipping, currency exchange and taxes.
+- Automatic condition/printing verification from listing photos.
+- Deal alerts and saved searches.
 
-## Notes
-- eBay Browse API requires an application token and production access may require additional approval.
-- Live listing discovery is **not connected yet**. No production credentials were provided.
-- Sold comparables and photos are necessary for confidence, especially for creased/damaged cards.
-- Do not auto-bid, purchase or modify wishlist entries.
+Live eBay API credentials must stay on a backend/serverless proxy, never in the public static page.
+The existing `deal-finder/scoring.js` helper provides condition-aware discount math and will be used by the future listing integration.
+
+## Manual smoke test before merging
+1. On a branch deployment, sign in with Google and check that the existing Wishlist is populated.
+2. Click the fifth navigation tab "🔎 מציאות", and verify the cards follow Wishlist order.
+3. Search for a name or set; open both eBay links and verify auction search queries.
+4. Change a wishlist position or mark a card as owned, then switch back to Deals; the list should update.
+5. Drag a wishlist card by its whole rectangle on mobile and ensure the existing behavior works.
+6. Confirm signed-out users see an empty state and that the Deals screen does not write to Firebase.
+7. Verify navigation fit and sticky header on iPhone-width screens.
+
+**Do not merge without browser smoke-testing** the large existing `index.html` on the branch deployment.
