@@ -211,7 +211,7 @@
     render();
   });
   $('dealRefreshRates').addEventListener('click', loadRates);
-  window.VintageDealsDashboard = {render};
+  window.VintageDealsDashboard = {render, convertToUSD:(value,currency)=>{const rate=getRate(currency);return rate!==null && Number.isFinite(Number(value))?Number(value)*rate:null;}, getFxDate:()=>fxDate};
   render();
   loadRates();
 })();
