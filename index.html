@@ -534,7 +534,7 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
 </section>
 <section class="collection-page" id="wishPage" hidden aria-label="רשימת המשאלות">
   <div class="collection-panel">
-    <div class="collection-heading"><div><h2>💜 Wishlist</h2><div class="subtle">לחץ ״↗ העבר״ כדי לבחור מיקום מדויק או לעבור ישר לראש הרשימה. אפשר גם לגרור לסידור קצר.</div></div><div class="wishlist-heading-actions"><span id="wishCount" class="info-pill"></span><button id="copyWishlist" type="button" class="btn sm">⧉ העתק רשימה</button></div></div>
+    <div class="collection-heading"><div><h2>💜 Wishlist</h2><div class="subtle">לחץ ״↗ העבר״ כדי לבחור מיקום מדויק או לעבור ישר לראש הרשימה. אפשר גם לגרור לסידור קצר.</div></div><div class="wishlist-heading-actions"><span id="wishCount" class="info-pill"></span><button id="openDealFinder" type="button" class="btn sm primary">🔎 מצא מציאות</button><button id="copyWishlist" type="button" class="btn sm">⧉ העתק רשימה</button></div></div>
     <div id="wishlistItems" class="wishlist-items" role="list"></div>
   </div>
 </section>
@@ -2481,6 +2481,33 @@ function attachCollections(){
 
 function attach(){document.addEventListener('click',e=>{const own=e.target.closest('[data-own]');if(own)return toggleOwned(own.dataset.own);const removeWishBtn=e.target.closest('[data-remove-wish]');if(removeWishBtn){removeWish(removeWishBtn.dataset.removeWish);return;}const wish=e.target.closest('[data-wish]');if(wish)return toggleWish(wish.dataset.wish);const preview=e.target.closest('[data-preview]');if(preview)return showModal(preview.dataset.preview);const set=e.target.closest('[data-set]');if(set){state.active=set.dataset.set;if(MAP.get(state.active)?.group==='Extra'){state.extras=true;$('extrasEnabled').checked=true;}state.limit=96;renderAll();const sticky=document.querySelector('.sticky-sitebar');const shell=document.querySelector('.shell');window.scrollTo({top:Math.max(0,shell.getBoundingClientRect().top+window.scrollY-(sticky?.offsetHeight||0)-12),behavior:'smooth'});}});
  $('search').addEventListener('input',e=>{state.query=e.target.value.trim();state.limit=96;if(state.query){state.active='all';state.status='all';state.holoOnly=false;state.pokemonOnly=false;$('statusSelect').value='all';$('holoOnly').checked=false;$('pokemonOnly').checked=false;}renderAll()});$('statusSelect').onchange=e=>{state.status=e.target.value;state.limit=96;renderCards()};$('sortSelect').onchange=e=>{state.sort=e.target.value;state.limit=96;renderCards()};$('holoOnly').onchange=e=>{state.holoOnly=e.target.checked;state.limit=96;renderCards()};$('pokemonOnly').onchange=e=>{state.pokemonOnly=e.target.checked;state.limit=96;renderCards()};$('extrasEnabled').onchange=e=>{state.extras=e.target.checked;if(!state.extras&&MAP.get(state.active)?.group==='Extra')state.active='all';state.limit=96;renderAll()};$('loadMore').onclick=()=>{state.limit+=96;renderCards()};$('showOwned').onclick=()=>{state.status='owned';$('statusSelect').value='owned';state.limit=96;renderCards()};$('showHolo').onclick=()=>{state.holoOnly=true;$('holoOnly').checked=true;state.limit=96;renderCards()};$('resetFilters').onclick=()=>{state.query='';state.status='all';state.sort='num';state.holoOnly=false;state.pokemonOnly=false;state.limit=96;$('search').value='';$('statusSelect').value='all';$('sortSelect').value='num';$('holoOnly').checked=false;$('pokemonOnly').checked=false;renderCards()};$('exportJSON').onclick=backup;$('exportCSV').onclick=exportCSV;$('importJSON').onclick=()=>$('fileInput').click();$('fileInput').onchange=e=>{importBackup(e.target.files[0]);e.target.value=''};$('closeModal').onclick=()=>$('modal').close();$('modal').addEventListener('click',e=>{if(e.target===$('modal'))$('modal').close()});attachCollections();}
+
+ // Read-only handoff to Deal Finder. Never include notes, purchase prices or cloud credentials.
+ function openDealFinder(){
+  if(!window.VintageCloud?.canEdit?.()){
+   toast('התחבר ל־Google והמתן לטעינת רשימת הרצונות לפני פתיחת המציאות.');
+   const dialog=$('cloudDialog');if(dialog&&!dialog.open)dialog.showModal();
+   return;
+  }
+  const progress=getProgress();
+  const cards=new Map(state.cards.map(card=>[card.id,card]));
+  const items=progress.wishOrder.filter(id=>progress.wish[id]&&!progress.owned[id]).map(id=>{
+   const c=cards.get(id);if(!c)return null;
+   const setName=MAP.get(c.set)?.name||'';
+   const condition=progress.conditions[id]||'';
+   const price=condition?window.VintageMarketPrices?.getOwnedPrice?.(c,setName,condition,!!progress.firstEdition[id]):null;
+   return {id:c.id,name:c.name,set:setName,number:cardNumber(c),edition:progress.firstEdition[id]?'1st edition':'unlimited',
+    condition,marketUSD:typeof price==='number'&&Number.isFinite(price)?price:null};
+  }).filter(Boolean);
+  try{
+   sessionStorage.setItem('pokemon-deal-finder-import-v1',JSON.stringify({v:1,timestamp:Date.now(),items}));
+   window.location.assign('deal-finder/index.html');
+  }catch(error){
+   console.error('Deal Finder wishlist handoff failed',error);
+   toast('לא הצלחנו להעביר את רשימת הרצונות. נסה שוב או בדוק שהדפדפן מאפשר אחסון זמני.');
+  }
+ }
+ $('openDealFinder').addEventListener('click',openDealFinder);
 attach();loadEmbeddedData();
 // Keep the desktop set sidebar below the sticky title/tabs, including when the header changes height.
 const stickySitebar=document.querySelector('.sticky-sitebar');
