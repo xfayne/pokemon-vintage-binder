@@ -322,14 +322,15 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
 .hero h1{margin:0;font-size:clamp(22px,3vw,31px)}
 .hero .stats,.hero p{display:none!important}
 .owned-heading{margin-bottom:9px;align-items:center}
-.owned-title-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;width:100%}
-.owned-title-row h2{margin:0;line-height:1.25}
-.owned-title-actions{display:inline-flex;align-items:center;gap:9px;flex:none;max-width:100%}
-.owned-total-value,.owned-export{height:40px;box-sizing:border-box;border:1px solid #d9e0f0;border-radius:11px;background:#f8faff}
-.owned-total-value{display:inline-flex;align-items:center;justify-content:center;padding:0 13px;color:#263b6d;font-size:15px;font-weight:800;line-height:1;white-space:nowrap;direction:ltr;font-variant-numeric:tabular-nums}
-.owned-export{width:40px;display:grid;place-items:center;padding:0;color:#5366d6;flex:none}
+.owned-title-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:nowrap;width:100%}
+.owned-title-row h2{margin:0;line-height:1.25;flex:none}
+.owned-title-actions{display:flex;align-items:center;gap:7px;flex:none;margin-inline-start:auto}
+.owned-total-value,.owned-export{height:32px;box-sizing:border-box;border:1px solid #d9e0f0;border-radius:9px;background:#f8faff}
+.owned-total-value{display:inline-flex;align-items:center;justify-content:center;padding:0 9px;color:#263b6d;font-size:13px;font-weight:800;line-height:1;white-space:nowrap;direction:ltr;font-variant-numeric:tabular-nums}
+.owned-export{width:32px;display:grid;place-items:center;padding:0;color:#5366d6;flex:none}
 .owned-export:hover{background:#eff1ff;border-color:#acb9ee}
-@media(max-width:650px){.owned-title-row{gap:10px}.owned-title-actions{gap:8px}.owned-total-value{font-size:14px;padding:0 11px}}
+@media(max-width:650px){.owned-title-row{gap:7px}.owned-title-actions{gap:6px}.owned-total-value{font-size:12px;padding:0 8px}}
+@media(max-width:360px){.owned-title-row h2{font-size:19px}.owned-total-value{font-size:11px;padding:0 6px}.owned-title-actions{gap:5px}}
 .owned-meta-row{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 11px}
 .owned-meta-row .info-pill{font-size:12px;white-space:nowrap;padding:5px 7px}
 .owned-sort{display:flex;align-items:center;gap:6px;color:#64718a;font-size:12px;font-weight:750;flex:none}
