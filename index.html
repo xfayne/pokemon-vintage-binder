@@ -2006,18 +2006,43 @@ function showView(view,doScroll=true){if(!['catalog','owned','binder','wishlist'
  document.querySelectorAll('[data-view-btn]').forEach(b=>{const a=b.dataset.viewBtn===view;b.classList.toggle('active',a);b.setAttribute('aria-pressed',String(a));});
  if(view!=='catalog')renderCollections();if(doScroll)window.scrollTo({top:document.querySelector('.main-nav').offsetTop-10,behavior:'smooth'});
 }
+function sortedOwnedCards(){
+ const own=state.cards.filter(c=>state.owned[c.id]), mode=$('ownedSort').value;
+ const setIndex=c=>SETS.findIndex(s=>s.id===c.set);
+ const added=(a,b)=>(Number(state.ownedAddedAt[b.id])||0)-(Number(state.ownedAddedAt[a.id])||0);
+ const price=c=>{
+  const condition=state.conditions[c.id];if(!condition)return -1;
+  const value=window.VintageMarketPrices?.getOwnedPrice?.(c,MAP.get(c.set)?.name||'',condition,!!state.firstEdition[c.id]);
+  return typeof value==='number'?value:-1;
+ };
+ if(mode==='holo')own.sort((a,b)=>Number(showHolo(b))-Number(showHolo(a))||added(a,b));
+ else if(mode==='set')own.sort((a,b)=>setIndex(a)-setIndex(b)||normalNum(a)-normalNum(b));
+ else if(mode==='price')own.sort((a,b)=>price(b)-price(a)||added(a,b));
+ else own.sort(added);
+ return own;
+}
+let ownedRenderTimer=null;
+function refreshOwned(){
+ if(state.view!=='owned'||ownedRenderTimer)return;
+ ownedRenderTimer=setTimeout(()=>{ownedRenderTimer=null;renderOwnedList();},120);
+}
+window.VintageBinder.refreshOwned=refreshOwned;
 function renderOwnedList(){
- const own=state.cards.filter(c=>state.owned[c.id]);
+ const own=sortedOwnedCards();
  $('ownedCountTab').textContent=own.length;
- $('ownedCount').textContent=own.length+' קלפים';
+ $('ownedCount').textContent=own.length+' קלפים · '+own.filter(showHolo).length+' Holo / Shining';
  const q=searchKey($('ownedFind').value);
  const matched=own.filter(c=>!q||searchText(c).includes(q));
  $('ownedItems').innerHTML=matched.length?matched.map(c=>{
-  const inBinder=state.binderOrder.includes(c.id);
-  return `<article class="owned-item" role="listitem">
-   <img loading="lazy" decoding="async" src="${esc(c.image)}" alt="${esc(c.name)}" data-preview="${esc(c.id)}">
-   <div class="owned-copy"><strong>${esc(c.name)}</strong><small>${esc(MAP.get(c.set)?.name||'')} · #${esc(cardNumber(c))}</small><div class="badges">${rarityHtml(c)}</div><span class="${inBinder?'binder-yes':'binder-no'}">${inBinder?'📖 בבינדר':'מחוץ לבינדר'}</span></div>
-   <div class="owned-actions"><button type="button" class="btn sm ${inBinder?'':'primary'}" data-owned-binder="${esc(c.id)}">${inBinder?'📍 העבר':'＋ לבינדר'}</button><button type="button" class="btn sm" data-preview="${esc(c.id)}">פרטים</button></div>
+  const inBinder=state.binderOrder.includes(c.id),condition=state.conditions[c.id]||'';
+  const market=condition?window.VintageMarketPrices?.getOwnedPrice?.(c,MAP.get(c.set)?.name||'',condition,!!state.firstEdition[c.id]):null;
+  const amount=typeof market==='number'?new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(market):'';
+  return `<article class="owned-item" role="listitem" tabindex="0" data-open-owned="${esc(c.id)}" aria-label="פרטים על ${esc(c.name)}">
+   <img loading="lazy" decoding="async" src="${esc(c.image)}" alt="${esc(c.name)}">
+   <div class="owned-copy"><strong>${esc(c.name)}</strong><small>${esc(MAP.get(c.set)?.name||'')} · #${esc(cardNumber(c))}</small><div class="badges">${rarityHtml(c)}</div>
+   ${condition?`<div class="owned-market"><span class="owned-condition">${esc(condition)}${state.firstEdition[c.id]?' · 1st':''}</span>${amount?`<span class="owned-price">${esc(amount)}</span>`:market===undefined?'<span class="owned-price pending">טוען מחיר…</span>':''}</div>`:''}
+   <span class="${inBinder?'binder-yes':'binder-no'}">${inBinder?'📖 בבינדר':'מחוץ לבינדר'}</span></div>
+   <div class="owned-actions"><button type="button" class="btn sm ${inBinder?'':'primary'}" data-owned-binder="${esc(c.id)}">${inBinder?'📍 העבר':'＋ לבינדר'}</button></div>
   </article>`}).join(''):`<div class="no-cards">${own.length?'לא נמצאו קלפים מתאימים לחיפוש.':'עוד אין קלפים ברשימה. אפשר לסמן ״יש לי״ בקטלוג.'}</div>`;
 }
 function renderCollections(){if(!state.ready)return;normalizeOrders();
