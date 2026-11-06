@@ -222,24 +222,23 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
 @media (orientation:landscape) and (min-width:570px){.reader-book{height:min(calc(100dvh - 46px),calc((100vw - 73px) / 2 / .74));border-radius:9px;padding:clamp(5px,1.1vw,11px)}.reader-stage{padding-top:3px;padding-bottom:0}.reader-foot{height:27px;flex-basis:27px}.reader-grid{gap:clamp(2px,.6vw,6px)}.reader-pocket{padding:2px;border-radius:4px}.reader-nav{height:38px;width:24px;font-size:25px}}
 @media (max-width:600px) and (orientation:portrait){.reader-stage{padding:5px 27px 4px}.reader-book{height:min(calc(100dvh - 58px),calc((100vw - 56px) / .74));padding:7px}.reader-pocket{padding:2px;border-radius:4px}}
 
+
+/* Quick wishlist ranking without dragging through dozens of items */
+.wish-move-action{background:#eef1ff!important;border-color:#bbc7e6!important;color:#314ca0!important}
+.wish-move-dialog{direction:rtl;box-sizing:border-box;width:min(94vw,370px);max-width:370px;border:1px solid #cbd6ea;border-radius:18px;padding:22px 19px 17px;background:#fff;color:#172038;box-shadow:0 18px 65px #13203b55}
+.wish-move-dialog::backdrop{background:#111b32a8}
+.wish-move-dialog h3{font-size:19px;margin:0 0 10px}
+.wish-move-dialog .wish-move-summary{color:#62718b;margin:0 0 17px;line-height:1.6}
+.wish-move-dialog label{display:block;font-weight:750;margin-bottom:8px}
+.wish-move-dialog input{display:block;box-sizing:border-box;width:100%;min-height:47px;font-size:18px;direction:ltr;text-align:center;border-radius:10px;border:1px solid #bfcde2;padding:9px 10px}
+.wish-move-actions{display:grid;gap:9px;margin-top:16px}
+.wish-move-actions .btn{width:100%;justify-content:center;min-height:43px}
+.wish-move-cancel{display:block;margin:14px auto 0;background:none;border:0;color:#6c7790;padding:7px 18px}
 </style>
-<script>
-// External card scan fallback: Bulbagarden images may block hotlinking.
-document.addEventListener('error', event => {
-  const img = event.target;
-  if (img instanceof HTMLImageElement &&
-      img.src === 'https://storage.googleapis.com/images.pricecharting.com/3glxxjcy56axpsah/1600.jpg' &&
-      !img.dataset.ancientMewFallback) {
-    img.dataset.ancientMewFallback = '1';
-    img.addEventListener('load', () => { img.style.opacity = ''; }, { once: true });
-    img.src = 'https://t206cards.com/content/wotc-promo/images/fronts/ancient-mew/international-2000.jpg';
-  }
-}, true);
-</script>
 </head>
 <body>
 <header class="hero"><div class="hero-inner">
-<div class="eyebrow">THE ORIGINAL WOTC ERA · 1999–2002 · v11</div>
+<div class="eyebrow">THE ORIGINAL WOTC ERA · 1999–2002 · v12</div>
 <h1>Pokémon Vintage Binder <span aria-hidden="true">✦</span></h1>
 <p>כל הקלפים מהילדות, במקום אחד. רשימה מלאה של Base, Jungle, Fossil, Team Rocket, Gym וכל סדרות Neo, עם סימון ברור של Holo ו־Shining.</p>
 <div class="stats">
@@ -314,10 +313,21 @@ document.addEventListener('error', event => {
 </section>
 <section class="collection-page" id="wishPage" hidden aria-label="רשימת המשאלות">
   <div class="collection-panel">
-    <div class="collection-heading"><div><h2>💜 רשימת המשאלות</h2><div class="subtle">גרור קלף מהתמונה או מהידית ״⋮⋮ גרור״; הרשימה תגלול אוטומטית גם כשאתה גורר למעלה או למטה.</div></div><span id="wishCount" class="info-pill"></span></div>
+    <div class="collection-heading"><div><h2>💜 רשימת המשאלות</h2><div class="subtle">לחץ ״↗ העבר״ כדי לבחור מיקום מדויק או לעבור ישר לראש הרשימה. אפשר גם לגרור לסידור קצר.</div></div><span id="wishCount" class="info-pill"></span></div>
     <div id="wishlistItems" class="wishlist-items" role="list"></div>
   </div>
 </section>
+<dialog id="wishMoveDialog" class="wish-move-dialog" aria-labelledby="wishMoveTitle">
+ <h3 id="wishMoveTitle">העברת קלף ברשימת המשאלות</h3>
+ <p id="wishMoveCurrent" class="wish-move-summary"></p>
+ <label for="wishMovePosition">מיקום חדש ברשימה</label>
+ <input id="wishMovePosition" type="number" min="1" step="1" inputmode="numeric" autocomplete="off" />
+ <div class="wish-move-actions">
+  <button type="button" class="btn" id="wishMoveTop">↑ לראש הרשימה</button>
+  <button type="button" class="btn primary" id="wishMoveConfirm">העבר למיקום שנבחר</button>
+ </div>
+ <button type="button" class="wish-move-cancel" id="wishMoveCancel">ביטול</button>
+</dialog>
 
 <div class="shell" id="catalogShell">
  <aside class="side" id="side">
@@ -1628,7 +1638,7 @@ document.addEventListener('error', event => {
 <article class="static-card"><div class="static-img"><a href="https://images.pokemontcg.io/base6/109.png" target="_blank" rel="noopener" aria-label="פתח תמונה של Mysterious Fossil"><img loading="lazy" decoding="async" src="https://images.pokemontcg.io/base6/109.png" alt="Mysterious Fossil"/><span class="open-photo">פתח תמונה ↗</span></a></div><div class="static-card-info"><strong dir="auto">Mysterious Fossil</strong><span class="static-number" dir="ltr">#109/110</span><span class="static-finish ">◇ רגיל</span><label class="static-own"><input type="checkbox" /> יש לי</label></div></article>
 <article class="static-card"><div class="static-img"><a href="https://images.pokemontcg.io/base6/110.png" target="_blank" rel="noopener" aria-label="פתח תמונה של Potion"><img loading="lazy" decoding="async" src="https://images.pokemontcg.io/base6/110.png" alt="Potion"/><span class="open-photo">פתח תמונה ↗</span></a></div><div class="static-card-info"><strong dir="auto">Potion</strong><span class="static-number" dir="ltr">#110/110</span><span class="static-finish ">◇ רגיל</span><label class="static-own"><input type="checkbox" /> יש לי</label></div></article>
 </div></details>
-<details id="static-movie2000" class="static-set"><summary><b>Movie Promo 2000 · Ancient Mew</b><small>2000 · 1 קלף · ✨ Holo</small></summary><div class="static-grid"><article class="static-card"><div class="static-img"><a href="https://storage.googleapis.com/images.pricecharting.com/3glxxjcy56axpsah/1600.jpg" target="_blank" rel="noopener"><img loading="lazy" src="https://storage.googleapis.com/images.pricecharting.com/3glxxjcy56axpsah/1600.jpg" alt="Ancient Mew"/><span class="open-photo">פתח תמונה ↗</span></a></div><div class="static-card-info"><strong>Ancient Mew</strong><span class="static-number">ללא מספר · Movie Promo 2000</span><span class="static-finish">✨ Holo</span></div></article></div></details>
+<details id="static-movie2000" class="static-set"><summary><b>Movie Promo 2000 · Ancient Mew</b><small>2000 · 1 קלף · ✨ Holo</small></summary><div class="static-grid"><article class="static-card"><div class="static-img"><a href="assets/ancient-mew.jpg" target="_blank" rel="noopener"><img loading="lazy" src="assets/ancient-mew.jpg" alt="Ancient Mew"/><span class="open-photo">פתח תמונה ↗</span></a></div><div class="static-card-info"><strong>Ancient Mew</strong><span class="static-number">ללא מספר · Movie Promo 2000</span><span class="static-finish">✨ Holo</span></div></article></div></details>
 </section>
   <div class="notice" id="fetchStatus" hidden></div>
   <div class="toolbar">
@@ -1709,7 +1719,7 @@ function embeddedCards(){
   }
   if(names.length!==i)throw Error('Incomplete embedded set '+set.id);
  }
- cards.push({id:'movie2000-ancient-mew',set:'movie2000',name:'Ancient Mew',number:'ללא מספר',total:null,rarity:'Movie Promo Holo',finish:'holo',kind:'Pokémon',image:'https://storage.googleapis.com/images.pricecharting.com/3glxxjcy56axpsah/1600.jpg',large:'https://storage.googleapis.com/images.pricecharting.com/3glxxjcy56axpsah/1600.jpg'});
+ cards.push({id:'movie2000-ancient-mew',set:'movie2000',name:'Ancient Mew',number:'ללא מספר',total:null,rarity:'Movie Promo Holo',finish:'holo',kind:'Pokémon',image:'assets/ancient-mew.jpg',large:'assets/ancient-mew.jpg'});
  return cards;
 }
 
@@ -1879,7 +1889,7 @@ function renderCollections(){if(!state.ready)return;normalizeOrders();
  const owned=!!state.owned[id],inBinder=state.binderOrder.includes(id);
  return `<article class="wish-item" role="listitem" data-order-kind="wishlist" data-order-index="${i}">
  <span class="wish-rank">${i+1}</span><img loading="lazy" decoding="async" src="${esc(c.image)}" alt="${esc(c.name)} — גרור לשינוי סדר" data-drag-kind="wishlist" data-drag-index="${i}" title="החזק וגרור לסידור" draggable="false"><div class="wish-copy"><strong>${esc(c.name)}</strong><small>${esc(MAP.get(c.set)?.name||'')} · #${esc(cardNumber(c))}${owned?' · ✓ יש לי':''}</small></div>
- <div class="wishlist-actions"><div class="reorder-row"><button type="button" data-move-kind="wishlist" data-move-index="${i}" data-move-delta="-1" ${i===0?'disabled':''} aria-label="מעלה עדיפות">↑</button><button type="button" class="drag-handle" data-drag-kind="wishlist" data-drag-index="${i}" aria-label="גרור שינוי עדיפות">⋮⋮ גרור</button><button type="button" data-move-kind="wishlist" data-move-index="${i}" data-move-delta="1" ${i===state.wishOrder.length-1?'disabled':''} aria-label="מוריד עדיפות">↓</button></div><button type="button" class="btn sm" data-owned-binder="${esc(id)}">${inBinder?'↗ העבר בבינדר':'＋ לבינדר'}</button><button class="wish-remove" type="button" data-remove-wish="${esc(id)}" aria-label="מחק משאלה מהרשימה">✕ הסר משאלה</button></div></article>`}).join(''):
+ <div class="wishlist-actions"><div class="reorder-row"><button type="button" data-move-kind="wishlist" data-move-index="${i}" data-move-delta="-1" ${i===0?'disabled':''} aria-label="מעלה עדיפות">↑</button><button type="button" class="drag-handle" data-drag-kind="wishlist" data-drag-index="${i}" aria-label="גרור שינוי עדיפות">⋮⋮ גרור</button><button type="button" data-move-kind="wishlist" data-move-index="${i}" data-move-delta="1" ${i===state.wishOrder.length-1?'disabled':''} aria-label="מוריד עדיפות">↓</button></div><button type="button" class="btn sm wish-move-action" data-wish-move="${esc(id)}" aria-label="העבר את ${esc(c.name)} למיקום אחר ברשימת המשאלות">↗ העבר</button><button type="button" class="btn sm" data-owned-binder="${esc(id)}">${inBinder?'↗ העבר בבינדר':'＋ לבינדר'}</button><button class="wish-remove" type="button" data-remove-wish="${esc(id)}" aria-label="מחק משאלה מהרשימה">✕ הסר משאלה</button></div></article>`}).join(''):
  `<div class="no-cards">רשימת המשאלות עדיין ריקה. סמן ☆ ליד קלף בקטלוג כדי להוסיף אותו. <button type="button" class="btn sm primary" data-view-btn="catalog">לקטלוג</button></div>`;
  renderOwnedList();
 }
@@ -1915,6 +1925,37 @@ function openMovePicker(id){
  panel.scrollIntoView({behavior:'smooth',block:'start'});
  toast('בחר עמוד וכיס ואז לחץ ״העבר למיקום שבחרתי״');
 }
+let wishMoveSelectedId=null;
+function openWishMove(id){
+ if(!ensureCloudEdit())return;
+ normalizeOrders();
+ const current=state.wishOrder.indexOf(id);
+ if(current<0)return;
+ const card=state.cards.find(c=>c.id===id);
+ wishMoveSelectedId=id;
+ $('wishMoveCurrent').textContent=(card?.name||'קלף')+' · מקום '+(current+1)+' מתוך '+state.wishOrder.length;
+ const input=$('wishMovePosition');
+ input.min='1';input.max=String(state.wishOrder.length);input.value=String(current+1);
+ $('wishMoveTop').disabled=current===0;
+ $('wishMoveDialog').showModal();
+}
+function applyWishMove(target){
+ const id=wishMoveSelectedId;
+ if(!id)return;
+ const current=state.wishOrder.indexOf(id);
+ if(current<0)return;
+ const total=state.wishOrder.length;
+ const position=Number(target);
+ if(!Number.isInteger(position)||position<1||position>total){
+  $('wishMovePosition').focus();
+  $('wishMovePosition').reportValidity();
+  return;
+ }
+ if(current!==position-1)reorder('wishlist',current,position-1);
+ $('wishMoveDialog').close();
+ wishMoveSelectedId=null;
+ if(current!==position-1)toast('הקלף הועבר למקום '+position+' ברשימת המשאלות');
+}
 function attachCollections(){
  document.addEventListener('click',e=>{
   const view=e.target.closest('[data-view-btn]');if(view){showView(view.dataset.viewBtn);return;}
@@ -1922,8 +1963,14 @@ function attachCollections(){
   const moveBinder=e.target.closest('[data-binder-move]');if(moveBinder){openMovePicker(moveBinder.dataset.binderMove);return;}
   const removeBinder=e.target.closest('[data-binder-remove]');if(removeBinder){removeFromBinder(removeBinder.dataset.binderRemove);return;}
   const addBinder=e.target.closest('[data-owned-binder]');if(addBinder){openMovePicker(addBinder.dataset.ownedBinder);return;}
+  const wishMove=e.target.closest('[data-wish-move]');if(wishMove){openWishMove(wishMove.dataset.wishMove);return;}
   const move=e.target.closest('[data-move-kind]');if(move){reorder(move.dataset.moveKind,Number(move.dataset.moveIndex),Number(move.dataset.moveIndex)+Number(move.dataset.moveDelta));return;}
  });
+ $('wishMoveTop').onclick=()=>applyWishMove(1);
+ $('wishMoveConfirm').onclick=()=>applyWishMove($('wishMovePosition').value);
+ $('wishMoveCancel').onclick=()=>$('wishMoveDialog').close();
+ $('wishMoveDialog').addEventListener('close',()=>{wishMoveSelectedId=null;});
+ $('wishMovePosition').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();applyWishMove(e.target.value);}});
  $('binderFind').addEventListener('input',searchBinder);$('ownedFind').addEventListener('input',renderOwnedList);
  $('binderPlaceSelected').onclick=()=>{if(!binderSelectedId)return;placeBinder(binderSelectedId,Number($('binderTargetPage').value)||1,Number($('binderTargetSlot').value)||1);};
  $('binderIncludeWish').onchange=e=>{if(!ensureCloudEdit()){e.target.checked=state.binderIncludeWish;return;}state.binderIncludeWish=e.target.checked;save();};
