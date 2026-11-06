@@ -2496,7 +2496,7 @@ function say(m){message.textContent=m||'';}
 function cleanOld(){try{const keys=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&(k.startsWith(legacyPrefix)||k.startsWith('vintage-binder-firebase-')||oldKeys.includes(k)))keys.push(k);}for(const k of keys)localStorage.removeItem(k);}catch(e){console.warn('Could not purge old collection cache',e);}}
 function clean(p){const out={};for(const k of ['owned','wish','removedWish','conditions','notes','purchasePrices','firstEdition','ownedAddedAt','binderExcluded']){const v=p?.[k];out[k]=v&&typeof v==='object'&&!Array.isArray(v)?{...v}:{}}for(const k of ['binderOrder','wishOrder'])out[k]=Array.isArray(p?.[k])?[...new Set(p[k].filter(v=>typeof v==='string'))]:[];out.binderIncludeWish=typeof p?.binderIncludeWish==='boolean'?p.binderIncludeWish:true;for(const id of Object.keys(out.removedWish))delete out.wish[id];out.wishOrder=out.wishOrder.filter(id=>!!out.wish[id]&&!out.removedWish[id]);return out;}
 function authError(e){switch(e?.code){case 'auth/unauthorized-domain':return 'צריך לאשר את '+location.hostname+' תחת Firebase Authentication → Settings → Authorized domains.';case 'auth/popup-blocked':return 'הדפדפן חסם את החלון. הפעל חלונות קופצים ב־Safari ונסה שוב.';case 'auth/popup-closed-by-user':return 'חלון ההתחברות נסגר לפני שהתחברת.';case 'permission-denied':return 'Firestore חסם את הגישה. בדוק את Security Rules תחת users/{uid}.';}return e?.message||String(e);}
-function resetSession(){shareEnabled=false;shareId=null;shareLoaded=false;shareIncludeWish=false;shareUpdateFailed=false;renderShare();session++;if(stopListening){stopListening();stopListening=null;}clearTimeout(flushTimer);flushTimer=null;user=null;docRef=null;ready=false;pending=false;writing=false;changeSeq=0;lastServerUpdate=0;serverRevision=0;lastWrittenRevision=0;}
+function resetSession(){updateAccount(null);shareEnabled=false;shareId=null;shareLoaded=false;shareIncludeWish=false;shareUpdateFailed=false;renderShare();session++;if(stopListening){stopListening();stopListening=null;}clearTimeout(flushTimer);flushTimer=null;user=null;docRef=null;ready=false;pending=false;writing=false;changeSeq=0;lastServerUpdate=0;serverRevision=0;lastWrittenRevision=0;}
 async function loadSdk(){if(sdk)return sdk;const ver='13.1.0';const [a,b,c]=await Promise.all([import('https://www.gstatic.com/firebasejs/'+ver+'/firebase-app.js'),import('https://www.gstatic.com/firebasejs/'+ver+'/firebase-auth.js'),import('https://www.gstatic.com/firebasejs/'+ver+'/firebase-firestore.js')]);sdk={...a,...b,...c};return sdk;}
 function stampOf(s){const t=s.data()?.updatedAt;return t&&typeof t.toMillis==='function'?t.toMillis():0;}
 function acceptServer(s,token){
@@ -2528,7 +2528,7 @@ async function flush(){
  finally{if(token===session){writing=false;if(seen!==changeSeq)flushTimer=setTimeout(flush,200);}}
 }
 async function activate(u){
- resetSession();const token=session;user=u;
+ resetSession();const token=session;user=u;updateAccount(u);
  $('cloudSignIn').hidden=true;$('cloudSignOut').hidden=false;
  setStatus('☁️ טוען מהענן…',u.email||'Google');
  try{
@@ -2570,7 +2570,25 @@ window.VintageCloud={canEdit:()=>Boolean(user&&ready),onChange:({immediate=false
  changeSeq++;pending=true;setStatus('☁️ ממתין לשמירה…',user.email||'Google');
  clearTimeout(flushTimer);flushTimer=setTimeout(flush,immediate?0:350);
 }};
-$('cloudManage').onclick=()=>dialog.showModal();
+const accountTrigger=$('accountTrigger'),accountMenu=$('accountMenu');
+function hideAccountMenu(){accountMenu.hidden=true;accountTrigger.setAttribute('aria-expanded','false');}
+function updateAccount(currentUser){
+ const label=currentUser?(currentUser.displayName?.trim().split(/\s+/)[0]||currentUser.email?.split('@')[0]||'החשבון שלי'):'התחברות';
+ $('accountName').textContent=label;
+ $('accountAvatar').textContent=currentUser?(label.charAt(0).toUpperCase()||'✓'):'👤';
+ accountTrigger.setAttribute('aria-label',currentUser?'תפריט חשבון '+(currentUser.email||''):'התחברות ל־Google');
+ hideAccountMenu();
+}
+accountTrigger.onclick=()=>{
+ if(!user){if(!dialog.open)dialog.showModal();return;}
+ accountMenu.hidden=!accountMenu.hidden;
+ accountTrigger.setAttribute('aria-expanded',String(!accountMenu.hidden));
+};
+$('accountSignOut').onclick=()=>{hideAccountMenu();$('cloudSignOut').click();};
+for(const id of ['exportJSON','importJSON'])$(id).addEventListener('click',hideAccountMenu);
+document.addEventListener('click',e=>{if(!e.target.closest('.account-area'))hideAccountMenu();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')hideAccountMenu();});
+updateAccount(null);
 $('cloudClose').onclick=()=>dialog.close();
 dialog.onclick=e=>{if(e.target===dialog)dialog.close();};
 $('cloudSignIn').onclick=()=>{if(!auth||!sdk){say('ספריות Firebase נטענות, נסה שוב.');return;}
