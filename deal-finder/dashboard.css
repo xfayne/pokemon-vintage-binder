@@ -1,0 +1,36 @@
+/* Advanced Deals dashboard - independent from binder drag styles */
+.deal-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:13px 0}
+.deal-summary>div{background:#f4f6fd;border:1px solid #dce3f2;border-radius:12px;padding:12px;display:grid;gap:5px}
+.deal-summary b{font-size:24px;font-variant-numeric:tabular-nums;color:#24365a}.deal-summary span{font-size:11px;color:#65738e}
+.deal-dashboard-controls{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(105px,.6fr) minmax(120px,.8fr);gap:9px;margin-top:12px}
+.deal-dashboard-controls label,.deal-target-controls label,.deal-form-grid label{display:grid;gap:5px;font-size:12px;color:#62718b;font-weight:750;min-width:0}
+.deal-dashboard-controls input,.deal-dashboard-controls select,.deal-target-controls input,.deal-form-grid input,.deal-form-grid select{width:100%;min-width:0;min-height:39px;border:1px solid #ccd6e8;border-radius:9px;background:#fff;color:var(--ink);padding:8px 10px;font:inherit;font-size:13px}
+.deal-target-controls{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(160px,.7fr);gap:12px;align-items:center;padding:11px 13px;border:1px solid #e0e6f2;border-radius:12px;margin-top:12px;background:#f9fbff}
+.deal-target-controls input[type=range]{min-height:25px;accent-color:#5366d6;padding:0}.deal-target-controls b{color:#394eaa}
+.deal-explainer,.deal-disclaimer{color:#6e7b94;font-size:11px;line-height:1.7;margin:9px 0 14px}
+.deal-section-heading{display:flex;align-items:center;justify-content:space-between;gap:9px;flex-wrap:wrap;margin:18px 0 9px}
+.deal-section-heading h3{margin:0;font-size:17px}.deal-section-heading small{color:#8490a5}
+.deal-card-values{display:flex;flex-wrap:wrap;gap:4px 14px;margin:5px 0 7px;color:#697792;font-size:11px}.deal-card-values b{color:#266f5e}
+.deal-actions button{border:1px solid #cbd5ef;border-radius:8px;background:#f1f5ff;color:#344c9a;font-weight:750;font-size:12px;padding:7px 9px}
+.deal-watch-heading{margin-top:27px}.deal-watch-form{padding:14px;border:1px solid #dbe3f2;background:#f8faff;border-radius:14px}
+.deal-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.deal-form-wide{grid-column:span 2}
+.deal-form-footer{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:12px}.deal-form-footer small{font-size:11px;color:#78849c;flex:1;line-height:1.5}
+.deal-status{font-size:12px;color:#a34658;min-height:15px;margin-top:6px}
+.deal-watch-status{display:flex;gap:8px;justify-content:space-between;align-items:center;flex-wrap:wrap;margin:12px 0;color:#6d7b92;font-size:11px}
+.deal-watch-items{display:grid;gap:9px}
+.deal-track-item{border:1px solid #dfe5ef;background:#fff;border-radius:13px;padding:13px;display:grid;gap:7px}
+.deal-track-head{display:flex;gap:8px;justify-content:space-between;align-items:center;flex-wrap:wrap}.deal-track-head strong{font-size:14px}
+.deal-signal{font-size:11px;border-radius:20px;padding:5px 9px;font-weight:800}
+.deal-signal.good{background:#dff7ed;color:#126d51}.deal-signal.review{background:#fff2d9;color:#8b5b1a}.deal-signal.neutral{background:#edf0f5;color:#566781}
+.deal-track-meta,.deal-track-explain{color:#667790;font-size:12px}
+.deal-track-numbers{display:flex;flex-wrap:wrap;gap:9px 17px;font-size:12px;color:#54627e}
+.deal-track-numbers b{color:#21355b}.deal-track-numbers b.positive{color:#178163}.deal-track-numbers b.negative{color:#b04754}
+.deal-track-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.deal-track-actions a{font-size:12px;font-weight:800}
+.deal-track-actions button{border:0;background:none;color:#b05262;font-size:12px;text-decoration:underline}
+.deal-track-item>small{color:#8993a6;font-size:10px;line-height:1.5}
+.deal-empty-watch{padding:22px 14px;background:#f9fbff;border:1px dashed #ccd6e5;border-radius:13px;color:#73819a;font-size:12px}
+@media(max-width:650px){.deal-summary>div{padding:9px 8px}.deal-summary b{font-size:20px}.deal-summary span{font-size:10px}
+ .deal-dashboard-controls{grid-template-columns:repeat(2,minmax(0,1fr))}.deal-dashboard-controls label:first-child{grid-column:span 2}
+ .deal-target-controls{grid-template-columns:1fr 1fr;gap:8px}.deal-target-controls input{font-size:12px}
+ .deal-card-values{gap:4px 8px}.deal-item{align-items:flex-start}.deal-actions{gap:6px}
+ .deal-actions button,.deal-actions a{padding:6px 7px;font-size:11px}}
