@@ -367,6 +367,28 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
 .hero h1{margin:0;font-size:clamp(19px,2.5vw,28px);line-height:1.22;min-width:0}
 @media(max-width:650px){.hero h1{font-size:19px}}
 @media(max-width:360px){.hero h1{font-size:17px}.hero-top{gap:8px}}
+/* v17: price and condition form a quiet, precisely aligned left rail */
+.owned-item{gap:12px;padding-block:8px}
+.owned-copy{min-width:0;flex:1}
+.owned-meta{margin-inline-start:auto;flex:0 0 93px;min-width:0;align-self:stretch;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;direction:ltr;font-variant-numeric:tabular-nums}
+.owned-meta .owned-price{display:block;color:#247962;font-size:15px;font-weight:800;line-height:1.15;white-space:nowrap;letter-spacing:-.2px}
+.owned-meta .owned-price.pending{font-size:10px;color:#8190a3;font-weight:500;white-space:normal}
+.owned-meta .owned-condition{display:inline-flex;justify-content:center;align-items:center;max-width:100%;padding:4px 9px;border-radius:8px;background:#ebeffd;color:#40527e;font-size:11px;font-weight:800;line-height:1.15;white-space:nowrap}
+.modal-own-row{display:flex;gap:7px;flex-wrap:nowrap}
+.modal-own-row .btn{flex:1 1 0;min-width:0;padding:8px 6px;white-space:normal;text-align:center;font-size:12px;line-height:1.35}
+@media(max-width:650px){
+ .owned-item{gap:9px;padding:8px}
+ .owned-meta{flex-basis:82px;gap:5px}
+ .owned-meta .owned-price{font-size:14px}
+ .owned-meta .owned-condition{font-size:11px;padding:4px 8px}
+ .modal-own-row{gap:5px}
+ .modal-own-row .btn{padding:8px 4px;font-size:11px}
+}
+@media(max-width:360px){
+ .owned-meta{flex-basis:73px}
+ .owned-meta .owned-price{font-size:12px}
+ .owned-meta .owned-condition{font-size:10px}
+}
 </style>
 </head>
 <body>
@@ -398,11 +420,11 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
 
 <input id="fileInput" type="file" accept=".json,application/json" hidden />
 
-<nav class="main-nav" aria-label="ניווט בין הקטלוג, הבינדר ורשימת המשאלות">
+<nav class="main-nav" aria-label="ניווט בין הקטלוג, הבינדר ו־Wishlist">
   <button type="button" class="active" data-view-btn="catalog" aria-pressed="true">📚 קטלוג</button>
   <button type="button" data-view-btn="owned" aria-pressed="false">✅ הקלפים שלי <span class="nav-number" id="ownedCountTab"></span></button>
   <button type="button" data-view-btn="binder" aria-pressed="false">📖 הבינדר שלי <span class="nav-number" id="binderCountTab"></span></button>
-  <button type="button" data-view-btn="wishlist" aria-pressed="false">💜 משאלות <span class="nav-number" id="wishCountTab"></span></button>
+  <button type="button" data-view-btn="wishlist" aria-pressed="false">💜 Wishlist <span class="nav-number" id="wishCountTab"></span></button>
 </nav>
 <section class="collection-page" id="ownedPage" hidden aria-label="הקלפים שלי ברשימה">
  <div class="collection-panel">
@@ -440,7 +462,7 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
 </section>
 <section class="collection-page" id="wishPage" hidden aria-label="רשימת המשאלות">
   <div class="collection-panel">
-    <div class="collection-heading"><div><h2>💜 רשימת המשאלות</h2><div class="subtle">לחץ ״↗ העבר״ כדי לבחור מיקום מדויק או לעבור ישר לראש הרשימה. אפשר גם לגרור לסידור קצר.</div></div><div class="wishlist-heading-actions"><span id="wishCount" class="info-pill"></span><button id="copyWishlist" type="button" class="btn sm">⧉ העתק רשימה</button></div></div>
+    <div class="collection-heading"><div><h2>💜 Wishlist</h2><div class="subtle">לחץ ״↗ העבר״ כדי לבחור מיקום מדויק או לעבור ישר לראש הרשימה. אפשר גם לגרור לסידור קצר.</div></div><div class="wishlist-heading-actions"><span id="wishCount" class="info-pill"></span><button id="copyWishlist" type="button" class="btn sm">⧉ העתק רשימה</button></div></div>
     <div id="wishlistItems" class="wishlist-items" role="list"></div>
   </div>
 </section>
@@ -1902,7 +1924,7 @@ function renderStats(){/* Collection totals are shown only in the relevant tabs.
 function rarityHtml(c){const t=c.finish==='holo'?'✨ Holo':c.finish==='shining'?'🌟 Shining':c.finish==='reverse'?'✨ Reverse Holo':c.finish==='unknown'?'? Promo (משתנה)':c.rarity==='Rare'?'◆ Rare':c.rarity==='Uncommon'?'◇ Uncommon':c.rarity==='Common'?'● Common':c.rarity==='Rare Secret'?'◆ Secret Rare':c.rarity||'רגיל';const cls=c.finish==='holo'||c.finish==='reverse'?'holo':c.finish==='shining'?'shining':c.finish==='unknown'?'unknown':'';return `<span class="rarity-tag ${cls}">${esc(t)}</span>`;}
 function cardHTML(c){const set=MAP.get(c.set);const isOwned=!!state.owned[c.id];return `<article class="poke-card ${isOwned?'owned':''}" role="listitem" data-id="${esc(c.id)}">
  <div class="card-img-wrap" data-preview="${esc(c.id)}" title="תמונה ופרטים"><img class="card-img" loading="lazy" decoding="async" src="${esc(c.image)}" alt="${esc(c.name)}" onerror="this.style.display='none';this.nextElementSibling.hidden=false"><span class="img-placeholder" hidden>✦</span></div>
- <div class="card-data"><div class="card-name" title="${esc(c.name)}">${esc(c.name)}</div><div class="card-sub">${esc(set.name)} · #${esc(cardNumber(c))}</div><div class="badges">${rarityHtml(c)}</div><div class="card-actions"><button class="wish-btn ${state.wish[c.id]?'on':''}" data-wish="${esc(c.id)}" aria-label="הוסף לרשימת רצונות" title="רשימת רצונות">${state.wish[c.id]?'★':'☆'}</button><button class="small-link" data-preview="${esc(c.id)}">פרטים</button><a class="small-link" href="${esc(c.image)}" target="_blank" rel="noopener">תמונה ↗</a>${state.conditions[c.id]?`<span class="info-pill">${esc(state.conditions[c.id])}</span>`:''}</div></div>
+ <div class="card-data"><div class="card-name" title="${esc(c.name)}">${esc(c.name)}</div><div class="card-sub">${esc(set.name)} · #${esc(cardNumber(c))}</div><div class="badges">${rarityHtml(c)}</div><div class="card-actions">${!isOwned?`<button class="wish-btn ${state.wish[c.id]?'on':''}" data-wish="${esc(c.id)}" aria-label="Wishlist" title="Wishlist">${state.wish[c.id]?'★':'☆'}</button>`:''}<button class="small-link" data-preview="${esc(c.id)}">פרטים</button><a class="small-link" href="${esc(c.image)}" target="_blank" rel="noopener">תמונה ↗</a>${state.conditions[c.id]?`<span class="info-pill">${esc(state.conditions[c.id])}</span>`:''}</div></div>
  <button class="own-btn ${isOwned?'on':''}" data-own="${esc(c.id)}" aria-label="${isOwned?'הסר מהאוסף':'יש לי קלף זה'}" title="${isOwned?'יש לי ✓':'סמן שיש לי'}">${isOwned?'✓':'+'}</button></article>`;}
 function renderCards(){const arr=visible();const slice=arr.slice(0,state.limit);$('cards').innerHTML=slice.length?slice.map(cardHTML).join(''):`<div class="empty" style="grid-column:1/-1"><strong>${state.ready?'לא נמצאו קלפים מתאימים':'רשימת הקלפים נטענת...'}</strong>${state.ready?'נסה לשנות את הסינון או החיפוש.':'מעט סבלנות, הרשימה כוללת יותר מאלף קלפים.'}</div>`;
  $('resultsCount').textContent=state.ready?`מציג ${nf(slice.length)} מתוך ${nf(arr.length)} קלפים`:'ממתין לנתונים';$('loadMore').hidden=arr.length<=state.limit;}
@@ -2088,10 +2110,10 @@ function renderOwnedList(){
   return `<article class="owned-item" role="listitem" tabindex="0" data-open-owned="${esc(c.id)}" aria-label="פרטים על ${esc(c.name)}">
    <img loading="lazy" decoding="async" src="${esc(c.image)}" alt="${esc(c.name)}">
    <div class="owned-copy"><strong>${esc(c.name)}</strong><small>${esc(MAP.get(c.set)?.name||'')} · #${esc(cardNumber(c))}</small><div class="badges">${rarityHtml(c)}</div></div>
-   <div class="owned-actions">
-    <button type="button" class="btn sm ${inBinder?'':'primary'}" data-owned-binder="${esc(c.id)}">${inBinder?'📍 העבר':'＋ לבינדר'}</button>
-    ${condition?`<div class="owned-market"><span class="owned-condition">${esc(condition)}${state.firstEdition[c.id]?' · 1st':''}</span>${amount?`<span class="owned-price">${esc(amount)}</span>`:market===undefined?'<span class="owned-price pending">טוען…</span>':''}</div>`:''}
-   </div>
+   ${condition?`<div class="owned-meta" aria-label="מצב הקלף ומחיר השוק">
+      ${amount?`<span class="owned-price">${esc(amount)}</span>`:market===undefined?'<span class="owned-price pending">טוען מחיר…</span>':''}
+      <span class="owned-condition">${esc(condition)}${state.firstEdition[c.id]?' · 1st':''}</span>
+    </div>`:''}
   </article>`}).join(''):`<div class="no-cards">${own.length?'לא נמצאו קלפים מתאימים לחיפוש.':'עוד אין קלפים ברשימה. אפשר לסמן ״יש לי״ בקטלוג.'}</div>`;
 }
 function renderCollections(){if(!state.ready)return;normalizeOrders();
