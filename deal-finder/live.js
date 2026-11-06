@@ -28,6 +28,8 @@
  '<p class="live-disclaimer">הנחות מוצגות רק כחישוב מותנה במצב הקלף שנבחר ובמחיר השוק. התאמה, מצב, אותנטיות ומשלוח אינם מאומתים באמצעות התמונות. המחירים עשויים להשתנות.</p>';
  page.querySelector('.deal-summary').after(ui);
  $('liveEndpoint').value=state.endpoint;
+ // Fixed public endpoint is configured in source. Do not display the obsolete manual connection form.
+ $('liveSettings').hidden=true;
 
  const list=()=>bridge()?.getWishlistCards?.()||[];
  const usd=(a)=>{if(!a||typeof a.value!=='number')return null;return window.VintageDealsDashboard?.convertToUSD?.(a.value,a.currency)??null};
@@ -60,10 +62,11 @@
   const badge=$('liveBadge');
   badge.textContent=state.status==='ready'?'eBay · API':state.status==='loading'?'מתחבר…':state.status==='awaiting-keys'?'ממתין למפתחות eBay':state.status==='error'?'שגיאת חיבור':'טרם חובר';
   badge.className='live-badge'+(state.status==='ready'?' ready':'');
-  $('liveReload').disabled=state.loading || !state.endpoint;
+  $('liveReload').disabled=state.loading || !state.endpoint || state.status==='awaiting-keys';
   $('liveMore').disabled=state.loading;
   $('liveMore').hidden=state.loading || state.done || state.status!=='ready' || state.searched>=total;
   $('liveSettings').open=false;
+ $('liveSettings').hidden=true;
   let status='';
   if(!state.endpoint)status='כדי לקבל מכרזים חיים צריך לחבר שרת eBay. התשתית קיימת; כרגע אין כתובת שרת מוגדרת.';
   else if(state.loading)status='בודקת מכרזים ומחירי משלוח עבור קלפים מרשימת הרצונות…';
