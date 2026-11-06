@@ -313,6 +313,53 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
 .owned-price.pending{font-weight:500;color:#8d98a8}
 .wishlist-heading-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 @media(max-width:650px){.hero-top{align-items:flex-start}.hero-top .eyebrow{font-size:10px;letter-spacing:.6px;line-height:1.7}.account-trigger{font-size:11px;max-width:145px}.account-trigger #accountName{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.account-chevron{display:none}.owned-toolbar{align-items:stretch}.owned-toolbar select{max-width:170px}.owned-item{gap:8px}.owned-price{font-size:11px}}
+
+/* v16: smaller masthead, compact owned controls and pricing on the left */
+.hero{overflow:visible;padding-top:17px;padding-bottom:17px}
+.hero::after{display:none}
+.hero-inner{display:flex;flex-direction:column;gap:6px}
+.hero-top{margin-bottom:0;align-items:center}
+.hero h1{margin:0;font-size:clamp(22px,3vw,31px)}
+.hero .stats,.hero p{display:none!important}
+.owned-heading{margin-bottom:7px;align-items:center}
+.owned-title-row{display:flex;gap:9px;align-items:center}
+.owned-title-row h2{margin:0}
+.owned-export{width:33px;height:33px;display:grid;place-items:center;border:1px solid #d9e0f0;border-radius:9px;background:#f8faff;color:#5366d6;flex:none}
+.owned-export:hover{background:#eff1ff;border-color:#acb9ee}
+.owned-meta-row{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 11px}
+.owned-meta-row .info-pill{font-size:12px;white-space:nowrap;padding:5px 7px}
+.owned-sort{display:flex;align-items:center;gap:6px;color:#64718a;font-size:12px;font-weight:750;flex:none}
+.owned-sort select{min-width:0;max-width:170px;height:34px;padding:5px 7px;border:1px solid #d5ddec;border-radius:9px;background:#fff;color:#273851}
+.owned-items{gap:7px;margin-top:10px}
+.owned-item{padding:7px 10px;gap:10px;min-height:0}
+.owned-item>img{width:48px;height:68px}
+.owned-copy{gap:2px}
+.owned-copy strong{font-size:15px}
+.owned-copy small{font-size:11px}
+.owned-actions{gap:4px;align-items:stretch;flex:none;min-width:78px}
+.owned-actions button{min-height:28px;padding:5px 7px}
+.owned-actions .owned-market{display:flex;align-items:flex-start;flex-direction:column;gap:3px;margin:0;line-height:1.2}
+.owned-actions .owned-price{font-size:12px}
+.owned-actions .owned-condition{font-size:10px;padding:2px 5px}
+@media(max-width:650px){
+ .hero{padding:15px 13px 16px}
+ .hero h1{font-size:24px;line-height:1.2}
+ .owned-title-row h2{font-size:21px}
+ .owned-meta-row .info-pill{font-size:10.5px;letter-spacing:-.15px}
+ .owned-sort{font-size:11px;gap:4px}
+ .owned-sort select{max-width:112px;width:112px;height:32px;font-size:11px;padding:3px 4px}
+ .owned-item{gap:8px;padding:7px 8px}
+ .owned-item>img{width:46px;height:65px}
+ .owned-copy strong{font-size:14px}
+ .owned-actions{min-width:68px;gap:4px}
+ .owned-actions button{font-size:10px;padding:5px 5px}
+ .owned-actions .owned-price{font-size:11px}
+}
+@media(max-width:360px){
+ .owned-meta-row{gap:4px}
+ .owned-meta-row .info-pill{font-size:10px;padding:4px}
+ .owned-sort select{max-width:98px;width:98px}
+}
 </style>
 </head>
 <body>
@@ -2037,10 +2084,11 @@ function renderOwnedList(){
   const amount=typeof market==='number'?new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(market):'';
   return `<article class="owned-item" role="listitem" tabindex="0" data-open-owned="${esc(c.id)}" aria-label="פרטים על ${esc(c.name)}">
    <img loading="lazy" decoding="async" src="${esc(c.image)}" alt="${esc(c.name)}">
-   <div class="owned-copy"><strong>${esc(c.name)}</strong><small>${esc(MAP.get(c.set)?.name||'')} · #${esc(cardNumber(c))}</small><div class="badges">${rarityHtml(c)}</div>
-   ${condition?`<div class="owned-market"><span class="owned-condition">${esc(condition)}${state.firstEdition[c.id]?' · 1st':''}</span>${amount?`<span class="owned-price">${esc(amount)}</span>`:market===undefined?'<span class="owned-price pending">טוען מחיר…</span>':''}</div>`:''}
-   <span class="${inBinder?'binder-yes':'binder-no'}">${inBinder?'📖 בבינדר':'מחוץ לבינדר'}</span></div>
-   <div class="owned-actions"><button type="button" class="btn sm ${inBinder?'':'primary'}" data-owned-binder="${esc(c.id)}">${inBinder?'📍 העבר':'＋ לבינדר'}</button></div>
+   <div class="owned-copy"><strong>${esc(c.name)}</strong><small>${esc(MAP.get(c.set)?.name||'')} · #${esc(cardNumber(c))}</small><div class="badges">${rarityHtml(c)}</div></div>
+   <div class="owned-actions">
+    <button type="button" class="btn sm ${inBinder?'':'primary'}" data-owned-binder="${esc(c.id)}">${inBinder?'📍 העבר':'＋ לבינדר'}</button>
+    ${condition?`<div class="owned-market"><span class="owned-condition">${esc(condition)}${state.firstEdition[c.id]?' · 1st':''}</span>${amount?`<span class="owned-price">${esc(amount)}</span>`:market===undefined?'<span class="owned-price pending">טוען…</span>':''}</div>`:''}
+   </div>
   </article>`}).join(''):`<div class="no-cards">${own.length?'לא נמצאו קלפים מתאימים לחיפוש.':'עוד אין קלפים ברשימה. אפשר לסמן ״יש לי״ בקטלוג.'}</div>`;
 }
 function renderCollections(){if(!state.ready)return;normalizeOrders();
