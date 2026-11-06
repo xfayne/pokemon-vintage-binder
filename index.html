@@ -449,6 +449,15 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
 .wishlist-items .wish-rank[data-drag-kind]{touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none;-webkit-user-drag:none}
 .wishlist-items .wish-item>img[data-drag-kind]:active,
 .wishlist-items .wish-rank[data-drag-kind]:active{cursor:grabbing}
+/* Whole-card Wishlist drag: hold to drag on touch, normal swipes scroll the page. */
+.wishlist-items .wish-item{
+ touch-action:pan-y;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none
+}
+.wishlist-items .wish-item>img[data-drag-kind],
+.wishlist-items .wish-item>.wish-rank[data-drag-kind]{touch-action:none}
+.wishlist-items .wish-item{cursor:grab}
+.wishlist-items .wish-item.drag-origin{cursor:grabbing}
+.wishlist-items .wish-side button{cursor:pointer}
 </style>
 </head>
 <body>
@@ -2237,7 +2246,7 @@ function renderCollections(){if(!state.ready)return;normalizeOrders();
   const condition=state.conditions[id]||'';
   const market=condition?window.VintageMarketPrices?.getOwnedPrice?.(c,MAP.get(c.set)?.name||'',condition,!!state.firstEdition[id]):null;
   const amount=typeof market==='number'?new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(market):'';
-  return `<article class="wish-item" role="listitem" data-order-kind="wishlist" data-order-index="${i}" data-open-wish="${esc(id)}" tabindex="0" aria-label="פרטים על ${esc(c.name)}">
+  return `<article class="wish-item" role="listitem" data-order-kind="wishlist" data-order-index="${i}" data-drag-kind="wishlist" data-drag-index="${i}" data-open-wish="${esc(id)}" tabindex="0" aria-label="פרטים על ${esc(c.name)}">
    <span class="wish-rank" data-drag-kind="wishlist" data-drag-index="${i}" title="גרור כדי לשנות את הסדר" aria-label="גרור כדי לשנות את הסדר">${i+1}</span>
    <img loading="lazy" decoding="async" src="${esc(c.image)}" alt="${esc(c.name)}" data-drag-kind="wishlist" data-drag-index="${i}" title="גרור לשינוי הסדר · הקש לפתיחת פרטים" draggable="false">
    <div class="wish-copy"><strong>${esc(c.name)}</strong><small>${esc(MAP.get(c.set)?.name||'')} · #${esc(cardNumber(c))}</small></div>
@@ -2348,8 +2357,8 @@ function attachCollections(){
  $('binderNext').onclick=()=>{state.binderPage++;renderCollections();};
  $('binderResetOrder').onclick=()=>{if(!ensureCloudEdit())return;if(!confirm('לסדר מחדש את הבינדר לפי סדרות ומספרי קלפים? סדר המשאלות יישמר.'))return;
  state.binderOrder=state.cards.filter(c=>(state.owned[c.id]||state.wish[c.id])&&!state.binderExcluded[c.id]).map(c=>c.id);state.binderPage=0;save();toast('הבינדר סודר לפי סדרות');};
- // Native pointer events: finger-drag from the card picture or large handle.
- // Other regions retain normal page scrolling, and the list autoscrolls near the viewport edges.
+ // Mouse/pen: drag from anywhere on a Wishlist card; existing binder handles still work.
+ // Touch: long-press anywhere on a Wishlist card to drag; normal swipes scroll the page.
  let gesture=null,scrollFrame=0,preventNextClick=false;
  function clearDragVisual(){
   document.querySelectorAll('.drop-target,.drag-origin').forEach(x=>x.classList.remove('drop-target','drag-origin'));
@@ -2362,9 +2371,23 @@ function attachCollections(){
   if(target){g.to=Number(target.dataset.orderIndex);target.classList.add('drop-target');}
   else g.to=null;
  }
+ function beginDrag(g){
+  g.active=true;preventNextClick=true;
+  document.body.classList.add('dragging-card');
+  g.original.classList.add('drag-origin');
+  const img=g.original.querySelector('img'),label=g.original.querySelector('.pocket-title,.wish-copy strong');
+  const ghost=document.createElement('div');ghost.className='drag-ghost';
+  const photo=document.createElement('img');photo.src=img?.src||'';photo.alt='';
+  const word=document.createElement('span');word.textContent=label?.textContent||'קלף';
+  const hint=document.createElement('small');hint.textContent='שחרר מעל קלף אחר';
+  ghost.append(photo,word,hint);document.body.appendChild(ghost);
+  ghost.style.left=g.x+'px';ghost.style.top=g.y+'px';
+  scrollFrame=requestAnimationFrame(tickAutoScroll);
+ }
  function tickAutoScroll(){
-  if(!gesture?.active)return;
-  const g=gesture,margin=94;
+  const g=gesture?.active?gesture:touchGesture?.active?touchGesture:null;
+  if(!g)return;
+  const margin=94;
   let velocity=0;
   if(g.y<margin)velocity=-Math.max(5,(margin-g.y)*.22);
   else if(g.y>innerHeight-margin)velocity=Math.max(5,(g.y-(innerHeight-margin))*.22);
@@ -2372,6 +2395,9 @@ function attachCollections(){
   scrollFrame=requestAnimationFrame(tickAutoScroll);
  }
  document.addEventListener('pointerdown',e=>{
+  const wishRow=e.target.closest('[data-order-kind="wishlist"]');
+  const directTouchHandle=e.target.closest('.wish-item>img[data-drag-kind],.wish-item>.wish-rank[data-drag-kind]');
+  if(wishRow&&(e.target.closest('button,a,input,select')||(e.pointerType==='touch'&&!directTouchHandle)))return;
   const h=e.target.closest('[data-drag-kind]');if(!h||e.button!==0)return;
   if(gesture)clearDragVisual();
   const kind=h.dataset.dragKind,from=Number(h.dataset.dragIndex);
@@ -2385,15 +2411,7 @@ function attachCollections(){
   const g=gesture;g.x=e.clientX;g.y=e.clientY;
   if(!g.active){
    if(Math.hypot(e.clientX-g.startX,e.clientY-g.startY)<7)return;
-   g.active=true;preventNextClick=true;document.body.classList.add('dragging-card');
-   g.original.classList.add('drag-origin');
-   const img=g.original.querySelector('img'),label=g.original.querySelector('.pocket-title,.wish-copy strong');
-   const ghost=document.createElement('div');ghost.className='drag-ghost';
-   const photo=document.createElement('img');photo.src=img?.src||'';photo.alt='';
-   const word=document.createElement('span');word.textContent=label?.textContent||'קלף';
-   const hint=document.createElement('small');hint.textContent='שחרר מעל קלף אחר';
-   ghost.append(photo,word,hint);document.body.appendChild(ghost);
-   scrollFrame=requestAnimationFrame(tickAutoScroll);
+   beginDrag(g);
   }
   if(e.cancelable)e.preventDefault();
   const ghost=document.querySelector('.drag-ghost');if(ghost){ghost.style.left=g.x+'px';ghost.style.top=g.y+'px';}
@@ -2406,6 +2424,58 @@ function attachCollections(){
   if(g.active){setTimeout(()=>{preventNextClick=false},150);}
  };
  document.addEventListener('pointerup',finish);document.addEventListener('pointercancel',e=>{if(gesture&&e.pointerId===gesture.pointer){gesture=null;clearDragVisual();}});
+ // For touch, wait for a brief long-press before taking over: short swipes still scroll,
+ // and short taps still open details. This avoids disabling vertical scrolling on long lists.
+ let touchGesture=null;
+ function cancelTouch(){
+  if(!touchGesture)return;
+  clearTimeout(touchGesture.timer);
+  if(touchGesture.active)clearDragVisual();
+  touchGesture=null;
+ }
+ function touchPoint(e,id){return Array.from(e.changedTouches).find(t=>t.identifier===id);}
+ document.addEventListener('touchstart',e=>{
+  const row=e.target.closest('[data-order-kind="wishlist"][data-order-index]');
+  if(!row||e.target.closest('button,a,input,select')||e.target.closest('.wish-item>img[data-drag-kind],.wish-item>.wish-rank[data-drag-kind]')||e.touches.length!==1)return;
+  cancelTouch();
+  const touch=e.changedTouches[0];
+  const pending={
+   id:touch.identifier,kind:'wishlist',from:Number(row.dataset.orderIndex),
+   to:null,x:touch.clientX,y:touch.clientY,startX:touch.clientX,startY:touch.clientY,
+   original:row,active:false,timer:null
+  };
+  touchGesture=pending;
+  pending.timer=setTimeout(()=>{
+   if(touchGesture!==pending||!pending.original.isConnected)return;
+   beginDrag(pending);
+  },320);
+ },{passive:true});
+ document.addEventListener('touchmove',e=>{
+  const g=touchGesture;if(!g)return;
+  const touch=touchPoint(e,g.id);if(!touch)return;
+  const distance=Math.hypot(touch.clientX-g.startX,touch.clientY-g.startY);
+  if(!g.active){
+   if(distance>9)cancelTouch(); // Native swipe: let the browser scroll freely.
+   return;
+  }
+  if(e.cancelable)e.preventDefault();
+  g.x=touch.clientX;g.y=touch.clientY;
+  const ghost=document.querySelector('.drag-ghost');
+  if(ghost){ghost.style.left=g.x+'px';ghost.style.top=g.y+'px';}
+  findDrop(g);
+ },{passive:false});
+ document.addEventListener('touchend',e=>{
+  const g=touchGesture;if(!g||!touchPoint(e,g.id))return;
+  clearTimeout(g.timer);touchGesture=null;
+  if(!g.active)return;
+  if(e.cancelable)e.preventDefault();
+  clearDragVisual();
+  if(g.to!==null&&g.to!==g.from){reorder('wishlist',g.from,g.to);toast('הסדר עודכן ונשמר');}
+  setTimeout(()=>{preventNextClick=false;},300);
+ },{passive:false});
+ document.addEventListener('touchcancel',e=>{
+  if(touchGesture&&touchPoint(e,touchGesture.id))cancelTouch();
+ });
  document.addEventListener('click',e=>{if(preventNextClick&&e.target.closest('[data-order-kind]')){e.preventDefault();e.stopImmediatePropagation();preventNextClick=false;}},true);
 }
 
