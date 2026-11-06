@@ -572,8 +572,6 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
   <p id="valueNotice" class="subtle" aria-live="polite"></p>
   <h3>שמונת הקלפים היקרים באוסף</h3>
   <div id="valueChart" class="value-chart" role="img" aria-label="גרף עמודות של הקלפים היקרים באוסף"></div>
-  <h3>שווי לפי קלף</h3>
-  <div id="valueRows" class="value-rows"></div>
  </div>
 </section>
 <section class="collection-page" id="ownedPage" hidden aria-label="הקלפים שלי ברשימה">
@@ -2326,7 +2324,6 @@ function renderValueDashboard(){
  const sorted=priced.sort((a,b)=>b.price-a.price);
  const top=sorted.slice(0,8),max=top[0]?.price||1;
  $('valueChart').innerHTML=top.length?top.map(r=>`<div class="value-bar-row"><span class="value-bar-name" title="${esc(r.c.name)}">${esc(r.c.name)}</span><div class="value-bar-track"><div class="value-bar-fill" style="width:${Math.max(1,r.price/max*100)}%"></div></div><span class="value-bar-price">${esc(usd(r.price))}</span></div>`).join(''):'<p class="subtle">הגרף יופיע כשיהיו מחירי שוק זמינים לקלפים שלך.</p>';
- $('valueRows').innerHTML=[...sorted,...rows.filter(r=>typeof r.price!=='number')].map(r=>`<div class="value-row"><img loading="lazy" src="${esc(r.c.image)}" alt=""><div class="value-row-info"><strong>${esc(r.c.name)}</strong><small>${esc(MAP.get(r.c.set)?.name||'')} · ${esc(r.condition||'מצב לא נבחר')}${state.firstEdition[r.c.id]?' · 1st Edition':''}</small></div><span class="value-row-price">${typeof r.price==='number'?esc(usd(r.price)):'—'}</span></div>`).join('')||'<p class="subtle">עדיין אין קלפים באוסף.</p>';
 }
 function renderOwnedList(){
  const own=sortedOwnedCards();
