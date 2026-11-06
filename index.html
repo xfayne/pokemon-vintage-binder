@@ -389,9 +389,59 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
  .owned-meta .owned-price{font-size:12px}
  .owned-meta .owned-condition{font-size:10px}
 }
+
+/* v18: keep the site title and main tabs accessible throughout long pages */
+.sticky-sitebar{position:sticky;top:0;z-index:600;background:var(--bg);box-shadow:0 3px 14px #182a4514;isolation:isolate}
+.sticky-sitebar .main-nav{margin:0 auto;padding:8px 20px 9px;max-width:1310px}
+.sticky-sitebar .main-nav button{padding:9px 15px}
+.collection-page,.shell,.binder-place,.static-set{scroll-margin-top:130px}
+@media(max-width:650px){
+ .sticky-sitebar .main-nav{padding:7px 10px 9px;gap:5px;grid-template-columns:repeat(4,minmax(0,1fr))}
+ .sticky-sitebar .main-nav button{min-width:0;padding:9px 2px;font-size:11px;gap:3px}
+ .sticky-sitebar .main-nav .nav-number{display:none}
+}
+/* Compact Wishlist: price and condition on the left, one reorder action only */
+.wishlist-items{gap:7px}
+.wishlist-items .wish-item{display:flex;align-items:center;gap:10px;padding:8px 10px;min-height:0;border-radius:13px;cursor:pointer;transition:background .15s,border-color .15s,box-shadow .15s}
+.wishlist-items .wish-item:hover{background:#f5f7ff;border-color:#b8c5e5;box-shadow:0 4px 12px #1626440d}
+.wishlist-items .wish-item:focus-visible{outline:3px solid #8b9cf4;outline-offset:2px}
+.wishlist-items .wish-rank{min-width:24px;font-size:14px;line-height:1.2;text-align:center}
+.wishlist-items .wish-item>img{width:46px;height:65px;flex:none;border-radius:6px;object-fit:contain}
+.wishlist-items .wish-copy{flex:1;min-width:0;overflow-wrap:anywhere}
+.wishlist-items .wish-copy strong{font-size:14px;line-height:1.2}
+.wishlist-items .wish-copy small{font-size:11px;line-height:1.3;margin-top:3px}
+.wish-side{flex:0 0 90px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-width:0}
+.wish-side .wish-move-action{width:100%;min-height:29px;padding:5px 7px;white-space:nowrap;border-color:#bfcceb;background:#edf1ff;color:#3c5099;font-size:12px}
+.wish-side .wish-move-action:hover{background:#e3eaff}
+.wish-side .wish-market{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:5px;max-width:100%;line-height:1.2;direction:ltr;font-variant-numeric:tabular-nums}
+.wish-side .wish-market .owned-price{font-size:13px;font-weight:800;color:#247962;white-space:nowrap}
+.wish-side .wish-market .owned-price.pending{font-size:10px;font-weight:500;color:#8691a5;white-space:normal}
+.wish-side .wish-market .owned-condition{font-size:10px;font-weight:800;padding:3px 6px;border-radius:6px;background:#ebeffd;color:#40527e;white-space:nowrap}
+@media(max-width:650px){
+ .wishlist-items{gap:7px}
+ .wishlist-items .wish-item{display:flex;gap:8px;padding:8px;min-height:0}
+ .wishlist-items .wish-rank{min-width:18px;font-size:12px}
+ .wishlist-items .wish-item>img{width:44px;height:63px;grid-column:auto;grid-row:auto}
+ .wishlist-items .wish-copy{grid-column:auto;grid-row:auto}
+ .wishlist-items .wish-copy strong{font-size:13px}
+ .wishlist-items .wish-copy small{font-size:10px}
+ .wish-side{flex-basis:80px;gap:4px}
+ .wish-side .wish-move-action{font-size:11px;min-height:29px;padding:5px}
+ .wish-side .wish-market{gap:3px}
+ .wish-side .wish-market .owned-price{font-size:12px}
+ .wish-side .wish-market .owned-condition{font-size:10px}
+}
+@media(max-width:360px){
+ .wishlist-items .wish-item{gap:6px}
+ .wishlist-items .wish-rank{min-width:15px}
+ .wishlist-items .wish-item>img{width:40px;height:57px}
+ .wish-side{flex-basis:70px}
+ .wish-side .wish-market .owned-price{font-size:11px}
+}
 </style>
 </head>
 <body>
+<div class="sticky-sitebar" aria-label="ניווט האתר">
 <header class="hero"><div class="hero-inner"><div class="hero-top"><h1>Pokémon Vintage Binder <span aria-hidden="true">✦</span></h1>
  <div class="account-area">
   <button type="button" id="accountTrigger" class="account-trigger" aria-haspopup="menu" aria-expanded="false" aria-label="התחברות"><span id="accountAvatar" class="account-avatar" aria-hidden="true">👤</span><span id="accountName">התחברות</span><span class="account-chevron" aria-hidden="true">⌄</span></button>
@@ -402,6 +452,13 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
    <button type="button" id="accountSignOut" role="menuitem">התנתקות</button>
   </div>
  </div></div></div></header>
+<nav class="main-nav" aria-label="ניווט בין הקטלוג, הבינדר ו־Wishlist">
+  <button type="button" class="active" data-view-btn="catalog" aria-pressed="true">📚 קטלוג</button>
+  <button type="button" data-view-btn="owned" aria-pressed="false">✅ הקלפים שלי <span class="nav-number" id="ownedCountTab"></span></button>
+  <button type="button" data-view-btn="binder" aria-pressed="false">📖 הבינדר שלי <span class="nav-number" id="binderCountTab"></span></button>
+  <button type="button" data-view-btn="wishlist" aria-pressed="false">💜 Wishlist <span class="nav-number" id="wishCountTab"></span></button>
+</nav>
+</div>
 
 <dialog id="cloudDialog" class="dialog cloud-config" aria-label="חיבור Firebase">
  <div class="modal-inner">
@@ -420,12 +477,7 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
 
 <input id="fileInput" type="file" accept=".json,application/json" hidden />
 
-<nav class="main-nav" aria-label="ניווט בין הקטלוג, הבינדר ו־Wishlist">
-  <button type="button" class="active" data-view-btn="catalog" aria-pressed="true">📚 קטלוג</button>
-  <button type="button" data-view-btn="owned" aria-pressed="false">✅ הקלפים שלי <span class="nav-number" id="ownedCountTab"></span></button>
-  <button type="button" data-view-btn="binder" aria-pressed="false">📖 הבינדר שלי <span class="nav-number" id="binderCountTab"></span></button>
-  <button type="button" data-view-btn="wishlist" aria-pressed="false">💜 Wishlist <span class="nav-number" id="wishCountTab"></span></button>
-</nav>
+
 <section class="collection-page" id="ownedPage" hidden aria-label="הקלפים שלי ברשימה">
  <div class="collection-panel">
   <div class="collection-heading owned-heading">
