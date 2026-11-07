@@ -66,6 +66,34 @@ test('fetches and deduplicates real-format eBay AUCTION items, including shippin
  }finally{globalThis.fetch=original}
 });
 
+test('request postal code overrides configured postal without leaking credentials',async()=>{
+ const original=globalThis.fetch;const calls=[];
+ globalThis.fetch=async(url,options={})=>{
+  calls.push({url:String(url),headers:options.headers});
+  if(String(url).includes('/oauth2/token'))return Response.json({access_token:'test',expires_in:3600});
+  return Response.json({itemSummaries:[]});
+ };
+ try{
+  const req=new Request('https://worker.example/api/search',{
+   method:'POST',headers:{origin:allowed,'content-type':'application/json'},
+   body:JSON.stringify({cards:[espeon],postalCode:'7654321'})
+  });
+  const response=await worker.fetch(req,env);
+  assert.equal(response.status,200);
+  const searches=calls.filter(x=>x.url.includes('/item_summary/search'));
+  assert.equal(searches.length,2);
+  searches.forEach(call=>{
+   assert.match(call.url,/deliveryPostalCode%3A7654321/);
+   assert.equal(call.headers['X-EBAY-C-ENDUSERCTX'],'contextualLocation=country%3DIL%2Czip%3D7654321');
+  });
+  const invalid=new Request('https://worker.example/api/search',{
+   method:'POST',headers:{origin:allowed,'content-type':'application/json'},
+   body:JSON.stringify({cards:[espeon],postalCode:'not-a-postal-code'})
+  });
+  assert.equal((await worker.fetch(invalid,env)).status,400);
+ }finally{globalThis.fetch=original}
+});
+
 test('blocks explicit first-edition mismatches, replicas, graded cards and excludes fixed-price listings',async()=>{
  const original=globalThis.fetch;
  globalThis.fetch=async url=>{
