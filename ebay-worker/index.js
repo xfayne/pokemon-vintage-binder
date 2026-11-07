@@ -68,9 +68,9 @@ function mapItem(item,card,market) {
   marketplace:market,matchConfidence:match.confidence,warnings:match.warnings
  };
 }
-async function search(c,market,token,env){
+async function search(c,market,token,env,postalCode){
  // The buyer's postal code is private, configured as a Cloudflare Worker secret.
- const postal=String(env.EBAY_DELIVERY_POSTAL_CODE||'').trim();
+ const postal=String(postalCode||env.EBAY_DELIVERY_POSTAL_CODE||'').trim();
  const zip=/^[0-9]{5,10}$/.test(postal)?postal:null;
  const deliveryFilter='buyingOptions:{AUCTION},deliveryCountry:IL'+(zip?',deliveryPostalCode:'+zip:'');
  const destination='country=IL'+(zip?',zip='+zip:'');
@@ -84,10 +84,10 @@ async function search(c,market,token,env){
  const data=await r.json();
  return (Array.isArray(data.itemSummaries)?data.itemSummaries:[]).map(x=>mapItem(x,c,market)).filter(Boolean);
 }
-async function searchBatch(cards,env){
+async function searchBatch(cards,env,postalCode){
  const token=await bearer(env);const items=[];const errors=[];
  for(const c of cards){
-  const outcomes=await Promise.allSettled(MARKETS.map(m=>search(c,m,token,env)));
+  const outcomes=await Promise.allSettled(MARKETS.map(m=>search(c,m,token,env,postalCode)));
   outcomes.forEach((result,i)=>{if(result.status==='fulfilled')items.push(...result.value);else errors.push({cardId:c.id,marketplace:MARKETS[i],error:String(result.reason?.message||'Unknown').slice(0,110)})});
  }
  const unique=new Set();
@@ -211,9 +211,10 @@ export default {
   if(request.method!=='POST'||u.pathname!=='/api/search')return reply({error:'Not found'},404,headers);
   if(Number(request.headers.get('content-length')||0)>6000)return reply({error:'Payload too large'},413,headers);
   let body;try{body=await request.json()}catch(_){return reply({error:'Invalid JSON'},400,headers)}
+  if(body?.postalCode!==undefined&&!/^[0-9]{7}$/.test(String(body.postalCode)))return reply({error:'Invalid Israeli postal code'},400,headers);
   if(!Array.isArray(body?.cards)||body.cards.length<1||body.cards.length>4)return reply({error:'Expected 1–4 cards'},400,headers);
   const cards=body.cards.map(cardInput);if(cards.some(c=>!c))return reply({error:'Invalid card'},400,headers);
-  try{return reply(await searchBatch(cards,env),200,headers)}
+  try{return reply(await searchBatch(cards,env,body.postalCode),200,headers)}
   catch(err){return reply({error:String(err.message||'EBAY_SEARCH_FAILED').slice(0,120)},503,headers)}
  }
 };
