@@ -23,7 +23,7 @@
  const ui=document.createElement('section');
  ui.className='live-auctions';
  ui.setAttribute('aria-label','מכרזים חיים מ־eBay');
- ui.innerHTML="<div class=\"live-title\"><span id=\"liveBadge\" class=\"live-badge\">בודק חיבור…</span></div>\n<div id=\"liveStatus\" class=\"live-status\" role=\"status\"></div>\n<div id=\"liveControls\" class=\"live-toolbar\" hidden>\n <button type=\"button\" id=\"liveReload\" class=\"btn primary\">↻ סרוק מחדש את כל הקלפים</button>\n <label for=\"liveType\">סוג מודעה <select id=\"liveType\"><option value=\"all\">הכול</option><option value=\"AUCTION\">מכרזים</option><option value=\"FIXED_PRICE\">Buy It Now</option></select></label>\n <label for=\"liveSort\">מיון <select id=\"liveSort\"><option value=\"recommended\">הזדמנויות מומלצות</option><option value=\"discount\">פער מול מחירון</option><option value=\"closing\">מסתיימים בקרוב</option><option value=\"bids\">מעט הצעות</option><option value=\"match\">התאמת קלף</option><option value=\"shipping\">משלוח: מהזול ליקר</option><option value=\"shippingDesc\">משלוח: מהיקר לזול</option></select></label>\n <label class=\"live-only-shipping\"><input type=\"checkbox\" id=\"liveOnlyShipping\"> רק משלוח ידוע</label>\n <label for=\"livePostal\" class=\"live-postal-label\">מיקוד למשלוח <input id=\"livePostal\" type=\"text\" inputmode=\"numeric\" autocomplete=\"postal-code\" maxlength=\"7\" placeholder=\"7 ספרות\" aria-label=\"מיקוד ישראלי לחישוב משלוח\"></label>\n</div>\n<details id=\"liveAdvanced\" class=\"live-advanced\"><summary>⚙ סינון מתקדם <span id=\"liveFilterCount\"></span></summary><div class=\"live-filter-grid\">\n<label>מכרז מסתיים בתוך<select id=\"liveEndLimit\"><option value=\"all\">ללא הגבלה</option><option value=\"1\">שעה</option><option value=\"6\">6 שעות</option><option value=\"24\">24 שעות</option><option value=\"72\">3 ימים</option><option value=\"168\">7 ימים</option></select></label>\n<label>משלוח מקסימלי<select id=\"liveShipMax\"><option value=\"all\">ללא הגבלה</option><option value=\"0\">$0 — חינם</option><option value=\"5\">$5</option><option value=\"10\">$10</option><option value=\"15\">$15</option><option value=\"25\">$25</option><option value=\"50\">$50</option></select></label>\n<label>מחיר כולל משלוח<select id=\"liveTotalMax\"><option value=\"all\">ללא הגבלה</option><option value=\"25\">$25</option><option value=\"50\">$50</option><option value=\"100\">$100</option><option value=\"200\">$200</option><option value=\"500\">$500</option></select></label>\n<label>פער מינימלי מהמחירון<select id=\"liveDiscountMin\"><option value=\"all\">ללא הגבלה</option><option value=\"10\">10%</option><option value=\"20\">20%</option><option value=\"30\">30%</option><option value=\"40\">40%</option><option value=\"50\">50%</option></select></label>\n<label>מצב לפי המודעה<select id=\"liveConditionMin\"><option value=\"all\">כל המצבים</option><option value=\"NM\">NM בלבד</option><option value=\"LP\">LP ומעלה</option><option value=\"MP\">MP ומעלה</option><option value=\"HP\">HP ומעלה</option><option value=\"DMG\">DMG ומעלה</option></select></label>\n</div><label class=\"live-unknown-label\"><input type=\"checkbox\" id=\"liveIncludeUnknown\" checked>כלול מודעות עם מחיר משלוח לא ידוע</label><button type=\"button\" class=\"btn\" id=\"liveResetFilters\">אפס סינון</button><p class=\"live-filter-note\">הסינון חל על המודעות שכבר נאספו; הוא לא מוחק תוצאות.</p></details>\n<div id=\"liveCount\" class=\"live-count\" aria-live=\"polite\"></div>\n<div id=\"liveProgress\" class=\"live-progress\" hidden role=\"progressbar\" aria-label=\"התקדמות סריקת קלפי ה־Wishlist\" aria-valuemin=\"0\" aria-valuenow=\"0\" aria-valuemax=\"100\"><div class=\"live-progress-fill\" id=\"liveProgressFill\"></div></div>\n<div class=\"live-scan-actions\"><button type=\"button\" class=\"btn\" id=\"liveMore\" hidden>השהה סריקה</button></div>\n<div id=\"liveListings\" class=\"live-results\" role=\"list\"></div>\n<div class=\"live-more\"><button type=\"button\" class=\"btn\" id=\"liveShowMore\" hidden>הצג עוד מכרזים</button></div>\n<p class=\"live-disclaimer\" id=\"liveDisclaimer\" hidden>המצב להשוואה מבוסס על מידע המוכר כשזמין, אחרת על הכותרת או ברירת מחדל. התאמה ומצב אינם אימות מקצועי. כל המחירים משתנים בזמן אמת. סינון יפנית נעשה לפי כותרת בלבד.</p>";
+ ui.innerHTML="<div class=\"live-title\"><span id=\"liveBadge\" class=\"live-badge\">בודק חיבור…</span></div>\n<div id=\"liveStatus\" class=\"live-status\" role=\"status\"></div>\n<div id=\"liveControls\" class=\"live-toolbar\" hidden>\n <button type=\"button\" id=\"liveReload\" class=\"btn primary\">↻ סרוק מחדש את כל הקלפים</button>\n <label for=\"liveType\">סוג מודעה <select id=\"liveType\"><option value=\"all\">הכול</option><option value=\"AUCTION\">מכרזים</option><option value=\"FIXED_PRICE\">Buy It Now</option></select></label>\n <label for=\"liveSort\">מיון <select id=\"liveSort\"><option value=\"recommended\">הזדמנויות מומלצות</option><option value=\"discount\">פער מול מחירון</option><option value=\"closing\">מסתיימים בקרוב</option><option value=\"bids\">מעט הצעות</option><option value=\"match\">התאמת קלף</option><option value=\"shipping\">משלוח: מהזול ליקר</option><option value=\"shippingDesc\">משלוח: מהיקר לזול</option></select></label>\n <label class=\"live-only-shipping\"><input type=\"checkbox\" id=\"liveOnlyShipping\"> רק משלוח ידוע</label>\n <label for=\"livePostal\" class=\"live-postal-label\">מיקוד למשלוח <input id=\"livePostal\" type=\"text\" inputmode=\"numeric\" autocomplete=\"postal-code\" maxlength=\"7\" placeholder=\"7 ספרות\" aria-label=\"מיקוד ישראלי לחישוב משלוח\"></label>\n</div>\n<details id=\"liveAdvanced\" class=\"live-advanced\"><summary>⚙ סינון מתקדם <span id=\"liveFilterCount\"></span></summary><div class=\"live-filter-grid\">\n<label>מכרז מסתיים בתוך<select id=\"liveEndLimit\"><option value=\"all\">ללא הגבלה</option><option value=\"1\">שעה</option><option value=\"6\">6 שעות</option><option value=\"24\">24 שעות</option><option value=\"72\">3 ימים</option><option value=\"168\">7 ימים</option></select></label>\n<label>משלוח מקסימלי<select id=\"liveShipMax\"><option value=\"all\">ללא הגבלה</option><option value=\"0\">$0 — חינם</option><option value=\"5\">$5</option><option value=\"10\">$10</option><option value=\"15\">$15</option><option value=\"25\">$25</option><option value=\"50\">$50</option></select></label>\n<label>מחיר כולל משלוח<select id=\"liveTotalMax\"><option value=\"all\">ללא הגבלה</option><option value=\"25\">$25</option><option value=\"50\">$50</option><option value=\"100\">$100</option><option value=\"200\">$200</option><option value=\"500\">$500</option></select></label>\n<label>פער מינימלי מהמחירון<select id=\"liveDiscountMin\"><option value=\"all\">ללא הגבלה</option><option value=\"10\">10%</option><option value=\"20\">20%</option><option value=\"30\">30%</option><option value=\"40\">40%</option><option value=\"50\">50%</option></select></label>\n<label>מצב לפי המודעה<select id=\"liveConditionMin\"><option value=\"all\">כל המצבים</option><option value=\"NM\">NM בלבד</option><option value=\"LP\">LP ומעלה</option><option value=\"MP\">MP ומעלה</option><option value=\"HP\">HP ומעלה</option><option value=\"DMG\">DMG ומעלה</option></select></label>\n</div><label class=\"live-unknown-label\"><input type=\"checkbox\" id=\"liveIncludeUnknown\" checked>כלול מודעות עם מחיר משלוח לא ידוע</label><label class=\"live-unknown-label\"><input type=\"checkbox\" id=\"liveShowReview\" checked>הצג גם מודעות שדורשות אימות (בתחתית הרשימה)</label><button type=\"button\" class=\"btn\" id=\"liveResetFilters\">אפס סינון</button><p class=\"live-filter-note\">הסינון חל על המודעות שכבר נאספו; הוא לא מוחק תוצאות.</p></details>\n<div id=\"liveCount\" class=\"live-count\" aria-live=\"polite\"></div>\n<div id=\"liveProgress\" class=\"live-progress\" hidden role=\"progressbar\" aria-label=\"התקדמות סריקת קלפי ה־Wishlist\" aria-valuemin=\"0\" aria-valuenow=\"0\" aria-valuemax=\"100\"><div class=\"live-progress-fill\" id=\"liveProgressFill\"></div></div>\n<div class=\"live-scan-actions\"><button type=\"button\" class=\"btn\" id=\"liveMore\" hidden>השהה סריקה</button></div>\n<div id=\"liveListings\" class=\"live-results\" role=\"list\"></div>\n<div class=\"live-more\"><button type=\"button\" class=\"btn\" id=\"liveShowMore\" hidden>הצג עוד מכרזים</button></div>\n<p class=\"live-disclaimer\" id=\"liveDisclaimer\" hidden>המצב להשוואה מבוסס על מידע המוכר כשזמין, אחרת על הכותרת או ברירת מחדל. התאמה ומצב אינם אימות מקצועי. כל המחירים משתנים בזמן אמת. סינון יפנית נעשה לפי כותרת בלבד.</p>";
 
  const POSTAL_STORAGE_KEY='pokemon-ebay-delivery-postal';
  try{
@@ -50,6 +50,12 @@
  const marketFor=(c,grade)=>bridge()?.getMarketPrice?.(c.id,grade);
  const cardIndex=()=>new Map(list().map(c=>[c.id,c]));
  const keyFor=item=>item.itemId||item.url;
+ const verificationFor=item=>{
+  const detail=state.conditionDetails.get(keyFor(item));
+  const status=detail?.verificationStatus||item.verificationStatus||'review';
+  const reasons=detail?.verificationReasons||item.verificationReasons||['התאמת הקלף לא אומתה'];
+  return {status,reasons};
+ };
  const resolvedGrade=item=>{
   const key=keyFor(item),detail=state.conditionDetails.get(key);
   const declared=(detail&&detail.source==='seller'&&detail.grade)?detail.grade:null;
@@ -60,6 +66,7 @@
  };
  function evaluation(item,card){
   const gradeInfo=resolvedGrade(item);
+  const verification=verificationFor(item);
   const raw=card?marketFor(card,gradeInfo.grade):null;
   const market=typeof raw==='number'&&Number.isFinite(raw)&&raw>0?raw:null;
   const current=usd(item.currentBid),shipping=usd(item.shipping);
@@ -67,20 +74,21 @@
   const comparable=allIn!==null?allIn:current;
   const provisional=allIn===null&&current!==null;
   const difference=market!==null&&comparable!==null?(market-comparable)/market:null;
-  const discount=allIn!==null?difference:null;
+  const discount=allIn!==null&&verification.status==='strong'?difference:null;
   const hours=item.format==='AUCTION'?(new Date(item.endTime).getTime()-Date.now())/3600000:null;
-  const reliable=discount!==null&&item.matchConfidence>=70&&gradeInfo.source!=='unknown'&&!/\\b(?:damaged|creased|folded|poor condition)\\b/i.test(item.title||'')&&!/\\b(?:lot|bundle)\\b/i.test(item.title||'');
+  const reliable=verification.status==='strong'&&discount!==null&&item.matchConfidence>=70&&gradeInfo.source!=='unknown'&&!/\\b(?:damaged|creased|folded|poor condition)\\b/i.test(item.title||'')&&!/\\b(?:lot|bundle)\\b/i.test(item.title||'');
   let group=4;
   if(reliable&&discount>=0.20&&((item.format==='FIXED_PRICE')||(hours!==null&&hours>=0&&hours<=6)))group=0;
   else if(reliable&&discount>=0.15&&((item.format==='FIXED_PRICE')||(hours!==null&&hours>=0&&hours<=24)))group=1;
   else if(discount!==null&&discount>0)group=2;
+  else if(verification.status!=='strong')group=5;
   else if(provisional||gradeInfo.source==='unknown'||discount===null)group=3;
   const score=(discount??-1)*100+(item.format==='FIXED_PRICE'?20:hours!==null&&hours<=6?18:hours!==null&&hours<=24?9:0)+item.matchConfidence/20;
   const warnings=Array.isArray(item.warnings)?item.warnings.slice():[];
   if(item.shipping===null)warnings.push('מחיר משלוח לא ידוע — ההשוואה היא להצעה או למחיר הפריט בלבד');
   if(item.matchConfidence<70)warnings.push('התאמת קלף לא ודאית');
   if(item.sellerFeedback!==null&&item.sellerFeedback<95)warnings.push('דירוג מוכר נמוך');
-  return {gradeInfo,market,allIn,discount,difference,provisional,hours,group,score,warnings};
+  return {gradeInfo,market,allIn,discount,difference,provisional,hours,group,score,warnings,verification};
  }
  const timeLabel=d=>{
   const t=new Date(d||'').getTime();if(!Number.isFinite(t))return 'זמן סיום לא ידוע';
@@ -119,11 +127,14 @@
   const type=$('liveType').value, end=$('liveEndLimit').value, shipMax=$('liveShipMax').value;
   const totalMax=$('liveTotalMax').value,minDiscount=$('liveDiscountMin').value,minCondition=$('liveConditionMin').value;
   const includeUnknown=$('liveIncludeUnknown').checked;
-  const activeFilters=[type!=='all',end!=='all',shipMax!=='all',totalMax!=='all',minDiscount!=='all',minCondition!=='all',!includeUnknown,shippingOnly].filter(Boolean).length;
+  const showReview=$('liveShowReview').checked;
+  const activeFilters=[type!=='all',end!=='all',shipMax!=='all',totalMax!=='all',minDiscount!=='all',minCondition!=='all',!includeUnknown,shippingOnly,!showReview].filter(Boolean).length;
   $('liveFilterCount').textContent=activeFilters?'('+activeFilters+' פעילים)':'';
   let enriched=state.items.map(item=>({item,card:lookup.get(item.cardId),score:evaluation(item,lookup.get(item.cardId))}))
    .filter(({item,score})=>{
     if(japaneseTitle(item.title))return false;
+    if(score.verification.status==='rejected')return false;
+    if(!showReview&&score.verification.status!=='strong')return false;
     if(type!=='all'&&type!==(item.format||'AUCTION'))return false;
     if(end!=='all'&&item.format==='AUCTION'&&(!Number.isFinite(score.hours)||score.hours<0||score.hours>Number(end)))return false;
     const sh=usd(item.shipping);
@@ -139,41 +150,49 @@
     }
     return true;
    });
-  if(sort==='recommended')enriched.sort((a,b)=>a.score.group-b.score.group||b.score.score-a.score.score||b.item.matchConfidence-a.item.matchConfidence);
-  if(sort==='discount')enriched.sort((a,b)=>(b.score.discount??-999)-(a.score.discount??-999)||b.item.matchConfidence-a.item.matchConfidence);
+  const trustFirst=(a,b)=>(a.score.verification.status==='strong'?0:1)-(b.score.verification.status==='strong'?0:1);
+  if(sort==='recommended')enriched.sort((a,b)=>trustFirst(a,b)||a.score.group-b.score.group||b.score.score-a.score.score||b.item.matchConfidence-a.item.matchConfidence);
+  if(sort==='discount')enriched.sort((a,b)=>trustFirst(a,b)||(b.score.discount??-999)-(a.score.discount??-999)||b.item.matchConfidence-a.item.matchConfidence);
   if(sort==='closing')enriched.sort((a,b)=>{
    const at=a.item.format==='AUCTION'?new Date(a.item.endTime).getTime():Infinity;
    const bt=b.item.format==='AUCTION'?new Date(b.item.endTime).getTime():Infinity;
-   return at-bt||b.item.matchConfidence-a.item.matchConfidence;
+   return trustFirst(a,b)||at-bt||b.item.matchConfidence-a.item.matchConfidence;
   });
-  if(sort==='bids')enriched.sort((a,b)=>(a.item.bidCount??Infinity)-(b.item.bidCount??Infinity));
-  if(sort==='match')enriched.sort((a,b)=>b.item.matchConfidence-a.item.matchConfidence);
+  if(sort==='bids')enriched.sort((a,b)=>trustFirst(a,b)||(a.item.bidCount??Infinity)-(b.item.bidCount??Infinity));
+  if(sort==='match')enriched.sort((a,b)=>trustFirst(a,b)||b.item.matchConfidence-a.item.matchConfidence);
   if(sort==='shipping'||sort==='shippingDesc')enriched.sort((a,b)=>{
+   if(trustFirst(a,b))return trustFirst(a,b);
    const x=usd(a.item.shipping),y=usd(b.item.shipping);
    if(x===null)return y===null?0:1;
    if(y===null)return -1;
    return (sort==='shipping'?x-y:y-x)||b.item.matchConfidence-a.item.matchConfidence;
   });
-  $('liveCount').textContent='מציג '+Math.min(state.visibleCount,enriched.length)+' מתוך '+enriched.length+' מודעות מתאימות · '+state.items.length+' נאספו בסריקה'+(activeFilters?' · סינון פעיל':'');
+  const strongCount=enriched.filter(x=>x.score.verification.status==='strong').length;
+  const reviewCount=enriched.length-strongCount;
+  $('liveCount').textContent='מציג '+Math.min(state.visibleCount,enriched.length)+' מתוך '+enriched.length+' מודעות · '+strongCount+' התאמות חזקות · '+reviewCount+' דורשות אימות'+(activeFilters?' · סינון פעיל':'');
   $('liveShowMore').hidden=enriched.length<=state.visibleCount;
   $('liveShowMore').textContent='הצג עוד מודעות ('+Math.min(PAGE_SIZE,enriched.length-state.visibleCount)+' מתוך '+(enriched.length-state.visibleCount)+')';
   $('liveListings').innerHTML=enriched.length?enriched.slice(0,state.visibleCount).map(({item,card,score})=>{
-   const grade=score.gradeInfo.grade, pct=score.difference===null?null:Math.round(Math.abs(score.difference)*100);
-   const discountText=pct===null?'מחירון לא זמין':
+   const verified=score.verification.status==='strong';
+   const grade=score.gradeInfo.grade, pct=!verified||score.difference===null?null:Math.round(Math.abs(score.difference)*100);
+   const discountText=!verified?'לא מוצגת הנחה עד לאימות הקלף':pct===null?'מחירון לא זמין':
     score.provisional?(score.difference>=0?'המחיר לפני משלוח נמוך ב־':'המחיר לפני משלוח גבוה ב־')+pct+'%':
     score.difference>=0?(item.format==='AUCTION'?'ההצעה כרגע נמוכה ב־':'זול ב־')+pct+'%':(item.format==='AUCTION'?'ההצעה כרגע גבוהה ב־':'יקר ב־')+pct+'%';
-   const tone=score.provisional?'provisional':score.discount===null?'unknown':score.discount>=0?'cheaper':'pricier';
+   const tone=!verified?'unknown':score.provisional?'provisional':score.discount===null?'unknown':score.discount>=0?'cheaper':'pricier';
    const key=keyFor(item);
    const conditionText=score.gradeInfo.source==='seller'?'על פי eBay':score.gradeInfo.source==='title'?'מזוהה בכותרת':'לא ידוע (MP כברירת מחדל)';
    const selectedLabel=score.gradeInfo.overridden?' · שינית ידנית':'';
    const detail=state.conditionDetails.get(key);
-   const showFetch=score.gradeInfo.source!=='seller'&&!detail;
+   const showFetch=(!verified||score.gradeInfo.source!=='seller')&&!detail;
    const amount=score.allIn===null?'—':'$'+score.allIn.toFixed(2);
    const isFixed=item.format==='FIXED_PRICE';
    const endLabel=isFixed?'קנייה מיידית':timeLabel(item.endTime);
    const sourceLabel=isFixed?'קנייה מיידית':'מכרז';
    const offer=item.bestOffer?'<span class="live-offer">אפשר להציע מחיר</span>':'';
-   const tier=score.group===0?'<span class="live-candidate">כדאי לבדוק עכשיו</span>':score.group===1?'<span class="live-watch">מעניין בקרוב</span>':score.group===2?'<span class="live-watch">למעקב</span>':'';
+   const tier=!verified?'<span class="live-verify-badge">דורש אימות</span>':
+    score.group===0?'<span class="live-candidate">כדאי לבדוק עכשיו</span>':
+    score.group===1?'<span class="live-watch">מעניין בקרוב</span>':
+    '<span class="live-strong-badge">התאמה חזקה</span>';
    const warnings=score.warnings.length?'<div class="live-flags">'+score.warnings.slice(0,3).map(x=>'<span>'+escape(x)+'</span>').join('')+'</div>':'';
    const image=item.image?'<img src="'+escape(item.image)+'" alt="" loading="lazy" decoding="async">':'<div class="live-no-image">✦</div>';
    const name=card?card.name+' · '+card.setName:'קלף לא מזוהה';
@@ -186,11 +205,12 @@
     '<span>כולל משלוח בדולר <b>'+amount+'</b></span></div>'+
     '<div class="live-single-grade"><div class="live-grade-control"><div><strong>מצב להשוואה: '+escape(grade)+'</strong><small>'+escape(conditionText+selectedLabel)+'</small></div>'+
     '<select class="live-item-grade" data-item-key="'+escape(key)+'" aria-label="מצב קלף להשוואה">'+GRADES.map(g=>'<option value="'+g+'"'+(g===grade?' selected':'')+'>'+g+'</option>').join('')+'</select></div>'+
-    '<div class="live-single-price"><span>מחירון '+grade+': <b>'+usdMoney(score.market)+'</b></span>'+
+    '<div class="live-single-price"><span>מחירון '+grade+': <b>'+(verified?usdMoney(score.market):'לא מוצג ללא אימות')+'</b></span>'+
     '<strong class="'+tone+'">'+discountText+'</strong></div>'+
-    (showFetch?'<button class="live-condition-fetch" type="button" data-item-key="'+escape(key)+'">'+(state.conditionLoading.has(key)?'בודק מול eBay…':'בדוק מצב שהמוכר הגדיר')+'</button>':
+    (showFetch?'<button class="live-condition-fetch" type="button" data-item-key="'+escape(key)+'">'+(state.conditionLoading.has(key)?'בודק מול eBay…':verified?'בדוק מצב שהמוכר הגדיר':'בדוק התאמת קלף מול eBay')+'</button>':
      (detail?.source==='unknown'?'<span class="live-condition-note">eBay לא סיפקה מצב מפורט למודעה הזאת</span>':''))+
-    (score.provisional?'<p class="live-pricebook-note">ההשוואה היא לפני משלוח. אין עדיין מחיר כולל אמין.</p>':'')+
+    (!verified?'<p class="live-match-review-note">נדרשת בדיקה: '+escape(score.verification.reasons.join(' · ')||'אין מספיק פרטי זיהוי')+'. המחירון והפער הוסתרו כדי לא להציג מציאה שגויה.</p>':'' )+
+    (verified&&score.provisional?'<p class="live-pricebook-note">ההשוואה היא לפני משלוח. אין עדיין מחיר כולל אמין.</p>':'')+
     '</div>'+warnings+
     '<div class="live-footer"><span>התאמת כותרת: '+Math.round(item.matchConfidence)+'% (לא אימות מקוריות)</span>'+
     '<a href="'+escape(item.url)+'" target="_blank" rel="noopener noreferrer">למודעה ב־eBay ↗</a></div></article>';
@@ -214,10 +234,10 @@
   conditionEnrichmentRunning=true;
   try{
    const index=cardIndex();
-   const candidates=state.items.filter(item=>!japaneseTitle(item.title)&&item.conditionSource!=='seller'&&!state.conditionDetails.has(keyFor(item)))
+   const candidates=state.items.filter(item=>!japaneseTitle(item.title)&&!state.conditionDetails.has(keyFor(item))&&(item.verificationStatus==='review'||item.conditionSource!=='seller'))
     .map(item=>({item,score:evaluation(item,index.get(item.cardId))}))
-    .sort((a,b)=>a.score.group-b.score.group||b.score.score-a.score.score)
-    .slice(0,10);
+    .sort((a,b)=>(a.item.verificationStatus==='review'?0:1)-(b.item.verificationStatus==='review'?0:1)||a.score.group-b.score.group||b.score.score-a.score.score)
+    .slice(0,18);
    for(const {item} of candidates){
     if(state.loading||state.status!=='ready')break;
     const key=keyFor(item);
@@ -227,7 +247,7 @@
      const postalCode=$('livePostal').value.trim();
      const response=await fetch(state.endpoint+'/api/item-condition',{
       method:'POST',headers:{'content-type':'application/json'},
-      body:JSON.stringify({itemId:item.itemId,marketplace:item.marketplace,...(postalCode?{postalCode}:{})})
+      body:JSON.stringify({itemId:item.itemId,marketplace:item.marketplace,card:(cardIndex().get(item.cardId)||null),...(postalCode?{postalCode}:{})})
      });
      const data=await response.json();
      state.conditionDetails.set(key,response.ok?data:{source:'unknown',grade:null,label:''});
@@ -285,7 +305,7 @@
     try{
      const response=await fetch(state.endpoint+'/api/search',{
       method:'POST',headers:{'content-type':'application/json'},
-      body:JSON.stringify({cards:selected.map(c=>({id:c.id,name:c.name,setName:c.setName,number:c.number,firstEdition:c.firstEdition})),...(postalCode?{postalCode}:{})}),
+      body:JSON.stringify({cards:selected.map(c=>({id:c.id,name:c.name,setName:c.setName,number:c.number,firstEdition:c.firstEdition,finish:c.finish})),...(postalCode?{postalCode}:{})}),
       signal:controller.signal
      });
      data=await response.json();
@@ -349,12 +369,13 @@
   state.visibleCount=PAGE_SIZE;
   render();
  }
- ['liveType','liveEndLimit','liveShipMax','liveTotalMax','liveDiscountMin','liveConditionMin','liveIncludeUnknown'].forEach(id=>{
+ ['liveType','liveEndLimit','liveShipMax','liveTotalMax','liveDiscountMin','liveConditionMin','liveIncludeUnknown','liveShowReview'].forEach(id=>{
   $(id).addEventListener('change',filtersChanged);
  });
  $('liveResetFilters').addEventListener('click',()=>{
   ['liveType','liveEndLimit','liveShipMax','liveTotalMax','liveDiscountMin','liveConditionMin'].forEach(id=>$(id).value='all');
   $('liveIncludeUnknown').checked=true;
+  $('liveShowReview').checked=true;
   $('liveOnlyShipping').checked=false;
   state.visibleCount=PAGE_SIZE;
   render();
@@ -378,7 +399,7 @@
    const postalCode=$('livePostal').value.trim();
    const response=await fetch(state.endpoint+'/api/item-condition',{
     method:'POST',headers:{'content-type':'application/json'},
-    body:JSON.stringify({itemId:item.itemId,marketplace:item.marketplace,...(postalCode?{postalCode}:{})})
+    body:JSON.stringify({itemId:item.itemId,marketplace:item.marketplace,card:(cardIndex().get(item.cardId)||null),...(postalCode?{postalCode}:{})})
    });
    const data=await response.json();
    if(!response.ok)throw Error(data.error||'Item condition unavailable');
