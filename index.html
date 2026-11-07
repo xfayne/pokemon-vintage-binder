@@ -2080,7 +2080,7 @@ window.VintageDealBridge={
   const lookup=new Map(state.cards.map(c=>[c.id,c]));
   return state.wishOrder.filter(id=>state.wish[id]&&!state.owned[id]).map((id,index)=>{
    const c=lookup.get(id);
-   return c?{id,rank:index+1,name:c.name,number:cardNumber(c),setName:MAP.get(c.set)?.name||'',image:c.image,condition:state.conditions[id]||'',firstEdition:!!state.firstEdition[id]}:null;
+   return c?{id,rank:index+1,name:c.name,number:cardNumber(c),setName:MAP.get(c.set)?.name||'',image:c.image,condition:state.conditions[id]||'',firstEdition:!!state.firstEdition[id],finish:c.finish||null}:null;
   }).filter(Boolean);
  },
  getMarketPrice:(id,grade)=>{
