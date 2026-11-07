@@ -54,7 +54,7 @@
   const detail=state.conditionDetails.get(keyFor(item));
   const status=detail?.verificationStatus||item.verificationStatus||'review';
   const reasons=detail?.verificationReasons||item.verificationReasons||['התאמת הקלף לא אומתה'];
-  return {status,reasons};
+  return {status,reasons,confidence:typeof detail?.matchConfidence==='number'&&detail.verificationStatus?detail.matchConfidence:item.matchConfidence};
  };
  const resolvedGrade=item=>{
   const key=keyFor(item),detail=state.conditionDetails.get(key);
@@ -76,17 +76,17 @@
   const difference=market!==null&&comparable!==null?(market-comparable)/market:null;
   const discount=allIn!==null&&verification.status==='strong'?difference:null;
   const hours=item.format==='AUCTION'?(new Date(item.endTime).getTime()-Date.now())/3600000:null;
-  const reliable=verification.status==='strong'&&discount!==null&&item.matchConfidence>=70&&gradeInfo.source!=='unknown'&&!/\\b(?:damaged|creased|folded|poor condition)\\b/i.test(item.title||'')&&!/\\b(?:lot|bundle)\\b/i.test(item.title||'');
+  const reliable=verification.status==='strong'&&discount!==null&&verification.confidence>=70&&gradeInfo.source!=='unknown'&&!/\\b(?:damaged|creased|folded|poor condition)\\b/i.test(item.title||'')&&!/\\b(?:lot|bundle)\\b/i.test(item.title||'');
   let group=4;
   if(reliable&&discount>=0.20&&((item.format==='FIXED_PRICE')||(hours!==null&&hours>=0&&hours<=6)))group=0;
   else if(reliable&&discount>=0.15&&((item.format==='FIXED_PRICE')||(hours!==null&&hours>=0&&hours<=24)))group=1;
   else if(discount!==null&&discount>0)group=2;
   else if(verification.status!=='strong')group=5;
   else if(provisional||gradeInfo.source==='unknown'||discount===null)group=3;
-  const score=(discount??-1)*100+(item.format==='FIXED_PRICE'?20:hours!==null&&hours<=6?18:hours!==null&&hours<=24?9:0)+item.matchConfidence/20;
+  const score=(discount??-1)*100+(item.format==='FIXED_PRICE'?20:hours!==null&&hours<=6?18:hours!==null&&hours<=24?9:0)+verification.confidence/20;
   const warnings=Array.isArray(item.warnings)?item.warnings.slice():[];
   if(item.shipping===null)warnings.push('מחיר משלוח לא ידוע — ההשוואה היא להצעה או למחיר הפריט בלבד');
-  if(item.matchConfidence<70)warnings.push('התאמת קלף לא ודאית');
+  if(verification.confidence<70)warnings.push('התאמת קלף לא ודאית');
   if(item.sellerFeedback!==null&&item.sellerFeedback<95)warnings.push('דירוג מוכר נמוך');
   return {gradeInfo,market,allIn,discount,difference,provisional,hours,group,score,warnings,verification};
  }
@@ -212,7 +212,7 @@
     (!verified?'<p class="live-match-review-note">נדרשת בדיקה: '+escape(score.verification.reasons.join(' · ')||'אין מספיק פרטי זיהוי')+'. המחירון והפער הוסתרו כדי לא להציג מציאה שגויה.</p>':'' )+
     (verified&&score.provisional?'<p class="live-pricebook-note">ההשוואה היא לפני משלוח. אין עדיין מחיר כולל אמין.</p>':'')+
     '</div>'+warnings+
-    '<div class="live-footer"><span>התאמת כותרת: '+Math.round(item.matchConfidence)+'% (לא אימות מקוריות)</span>'+
+    '<div class="live-footer"><span>התאמת פרטי המודעה: '+Math.round(score.verification.confidence)+'% (לא אימות מקוריות)</span>'+
     '<a href="'+escape(item.url)+'" target="_blank" rel="noopener noreferrer">למודעה ב־eBay ↗</a></div></article>';
   }).join(''):state.status==='ready'&&!state.loading?
    '<div class="live-empty">'+(state.items.length?'אין מודעות שתואמות לפילטרים. לחץ על איפוס סינון.':state.done?'לא נמצאו מודעות תואמות בקלפים שנבדקו. נסה לסרוק מחדש.':'עדיין לא נמצאו מודעות תואמות.')+'</div>':'';
