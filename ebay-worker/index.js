@@ -18,7 +18,7 @@ function cors(origin,env) {
 function clean(x,max) {return String(x==null?'':x).replace(/[\u0000-\u001f]/g,' ').trim().slice(0,max||90)}
 function cardInput(raw) {
  if (!raw || typeof raw!=='object') return null;
- const c={id:clean(raw.id,40),name:clean(raw.name,80),setName:clean(raw.setName,80),number:clean(raw.number,15),firstEdition:raw.firstEdition===true};
+ const c={id:clean(raw.id,40),name:clean(raw.name,80),setName:clean(raw.setName,80),number:clean(raw.number,15),firstEdition:raw.firstEdition===true,finish:['holo','normal','shining'].includes(raw.finish)?raw.finish:null};
  return /^[a-z0-9-]{2,40}$/i.test(c.id)&&c.name.length>=2&&c.setName.length>=3?c:null;
 }
 async function bearer(env) {
@@ -34,23 +34,94 @@ async function bearer(env) {
  return tokenCache.value;
 }
 const normalized=s=>String(s||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim().replace(/\s+/g,' ');
-function titleMatch(raw,card) {
- const t=normalized(raw),name=normalized(card.name),set=normalized(card.setName),num=normalized(card.number);
- if(!(' '+t+' ').includes(' '+name+' '))return null;
- if(/\b(proxy|reprint|replica|orica|fake|custom|facsimile|psa|bgs|cgc|graded|slab)\b/.test(t))return null;
- if(!card.firstEdition && /\b(1st|first) edition\b/.test(t))return null;
- const warnings=[];let confidence=45;
- if((' '+t+' ').includes(' '+set+' '))confidence+=28;else warnings.push('שם הסדרה אינו מופיע בכותרת');
- const statedNumbers=String(raw||'').match(/\b\d{1,3}\s*\/\s*\d{2,3}\b/g)||[];
- if(num && statedNumbers.length && !statedNumbers.some(n=>normalized(n)===num))return null;
- if(num && (' '+t+' ').includes(' '+num+' ')) confidence+=18;else warnings.push('מספר הקלף לא אומת');
- if(card.firstEdition) {
-  if(/\b(1st|first) edition\b/.test(t))confidence+=9;else warnings.push('הדפסת 1st Edition לא אומתה');
- } else warnings.push('Unlimited לא אומתה');
- if(/\b(lot|bundle|set of|multiple cards)\b/.test(t)){warnings.push('ייתכן שמדובר באוסף ולא בקלף יחיד');confidence-=20}
- if(/\b(crease|creased|fold|bent|damaged|dmg|heavily played)\b/.test(t))warnings.push('תיאור מציין נזק פיזי');
- if(/\b(non holo|nonholo|reverse holo)\b/.test(t))warnings.push('בדוק התאמת סוג Holo');
- return {confidence:Math.max(0,Math.min(100,confidence)),warnings};
+
+/* Marketplace text is seller-authored and untrusted: every price comparison needs
+ * strong evidence of the EXACT vintage card, not a keyword or a cheap lookalike. */
+const VINTAGE_CARD_NAMES=["Here Comes Team Rocket!","Lt. Surge's Electabuzz","Rocket's Sneak Attack","Lt. Surge's Magnemite","Lt. Surge's Electrode","Lt. Surge's Magneton","Lt. Surge's Raticate","Giovanni's Nidoqueen","Giovanni's Nidoran ♀","Giovanni's Nidoran ♂","Team Rocket's Meowth","Rocket's Hitmonchan","Blaine's Kangaskhan","Lt. Surge's Spearow","Blaine's Charmander","Lt. Surge's Pikachu","Lt. Surge's Rattata","Lt. Surge's Voltorb","Giovanni's Gyarados","Giovanni's Nidoking","Lt. Surge's Jolteon","Blaine's Charmeleon","Giovanni's Nidorina","Giovanni's Nidorino","Giovanni's Magikarp","Lt. Surge's Fearow","Misty's Tentacruel","Erika's Victreebel","Lt. Surge's Raichu","Sabrina's Venomoth","Blaine's Growlithe","Erika's Weepinbell","Erika's Bellsprout","Sabrina's Mr. Mime","Sabrina's Slowpoke","Blaine's Charizard","Giovanni's Machamp","Giovanni's Persian","Sabrina's Alakazam","Blaine's Ninetales","Giovanni's Machoke","Erika's Jigglypuff","Erika's Dragonair","Erika's Vileplume","The Rocket's Trap","Brock's Sandslash","Misty's Poliwrath","Misty's Tentacool","Brock's Lickitung","Erika's Exeggcute","Erika's Exeggutor","Misty's Poliwhirl","Sabrina's Haunter","Sabrina's Slowbro","Brock's Sandshrew","Sabrina's Drowzee","Sabrina's Venonat","Blaine's Arcanine","Brock's Ninetales","Giovanni's Pinsir","Sabrina's Golduck","Blaine's Rapidash","Erika's Bulbasaur","Giovanni's Meowth","Lt. Surge's Eevee","Sabrina's Kadabra","Giovanni's Machop","Sabrina's Porygon","Sabrina's Psyduck","Blaine's Moltres","Erika's Clefable","Rocket's Moltres","Rocket's Scyther","Sabrina's Gengar","Erika's Clefairy","Misty's Cloyster","Rocket's Snorlax","Brock's Graveler","Misty's Shellder","Sabrina's Gastly","Erika's Venusaur","Misty's Gyarados","Koga's Pidgeotto","Brock's Primeape","Blaine's Rhyhorn","Misty's Magikarp","Light Wigglytuff","Dark Charmeleon","Brock's Rhyhorn","Misty's Goldeen","Blaine's Magmar","Brock's Geodude","Erika's Dratini","Misty's Psyduck","Misty's Seaking","Misty's Starmie","Blaine's Ponyta","Blaine's Tauros","Blaine's Vulpix","Erika's Tangela","Misty's Poliwag","Koga's Beedrill","Misty's Golduck","Rocket's Mewtwo","Rocket's Zapdos","Brock's Dugtrio","Blaine's Dodrio","Erika's Ivysaur","Misty's Dewgong","Sabrina's Hypno","Blaine's Mankey","Brock's Diglett","Dark Feraligatr","Dark Typhlosion","Light Azumarill","Light Dragonite","Light Dragonair","Light Piloswine","Dark Forretress","Dark Wigglytuff","Light Ninetales","_____'s Pikachu","Surfing Pikachu","Dark Blastoise","Dark Charizard","Dark Dragonite","Dark Vileplume","Rainbow Energy","Dark Dragonair","Dark Electrode","Dark Wartortle","Brock's Rhydon","Misty's Seadra","Brock's Golbat","Erika's Oddish","Sabrina's Jynx","Brock's Mankey","Brock's Vulpix","Misty's Horsea","Misty's Staryu","Sabrina's Abra","Koga's Koffing","Koga's Weezing","Blaine's Doduo","Koga's Tangela","Dark Tyranitar","Light Arcanine","Miracle Energy","Dark Exeggutor","Light Vaporeon","Light Venomoth","Dark Octillery","Light Sunflora","Computer Error","Flying Pikachu","Pokémon Center","Dark Alakazam","Dark Gyarados","Dark Magneton","Dark Primeape","Dark Rapidash","Dark Vaporeon","Dark Raticate","Brock's Golem","Brock's Zubat","Erika's Gloom","Koga's Golbat","Koga's Kakuna","Koga's Pidgey","Erika's Paras","Koga's Grimer","Koga's Weedle","Dark Ampharos","Dark Houndoom","Dark Porygon2","Light Togetic","Dark Magcargo","Dark Slowking","Dark Ursaring","Light Lanturn","Light Machamp","Dark Croconaw","Light Dewgong","Light Flareon","Light Golduck","Light Jolteon","Light Machoke","Light Slowbro","Lucky Stadium","Pokémon Tower","Dark Dugtrio","Dark Machamp","Dark Slowbro","Dark Weezing","Dark Flareon","Dark Golduck","Dark Jolteon","Dark Kadabra","Dark Machoke","Dark Persian","Brock's Onix","Misty's Seel","Koga's Ditto","Koga's Arbok","Koga's Ekans","Koga's Zubat","Metal Energy","Dark Donphan","Dark Ariados","Dark Omastar","Light Ledian","Dark Flaaffy","Dark Haunter","Dark Omanyte","Dark Pupitar","Dark Quilava","Cool Porygon","Feraligator","Dark Golbat","Dark Crobat","Dark Espeon","Dark Gengar","Dark Scizor","Dark Raichu","Hitmonchan","Electabuzz","Charmeleon","Farfetch'd","Charmander","Kangaskhan","Victreebel","Wigglytuff","Butterfree","Weepinbell","Bellsprout","Jigglypuff","Aerodactyl","Tentacruel","Dark Arbok","Dark Hypno","Dark Gloom","Koga's Muk","Feraligatr","Typhlosion","Forretress","Misdreavus","Blastoise","Charizard","Ninetales","Poliwrath","Dragonair","Electrode","Pidgeotto","Growlithe","Poliwhirl","Wartortle","Bulbasaur","Magnemite","Nidoran ♂","Sandshrew","Nidoqueen","Vileplume","Exeggutor","Lickitung","Exeggcute","Nidoran ♀","Dragonite","Hitmonlee","Sandslash","Tentacool","Lt. Surge","Azumarill","Bellossom","Heracross","Piloswine","Chikorita","Cyndaquil","Girafarig","Sudowoodo","Hitmontop","Tyranitar","Unown [A]","Wobbuffet","Igglybuff","Unown [D]","Unown [F]","Unown [M]","Unown [N]","Unown [U]","Dunsparce","Teddiursa","Unown [E]","Unown [I]","Unown [O]","Octillery","Unown [B]","Unown [Y]","Unown [K]","Unown [G]","Unown [H]","Unown [W]","Unown [X]","Unown [C]","Unown [P]","Unown [Q]","Unown [Z]","Unown [L]","Unown [S]","Unown [T]","Unown [V]","Unown [J]","Alakazam","Clefairy","Gyarados","Magneton","Nidoking","Venusaur","Beedrill","Arcanine","Magikarp","Nidorino","Raticate","Caterpie","Squirtle","Clefable","Mr. Mime","Vaporeon","Venomoth","Nidorina","Parasect","Primeape","Rapidash","Articuno","Kabutops","Cloyster","Graveler","Shellder","Slowpoke","Dark Muk","Giovanni","Ampharos","Jumpluff","Meganium","Skarmory","Slowking","Croconaw","Granbull","Quagsire","Skiploom","Sunflora","Chinchou","Hoothoot","Snubbull","Spinarak","Stantler","Totodile","Houndoom","Houndour","Politoed","Smeargle","Ursaring","Larvitar","Delibird","Porygon2","Magcargo","Qwilfish","Remoraid","Smoochum","Chansey","Machamp","Dugtrio","Dewgong","Dratini","Haunter","Ivysaur","Kadabra","Machoke","Porygon","Diglett","Drowzee","Koffing","Metapod","Pikachu","Poliwag","Rattata","Starmie","Tangela","Voltorb","Flareon","Jolteon","Pidgeot","Scyther","Snorlax","Marowak","Persian","Seaking","Goldeen","Rhyhorn","Spearow","Venonat","Moltres","Golduck","Kingler","Omastar","Slowbro","Weezing","Geodude","Omanyte","Psyduck","Sabrina","Kingdra","Steelix","Togetic","Donphan","Murkrow","Sneasel","Ariados","Bayleef","Flaaffy","Lanturn","Miltank","Noctowl","Quilava","Mantine","Sentret","Shuckle","Sunkern","Umbreon","Corsola","Pupitar","Tyrogue","Blissey","Suicune","Mewtwo","Raichu","Zapdos","Kakuna","Magmar","Gastly","Machop","Pidgey","Ponyta","Staryu","Vulpix","Weedle","Pinsir","Dodrio","Fearow","Rhydon","Tauros","Cubone","Mankey","Meowth","Oddish","Gengar","Lapras","Golbat","Seadra","Grimer","Horsea","Kabuto","Krabby","Blaine","Cleffa","Elekid","Furret","Ledian","Phanpy","Togepi","Gligar","Hoppip","Ledyba","Mareep","Marill","Swinub","Wooper","Espeon","Scizor","Pineco","Celebi","Crobat","Raikou","Slugma","Doduo","Gloom","Eevee","Paras","Ditto","Hypno","Arbok","Golem","Ekans","Zubat","Brock","Erika","Misty","Lugia","Pichu","Magby","Aipom","Yanma","Entei","Ho-oh","Jynx","Seel","Abra","Onix","Koga","Xatu","Natu","Muk","Mew"].map(normalized);
+const KNOWN_SETS=["Base Set","Base Set 2","Jungle","Fossil","Team Rocket","Gym Heroes","Gym Challenge","Neo Genesis","Neo Discovery","Neo Revelation","Neo Destiny","Southern Islands","Legendary Collection","Wizards Black Star Promos","Gem Pack","Genetic Apex","Evolving Skies","Scarlet Violet","Sword Shield","Expedition","Aquapolis","Skyridge"].map(normalized);
+const hasPhrase=(hay,needle)=>(' '+hay+' ').includes(' '+needle+' ');
+const titleNumbers=s=>[...String(s||'').matchAll(/\b\d{1,4}\s*[\/／]\s*\d{1,4}\b/g)].map(x=>normalized(x[0]));
+const isNonEnglish=text=>/[ぁ-ヿ一-鿿가-힣]/u.test(String(text||''))||
+ /\b(?:japanese|japanisch|japonais|chinese|mandarin|simplified chinese|traditional chinese|korean|spanish|español|italian|italiano|french|français|german language|deutsch|portuguese|português|russian|russisch|thai|indonesian|indonesisch)\b/i.test(String(text||''));
+const isWrongProduct=text=>/\b(?:tcg\s*pocket|pokemon\s*pocket|digital\s*(?:card|trade|only|code)?|virtual\s*(?:card|trade)?|not\s*(?:a\s*)?physical|non\s*physical|code\s*card|online\s*code|qr\s*code|download\s*code|proxy|orica|replica|reprint|counterfeit|facsimile|custom\s*(?:art|card|print)?|fan\s*art|poster|art\s*print|sticker|playmat|sleeves?|display\s*box|booster\s*pack|sealed\s*pack|gem\s*pack|pack\s*of\s*\d+|3d\s*printed|psa|cgc|bgs|graded|slab)\b/i.test(String(text||''))||
+ /\b(?:choose\s*(?:your|a)\s*card|you\s*choose|pick\s*(?:your|a)\s*card|select\s*(?:a|your)\s*card|mystery\s*(?:card|pack))\b/i.test(String(text||''));
+function otherCardNames(title,target){
+ const t=normalized(title),targetName=normalized(target);
+ const names=new Set();
+ for(const name of VINTAGE_CARD_NAMES){
+  if(name===targetName||hasPhrase(targetName,name)||hasPhrase(name,targetName))continue;
+  if(hasPhrase(t,name))names.add(name);
+ }
+ return [...names];
+}
+function strictCardMatch(raw,card,aspects){
+ const title=String(raw||''),t=normalized(title),name=normalized(card.name),set=normalized(card.setName);
+ const num=normalized(card.number);
+ if(!name||!hasPhrase(t,name)||isNonEnglish(title)||isWrongProduct(title))return null;
+ if(!card.firstEdition&&/\b(?:1st|first)\s*edition\b/i.test(title))return null;
+ const reasons=[];
+ const titleNums=titleNumbers(title);
+ if(num&&titleNums.length&&!titleNums.includes(num))return null;
+ const hasNum=!!num&&titleNums.includes(num);
+ if(titleNums.length>1)reasons.push('בכותרת מוזכרים כמה מספרי קלפים');
+ const hasSet=hasPhrase(t,set);
+ const otherSets=KNOWN_SETS.filter(other=>other!==set&&!hasPhrase(set,other)&&!hasPhrase(other,set)&&hasPhrase(t,other));
+ if(!hasSet&&otherSets.length)return null;
+ if(!hasSet)reasons.push('הסדרה המדויקת לא אומתה בכותרת');
+ if(!hasNum)reasons.push('מספר הקלף לא אומת');
+ const otherNames=otherCardNames(title,card.name);
+ if(otherNames.length)reasons.push('הכותרת מזכירה קלפים נוספים');
+ if(/\b(?:lot|bundle|mixed\s*cards|multiple\s*cards|various\s*cards|assorted|collection|set\s*of)\b/i.test(title))
+  reasons.push('מודעה מרובת קלפים או וריאציות');
+ if(card.firstEdition&&!/\b(?:1st|first)\s*edition\b/i.test(title))
+  reasons.push('הדפסת First Edition לא אומתה');
+ if(card.finish==='holo'&&/\b(?:non[\s-]?holo|regular\s*rare|reverse\s*holo)\b/i.test(title))
+  reasons.push('קיימת סתירה לגבי גרסת Holo');
+ if(card.finish==='normal'&&/\b(?:holographic|holo\s*rare)\b/i.test(title)&&!/\bnon[\s-]?holo\b/i.test(title))
+  reasons.push('קיימת סתירה לגבי גרסת Holo');
+ const aspectData=Array.isArray(aspects)?aspects:[];
+ let evidence=0;
+ for(const a of aspectData){
+  const field=normalized(a?.name),value=normalized(Array.isArray(a?.value)?a.value.join(' '):a?.value||a?.values?.join(' ')||'');
+  if(!field||!value)continue;
+  if(/\b(?:language|sprache|lingua|langue|idioma)\b/.test(field)){
+   if(isNonEnglish(value))return null;
+  }
+  if(/\b(?:card number|card no|number)\b/.test(field)){
+   const vals=titleNumbers(value);
+   if(num&&vals.length&&!vals.includes(num))return null;
+   if(num&&vals.includes(num))evidence++;
+  }
+  if(/\b(?:set|expansion|series)\b/.test(field)){
+   if(hasPhrase(value,set))evidence++;
+   else if(KNOWN_SETS.some(x=>hasPhrase(value,x)))return null;
+  }
+  if(/\b(?:card name|character|pokemon name)\b/.test(field)){
+   if(!hasPhrase(value,name)&&VINTAGE_CARD_NAMES.some(x=>hasPhrase(value,x)))return null;
+   if(hasPhrase(value,name))evidence++;
+  }
+  if(/\b(?:finish|holo)\b/.test(field)){
+   if(card.finish==='holo'&&/\bnon\s*holo\b/.test(value))reasons.push('ה־Holo אינו תואם לפרטי המוכר');
+   if(card.finish==='normal'&&/\bholo(?:graphic)?\b/.test(value)&&!/\bnon\s*holo\b/.test(value))reasons.push('ה־Holo אינו תואם לפרטי המוכר');
+  }
+ }
+ // Explicit card number + set + name is usually sufficient; ambiguous items
+ // remain review-only unless their structured item aspects add corroboration.
+ const strong=hasNum&&hasSet&&reasons.length===0||hasSet&&evidence>=2&&reasons.filter(x=>!['מספר הקלף לא אומת','הסדרה המדויקת לא אומתה בכותרת'].includes(x)).length===0;
+ if(!strong&&!reasons.length)reasons.push('לא נמצאו די פרטי זיהוי עצמאיים');
+ return {status:strong?'strong':'review',confidence:strong?Math.min(99,91+evidence*2):Math.min(68,43+evidence*7),reasons,
+  evidence:{titleNumber:hasNum,titleSet:hasSet,aspects:evidence}};
+}
+
+function titleMatch(raw,card){
+ const verified=strictCardMatch(raw,card);
+ if(!verified)return null;
+ const t=normalized(raw);
+ const warnings=[...verified.reasons];
+ if(!card.firstEdition)warnings.push('Unlimited לא אומתה');
+ if(/\b(?:crease|creased|fold|bent|damaged|dmg|heavily played)\b/.test(t))warnings.push('תיאור מציין נזק פיזי');
+ return {confidence:verified.confidence,warnings,verificationStatus:verified.status,
+  verificationReasons:verified.reasons};
 }
 function cash(x) {const n=Number(x?.value);return x&&Number.isFinite(n)&&n>=0&&/^[A-Z]{3}$/.test(String(x.currency))?{value:n,currency:String(x.currency)}:null}
 // Grade inference is explicitly separated from eBay's structured condition.
@@ -104,7 +175,8 @@ function mapItem(item,card,market){
   conditionGrade,conditionSource,conditionLabel:structured?.label||rawCondition,
   format:auction?'AUCTION':'FIXED_PRICE',
   bestOffer:item.buyingOptions.includes('BEST_OFFER'),
-  marketplace:market,matchConfidence:match.confidence,warnings:match.warnings
+  marketplace:market,matchConfidence:match.confidence,warnings:match.warnings,
+  verificationStatus:match.verificationStatus,verificationReasons:match.verificationReasons
  };
 }
 async function search(c,market,token,env,postalCode,format){
@@ -141,7 +213,7 @@ async function searchBatch(cards,env,postalCode){
   items:items.filter(x=>{const k=x.itemId||x.url;if(unique.has(k))return false;unique.add(k);return true})
    .sort((a,b)=>b.matchConfidence-a.matchConfidence).slice(0,240),errors};
 }
-async function getItemCondition(itemId,market,env,postalCode){
+async function getItemCondition(itemId,market,env,postalCode,card){
  const token=await bearer(env);
  const postal=String(postalCode||env.EBAY_DELIVERY_POSTAL_CODE||'').trim();
  const zip=/^[0-9]{5,10}$/.test(postal)?postal:null;
@@ -156,9 +228,11 @@ async function getItemCondition(itemId,market,env,postalCode){
  const desc=gradeFromDescriptors(item.conditionDescriptors);
  const cond=clean(item.condition,80);
  const explicit=gradeFromText(cond);
+ const match=card?strictCardMatch(item.title||'',card,item.localizedAspects):null;
  return {condition:cond,grade:desc?.grade||explicit||null,
   label:desc?.label||cond||null,
-  source:desc||explicit?'seller':'unknown'};
+  source:desc||explicit?'seller':'unknown',verificationStatus:match?.status||'rejected',
+  verificationReasons:match?.reasons||[],matchConfidence:match?.confidence||0};
 }
 
 /* SHIPMENT_API: 17TRACK V2.4 integration.
@@ -280,7 +354,7 @@ export default {
    const marketplace=String(body?.marketplace||'');
    if(!/^v\d\|\d{3,20}\|\d{1,6}$/.test(itemId)||!MARKETS.includes(marketplace))
     return reply({error:'Invalid item'},400,headers);
-   try{return reply(await getItemCondition(itemId,marketplace,env,body.postalCode),200,headers)}
+   try{return reply(await getItemCondition(itemId,marketplace,env,body.postalCode,body.card?cardInput(body.card):null),200,headers)}
    catch(e){return reply({error:String(e.message||'ITEM_CONDITION_UNAVAILABLE')},502,headers)}
   }
   if(request.method!=='POST'||u.pathname!=='/api/search')return reply({error:'Not found'},404,headers);
