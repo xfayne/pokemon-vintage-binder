@@ -79,3 +79,9 @@
 /* A bid-only comparison is informative, but not a confirmed savings estimate. */
 .live-pricebook-row .live-pricebook-difference.provisional{color:#556a92}
 .live-pricebook-note{margin:0;padding:8px 10px;border-top:1px solid #e8edf5;background:#f7f9fd;color:#62718a;font-size:10px;line-height:1.7}
+
+/* Private destination postal code, saved in this browser only. */
+.live-toolbar .live-postal-label{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.live-postal-label input{font:inherit;font-size:12px;direction:ltr;text-align:center;border:1px solid #d5deef;border-radius:8px;background:#fff;color:#283b62;padding:7px;width:99px;max-width:100%;letter-spacing:.025em}
+.live-postal-label input:focus-visible{outline:2px solid #748fe2;outline-offset:1px}
+@media(max-width:650px){.live-postal-label{width:100%;justify-content:space-between}}
