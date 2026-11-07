@@ -14,8 +14,10 @@
  const ui=document.createElement('section');
  ui.className='live-auctions';
  ui.setAttribute('aria-label','מכרזים חיים מ־eBay');
- ui.innerHTML="<div class=\"live-title\"><span id=\"liveBadge\" class=\"live-badge\">בודק חיבור…</span></div>\n<div id=\"liveStatus\" class=\"live-status\" role=\"status\"></div>\n<div id=\"liveControls\" class=\"live-toolbar\" hidden>\n <button type=\"button\" id=\"liveReload\" class=\"btn primary\">↻ חפש מכרזים</button>\n <label for=\"dealGrade\">מצב להערכת מחיר <select id=\"dealGrade\"><option>NM</option><option>LP</option><option selected>MP</option><option>HP</option><option>DMG</option></select></label>\n <label for=\"liveSort\">מיון <select id=\"liveSort\"><option value=\"discount\">פער שמרני מול מחירון</option><option value=\"closing\">מסתיימים בקרוב</option><option value=\"bids\">מעט הצעות</option><option value=\"match\">התאמת קלף</option><option value=\"shipping\">משלוח: מהזול ליקר</option><option value=\"shippingDesc\">משלוח: מהיקר לזול</option></select></label>\n <label class=\"live-only-shipping\"><input type=\"checkbox\" id=\"liveOnlyShipping\"> רק משלוח ידוע</label>\n</div>\n<div id=\"liveListings\" class=\"live-results\" role=\"list\"></div>\n<div class=\"live-more\"><button type=\"button\" class=\"btn\" id=\"liveMore\" hidden>חפש בארבעה קלפים נוספים ↓</button></div>\n<p class=\"live-disclaimer\" id=\"liveDisclaimer\" hidden>ההשוואה מבוססת על מצבי הקלף שסימנת, לא על בדיקת מצב המכרז. הסינון מסיר כותרות המזוהות כיפניות, אך אינו מאמת שפה מתמונות. מחירים ומכרזים עשויים להשתנות.</p>";
+ ui.innerHTML="<div class=\"live-title\"><span id=\"liveBadge\" class=\"live-badge\">בודק חיבור…</span></div>\n<div id=\"liveStatus\" class=\"live-status\" role=\"status\"></div>\n<div id=\"liveControls\" class=\"live-toolbar\" hidden>\n <button type=\"button\" id=\"liveReload\" class=\"btn primary\">↻ חפש מכרזים</button>\n <label for=\"dealGrade\">מצב להערכת מחיר <select id=\"dealGrade\"><option>NM</option><option>LP</option><option selected>MP</option><option>HP</option><option>DMG</option></select></label>\n <label for=\"liveSort\">מיון <select id=\"liveSort\"><option value=\"discount\">פער שמרני מול מחירון</option><option value=\"closing\">מסתיימים בקרוב</option><option value=\"bids\">מעט הצעות</option><option value=\"match\">התאמת קלף</option><option value=\"shipping\">משלוח: מהזול ליקר</option><option value=\"shippingDesc\">משלוח: מהיקר לזול</option></select></label>\n <label class=\"live-only-shipping\"><input type=\"checkbox\" id=\"liveOnlyShipping\"> רק משלוח ידוע</label>\n <label for=\"livePostal\" class=\"live-postal-label\">מיקוד למשלוח <input id=\"livePostal\" type=\"text\" inputmode=\"numeric\" autocomplete=\"postal-code\" maxlength=\"7\" placeholder=\"7 ספרות\" aria-label=\"מיקוד ישראלי לחישוב משלוח\"></label>\n</div>\n<div id=\"liveListings\" class=\"live-results\" role=\"list\"></div>\n<div class=\"live-more\"><button type=\"button\" class=\"btn\" id=\"liveMore\" hidden>חפש בארבעה קלפים נוספים ↓</button></div>\n<p class=\"live-disclaimer\" id=\"liveDisclaimer\" hidden>ההשוואה מבוססת על מצבי הקלף שסימנת, לא על בדיקת מצב המכרז. הסינון מסיר כותרות המזוהות כיפניות, אך אינו מאמת שפה מתמונות. מחירים ומכרזים עשויים להשתנות.</p>";
 
+ const POSTAL_STORAGE_KEY='pokemon-ebay-delivery-postal';
+ try{const stored=localStorage.getItem(POSTAL_STORAGE_KEY);if(stored&&/^[0-9]{7}$/.test(stored))ui.querySelector('#livePostal').value=stored;}catch(_){}
  const GRADES=['NM','LP','MP','HP','DMG'];
  const selectedGrades=new Set(['LP','MP','HP']);
  const gradeSelector=document.createElement('div');
@@ -78,7 +80,7 @@
   else if(state.loading)status='בודקת מכרזים ומחירי משלוח עבור קלפים מרשימת הרצונות…';
   else if(state.error)status=state.error;
   else if(state.status==='awaiting-keys')status='החיבור לשרת מוכן. ממתינים לאישור חשבון המפתחים ולהגדרת מפתחות eBay כדי להתחיל לחפש מכרזים אוטומטית.';
-  else if(state.fetchedAt)status='מקור: eBay Browse API · נבדקו '+state.searched+' מתוך '+total+' קלפים · עודכן: '+new Date(state.fetchedAt).toLocaleString('he-IL')+(state.errors.length?' · היו '+state.errors.length+' שגיאות חלקיות':'');
+  else if(state.fetchedAt)status='מקור: eBay Browse API · נבדקו '+state.searched+' מתוך '+total+' קלפים · עודכן: '+new Date(state.fetchedAt).toLocaleString('he-IL')+(state.errors.length?' · היו '+state.errors.length+' שגיאות חלקיות':'')+(!/^[0-9]{7}$/.test($('livePostal').value)?' · להערכת משלוח מדויקת, הזן מיקוד':'');
   else if(state.status==='ready')status='מחובר ל־eBay. ניתן לחפש מכרזים על קלפים מה־Wishlist שלך.';
   else status='בדיקת חיבור לשרת eBay…';
   $('liveStatus').textContent=status;
@@ -147,7 +149,8 @@
   if(!selected.length){state.done=true;render();return}
   state.loading=true;state.error='';state.status='loading';render();
   try{
-   const response=await fetch(state.endpoint+'/api/search',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({cards:selected.map(c=>({id:c.id,name:c.name,setName:c.setName,number:c.number,firstEdition:c.firstEdition}))})});
+   const postalCode=$('livePostal').value.trim();
+   const response=await fetch(state.endpoint+'/api/search',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({cards:selected.map(c=>({id:c.id,name:c.name,setName:c.setName,number:c.number,firstEdition:c.firstEdition})),...(postalCode?{postalCode}:{})})});
    const data=await response.json();
    if(!response.ok)throw Error(data.error||'eBay returned HTTP '+response.status);
    if(!Array.isArray(data.items))throw Error('שרת eBay החזיר נתונים לא תקינים.');
@@ -168,6 +171,12 @@
  $('liveMore').addEventListener('click',()=>findMore(false));
  $('liveSort').addEventListener('change',render);
  $('liveOnlyShipping').addEventListener('change',render);
+ $('livePostal').addEventListener('change',()=>{
+  const value=$('livePostal').value.trim();
+  if(value&&!/^[0-9]{7}$/.test(value)){state.error='נא להזין מיקוד ישראלי בן 7 ספרות';render();return}
+  try{if(value)localStorage.setItem(POSTAL_STORAGE_KEY,value);else localStorage.removeItem(POSTAL_STORAGE_KEY)}catch(_){}
+  if(state.status==='ready'&&!state.loading)findMore(true);
+ });
  gradeSelector.addEventListener('click',e=>{
   const button=e.target.closest('button[data-grade]');
   if(!button||!gradeSelector.contains(button))return;
