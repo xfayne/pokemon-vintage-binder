@@ -8,13 +8,21 @@
  const $=id=>document.getElementById(id);
  const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const money=v=>{if(!v || !Number.isFinite(Number(v.value)) || !/^[A-Z]{3}$/.test(String(v.currency)))return '—';try{return new Intl.NumberFormat('en-US',{style:'currency',currency:v.currency,maximumFractionDigits:2}).format(Number(v.value));}catch(_){return String(v.value)+' '+String(v.currency)}};
- const state={endpoint:DEFAULT_WORKER_URL,status:'setup',error:'',items:[],searched:0,done:false,loading:false,seen:new Set(),fetchedAt:null,errors:[]};
+ const state={endpoint:DEFAULT_WORKER_URL,status:'setup',error:'',items:[],searched:0,done:false,paused:false,loading:false,seen:new Set(),fetchedAt:null,errors:[],visibleCount:40,scanTotal:0,lastScanAt:0};
+ const BATCH_SIZE=4;
+ const BATCH_DELAY_MS=500;
+ const SCAN_TTL_MS=30*60*1000;
+ const PAGE_SIZE=40;
+ let scanCards=[];
+ let scanSerial=0;
+ let activeRequest=null;
+ const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
  // The public endpoint is fixed in code, not a per-device setup step.
 
  const ui=document.createElement('section');
  ui.className='live-auctions';
  ui.setAttribute('aria-label','מכרזים חיים מ־eBay');
- ui.innerHTML="<div class=\"live-title\"><span id=\"liveBadge\" class=\"live-badge\">בודק חיבור…</span></div>\n<div id=\"liveStatus\" class=\"live-status\" role=\"status\"></div>\n<div id=\"liveControls\" class=\"live-toolbar\" hidden>\n <button type=\"button\" id=\"liveReload\" class=\"btn primary\">↻ חפש מכרזים</button>\n <label for=\"dealGrade\">מצב להערכת מחיר <select id=\"dealGrade\"><option>NM</option><option>LP</option><option selected>MP</option><option>HP</option><option>DMG</option></select></label>\n <label for=\"liveSort\">מיון <select id=\"liveSort\"><option value=\"discount\">פער שמרני מול מחירון</option><option value=\"closing\">מסתיימים בקרוב</option><option value=\"bids\">מעט הצעות</option><option value=\"match\">התאמת קלף</option><option value=\"shipping\">משלוח: מהזול ליקר</option><option value=\"shippingDesc\">משלוח: מהיקר לזול</option></select></label>\n <label class=\"live-only-shipping\"><input type=\"checkbox\" id=\"liveOnlyShipping\"> רק משלוח ידוע</label>\n <label for=\"livePostal\" class=\"live-postal-label\">מיקוד למשלוח <input id=\"livePostal\" type=\"text\" inputmode=\"numeric\" autocomplete=\"postal-code\" maxlength=\"7\" placeholder=\"7 ספרות\" aria-label=\"מיקוד ישראלי לחישוב משלוח\"></label>\n</div>\n<div id=\"liveListings\" class=\"live-results\" role=\"list\"></div>\n<div class=\"live-more\"><button type=\"button\" class=\"btn\" id=\"liveMore\" hidden>חפש בארבעה קלפים נוספים ↓</button></div>\n<p class=\"live-disclaimer\" id=\"liveDisclaimer\" hidden>ההשוואה מבוססת על מצבי הקלף שסימנת, לא על בדיקת מצב המכרז. הסינון מסיר כותרות המזוהות כיפניות, אך אינו מאמת שפה מתמונות. מחירים ומכרזים עשויים להשתנות.</p>";
+ ui.innerHTML="<div class=\"live-title\"><span id=\"liveBadge\" class=\"live-badge\">בודק חיבור…</span></div>\n<div id=\"liveStatus\" class=\"live-status\" role=\"status\"></div>\n<div id=\"liveControls\" class=\"live-toolbar\" hidden>\n <button type=\"button\" id=\"liveReload\" class=\"btn primary\">↻ סרוק מחדש את כל הקלפים</button>\n <label for=\"dealGrade\">מצב להערכת מחיר <select id=\"dealGrade\"><option>NM</option><option>LP</option><option selected>MP</option><option>HP</option><option>DMG</option></select></label>\n <label for=\"liveSort\">מיון <select id=\"liveSort\"><option value=\"discount\">פער שמרני מול מחירון</option><option value=\"closing\">מסתיימים בקרוב</option><option value=\"bids\">מעט הצעות</option><option value=\"match\">התאמת קלף</option><option value=\"shipping\">משלוח: מהזול ליקר</option><option value=\"shippingDesc\">משלוח: מהיקר לזול</option></select></label>\n <label class=\"live-only-shipping\"><input type=\"checkbox\" id=\"liveOnlyShipping\"> רק משלוח ידוע</label>\n <label for=\"livePostal\" class=\"live-postal-label\">מיקוד למשלוח <input id=\"livePostal\" type=\"text\" inputmode=\"numeric\" autocomplete=\"postal-code\" maxlength=\"7\" placeholder=\"7 ספרות\" aria-label=\"מיקוד ישראלי לחישוב משלוח\"></label>\n</div>\n<div id=\"liveProgress\" class=\"live-progress\" hidden role=\"progressbar\" aria-label=\"התקדמות סריקת קלפי ה־Wishlist\" aria-valuemin=\"0\" aria-valuenow=\"0\" aria-valuemax=\"100\"><div class=\"live-progress-fill\" id=\"liveProgressFill\"></div></div>\n<div id=\"liveListings\" class=\"live-results\" role=\"list\"></div>\n<div class=\"live-more\"><button type=\"button\" class=\"btn\" id=\"liveShowMore\" hidden>הצג עוד מכרזים</button><button type=\"button\" class=\"btn\" id=\"liveMore\" hidden>השהה סריקה</button></div>\n<p class=\"live-disclaimer\" id=\"liveDisclaimer\" hidden>ההשוואה מבוססת על מצבי הקלף שסימנת, לא על בדיקת מצב המכרז. הסינון מסיר כותרות המזוהות כיפניות, אך אינו מאמת שפה מתמונות. מחירים ומכרזים עשויים להשתנות.</p>";
 
  const POSTAL_STORAGE_KEY='pokemon-ebay-delivery-postal';
  try{
@@ -78,23 +86,33 @@
   return hours<0?'מכרז הסתיים':hours===0?'מסתיים בקרוב':hours<=24?'נותרו '+hours+' שעות':'נותרו '+Math.ceil(hours/24)+' ימים';
  };
  function render(){
-  const total=list().length;
+  const total=state.scanTotal||list().length;
   const badge=$('liveBadge');
-  badge.textContent=state.status==='ready'?'eBay · API':state.status==='loading'?'מתחבר…':state.status==='awaiting-keys'?'ממתין למפתחות eBay':state.status==='error'?'שגיאת חיבור':'טרם חובר';
+  badge.textContent=state.status==='awaiting-keys'?'ממתין למפתחות eBay':state.status==='error'?'שגיאת חיבור':state.loading&&state.status==='ready'?'סורק מכרזים…':state.status==='ready'?'eBay · API':state.status==='loading'?'מתחבר…':'טרם חובר';
   badge.className='live-badge'+(state.status==='ready'?' ready':'');
-  $('liveReload').disabled=state.loading || !state.endpoint || state.status==='awaiting-keys';
-  $('liveMore').disabled=state.loading;
-  $('liveMore').hidden=state.loading || state.done || state.status!=='ready' || state.searched>=total;
+  $('liveReload').disabled=state.loading||!state.endpoint||state.status==='awaiting-keys';
+  $('liveMore').hidden=!(state.loading||state.paused&&!state.done);
+  $('liveMore').textContent=state.loading?'השהה סריקה':'המשך סריקה';
+  $('liveMore').disabled=false;
   $('liveControls').hidden=state.status!=='ready';
   $('liveDisclaimer').hidden=state.status!=='ready';
+  const progress=$('liveProgress');
+  progress.hidden=state.status!=='ready'||!total;
+  const pct=total?Math.min(100,Math.round(state.searched/total*100)):0;
+  progress.setAttribute('aria-valuenow',String(pct));
+  progress.setAttribute('aria-valuetext',state.searched+' מתוך '+total+' קלפים');
+  $('liveProgressFill').style.width=pct+'%';
   let status='';
-  if(!state.endpoint)status='כדי לקבל מכרזים חיים צריך לחבר שרת eBay. התשתית קיימת; כרגע אין כתובת שרת מוגדרת.';
-  else if(state.loading)status='בודקת מכרזים ומחירי משלוח עבור קלפים מרשימת הרצונות…';
-  else if(state.error)status=state.error;
-  else if(state.status==='awaiting-keys')status='החיבור לשרת מוכן. ממתינים לאישור חשבון המפתחים ולהגדרת מפתחות eBay כדי להתחיל לחפש מכרזים אוטומטית.';
-  else if(state.fetchedAt)status='מקור: eBay Browse API · נבדקו '+state.searched+' מתוך '+total+' קלפים · עודכן: '+new Date(state.fetchedAt).toLocaleString('he-IL')+(state.errors.length?' · היו '+state.errors.length+' שגיאות חלקיות':'')+(!/^[0-9]{7}$/.test($('livePostal').value)?' · להערכת משלוח מדויקת, הזן מיקוד':'');
-  else if(state.status==='ready')status='מחובר ל־eBay. ניתן לחפש מכרזים על קלפים מה־Wishlist שלך.';
-  else status='בדיקת חיבור לשרת eBay…';
+  if(!state.endpoint)status='כדי לקבל מכרזים חיים צריך לחבר שרת eBay.';
+  else if(state.status==='awaiting-keys')status='ממתינים לאישור והגדרת מפתחות eBay כדי להתחיל בסריקה.';
+  else if(state.status==='error')status=state.error||'אי אפשר להתחבר ל־eBay';
+  else if(state.status==='loading')status='מתחברים ל־eBay…';
+  else if(state.loading)status='סורקים אוטומטית: '+state.searched+' מתוך '+total+' קלפים · נאספו '+state.items.length+' מכרזים'+(state.errors.length?' · '+state.errors.length+' שגיאות חלקיות':'');
+  else if(state.paused)status=(state.error?state.error+' · ':'סריקה מושהית · ')+'נבדקו '+state.searched+' מתוך '+total+' קלפים. אפשר להמשיך מהמקום שבו נעצרנו.';
+  else if(state.done)status='הסריקה הושלמה: '+state.searched+' מתוך '+total+' קלפים · נאספו '+state.items.length+' מכרזים'+(state.errors.length?' · '+state.errors.length+' שגיאות חלקיות':'')+(state.lastScanAt?' · עודכן: '+new Date(state.lastScanAt).toLocaleTimeString('he-IL'):'');
+  else if(state.status==='ready')status='מחובר ל־eBay. פתיחת לשונית מציאות תתחיל סריקה אוטומטית.';
+  else status='בודקים את החיבור ל־eBay…';
+  if(state.status==='ready'&&!/^[0-9]{7}$/.test($('livePostal').value))status+=' · מומלץ להזין מיקוד לחישוב משלוח';
   $('liveStatus').textContent=status;
   const lookup=cardIndex(),sort=$('liveSort').value,shippingOnly=$('liveOnlyShipping').checked;
   const enriched=state.items.map(item=>{
@@ -112,7 +130,9 @@
    if(y===null)return -1;
    return (sort==='shipping'?x-y:y-x)||b.item.matchConfidence-a.item.matchConfidence;
   });
-  $('liveListings').innerHTML=enriched.length ? enriched.map(({item,card,score})=>{
+  $('liveShowMore').hidden=enriched.length<=state.visibleCount;
+  $('liveShowMore').textContent='הצג עוד מכרזים ('+Math.min(PAGE_SIZE,enriched.length-state.visibleCount)+' מתוך '+(enriched.length-state.visibleCount)+')';
+  $('liveListings').innerHTML=enriched.length ? enriched.slice(0,state.visibleCount).map(({item,card,score})=>{
    const flag=score.discount!==null&&score.discount>=0.35&&item.matchConfidence>=70&&item.shipping!==null&&!/\b(damaged?|creased?|poor|heavy played)\b/i.test(item.title);
    const dt=Number.isFinite(new Date(item.endTime).getTime())?timeLabel(item.endTime):'זמן סיום לא ידוע';
    const amount=score.allIn===null?'—':'$'+score.allIn.toFixed(2);
@@ -138,7 +158,7 @@
      '<div class="live-footer"><span>התאמת כותרת: '+Math.round(item.matchConfidence)+'% (לא אימות מקוריות)</span>'+
      '<a href="'+escape(item.url)+'" target="_blank" rel="noopener noreferrer">למכרז ב־eBay ↗</a></div></article>';
   }).join('') : state.status==='ready'&&!state.loading?
-   '<div class="live-empty">'+(state.searched?'לא נמצאו מכרזים תואמים בקלפים שנבדקו. אפשר להמשיך לקלפים הבאים.':'עוד לא בוצע חיפוש.')+'</div>':
+   '<div class="live-empty">'+(state.done?'לא נמצאו מכרזים תואמים בקלפים שנבדקו. אפשר לנסות לסרוק מחדש.':state.paused?'לא נמצאו עדיין מכרזים תואמים. אפשר להמשיך את הסריקה.':'עדיין לא נמצאו מכרזים תואמים.')+'</div>':
    '';
  }
 
@@ -153,41 +173,111 @@
    state.status='ready';state.error='';render();return true;
   }catch(error){state.status='error';state.error='אי אפשר להתחבר לשרת: '+String(error.message||error);render();return false}
  }
- async function findMore(reset=false){
-  if(state.loading || !state.endpoint)return;
-  const wanted=list();
-  if(reset){state.items=[];state.seen=new Set();state.searched=0;state.done=false;state.errors=[];state.fetchedAt=null}
-  const selected=wanted.slice(state.searched,state.searched+4);
-  if(!selected.length){state.done=true;render();return}
-  state.loading=true;state.error='';state.status='loading';render();
+ function pauseScan(){
+  if(!state.loading)return;
+  scanSerial++;
+  activeRequest?.abort();
+  activeRequest=null;
+  state.loading=false;
+  state.paused=true;
+  render();
+ }
+ async function scanAll(reset=false){
+  if(state.loading||state.status!=='ready'||!state.endpoint)return;
+  if(reset||!scanCards.length){
+   scanCards=list().slice();
+   state.scanTotal=scanCards.length;
+   state.items=[];
+   state.seen=new Set();
+   state.searched=0;
+   state.done=false;
+   state.paused=false;
+   state.errors=[];
+   state.error='';
+   state.fetchedAt=null;
+   state.lastScanAt=0;
+   state.visibleCount=PAGE_SIZE;
+  }
+  if(!scanCards.length){
+   state.done=true;
+   state.paused=false;
+   state.lastScanAt=Date.now();
+   render();
+   return;
+  }
+  const serial=++scanSerial;
+  state.loading=true;
+  state.paused=false;
+  state.error='';
+  render();
   try{
-   const postalCode=$('livePostal').value.trim();
-   const response=await fetch(state.endpoint+'/api/search',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({cards:selected.map(c=>({id:c.id,name:c.name,setName:c.setName,number:c.number,firstEdition:c.firstEdition})),...(postalCode?{postalCode}:{})})});
-   const data=await response.json();
-   if(!response.ok)throw Error(data.error||'eBay returned HTTP '+response.status);
-   if(!Array.isArray(data.items))throw Error('שרת eBay החזיר נתונים לא תקינים.');
-   for(const item of data.items){
-    if(!item||typeof item.itemId!=='string'||typeof item.url!=='string')continue;
-    const k=item.itemId||item.url;if(state.seen.has(k))continue;state.seen.add(k);state.items.push(item);
+   while(serial===scanSerial&&state.searched<scanCards.length){
+    const selected=scanCards.slice(state.searched,state.searched+BATCH_SIZE);
+    const postalCode=$('livePostal').value.trim();
+    const controller=new AbortController();
+    activeRequest=controller;
+    let data;
+    try{
+     const response=await fetch(state.endpoint+'/api/search',{
+      method:'POST',headers:{'content-type':'application/json'},
+      body:JSON.stringify({cards:selected.map(c=>({id:c.id,name:c.name,setName:c.setName,number:c.number,firstEdition:c.firstEdition})),...(postalCode?{postalCode}:{})}),
+      signal:controller.signal
+     });
+     data=await response.json();
+     if(!response.ok)throw Error(data.error||'eBay returned HTTP '+response.status);
+     if(!Array.isArray(data.items))throw Error('שרת eBay החזיר נתונים לא תקינים.');
+    }finally{
+     if(activeRequest===controller)activeRequest=null;
+    }
+    if(serial!==scanSerial)return;
+    for(const item of data.items){
+     if(!item||typeof item.itemId!=='string'||typeof item.url!=='string')continue;
+     const key=item.itemId||item.url;
+     if(state.seen.has(key))continue;
+     state.seen.add(key);
+     state.items.push(item);
+    }
+    state.searched+=selected.length;
+    state.fetchedAt=data.fetchedAt||new Date().toISOString();
+    if(Array.isArray(data.errors))state.errors.push(...data.errors);
+    render();
+    // Stop on throttling rather than exhausting the eBay application quota.
+    if(Array.isArray(data.errors)&&data.errors.some(x=>/\b(?:429|rate.limit|quota.exceeded)\b/i.test(String(x.error||'')))){
+     state.error='eBay הגבילה זמנית את קצב הבקשות';
+     state.paused=true;
+     break;
+    }
+    if(state.searched<scanCards.length)await delay(BATCH_DELAY_MS);
    }
-   state.searched+=selected.length;
-   state.done=state.searched>=wanted.length;
-   state.fetchedAt=data.fetchedAt||new Date().toISOString();
-   if(Array.isArray(data.errors))state.errors.push(...data.errors);
-   state.status='ready';
-  }catch(e){state.status='error';state.error='חיפוש המכרזים נכשל: '+String(e.message||e)}
-  finally{state.loading=false;render()}
+  }catch(e){
+   if(serial!==scanSerial)return;
+   state.error='הסריקה נעצרה: '+String(e.message||e);
+   state.paused=true;
+  }finally{
+   if(serial===scanSerial){
+    state.loading=false;
+    activeRequest=null;
+    if(state.searched>=scanCards.length){
+     state.done=true;
+     state.paused=false;
+     state.lastScanAt=Date.now();
+    }else if(!state.done)state.paused=true;
+    render();
+   }
+  }
  }
 
- $('liveReload').addEventListener('click',()=>findMore(true));
- $('liveMore').addEventListener('click',()=>findMore(false));
- $('liveSort').addEventListener('change',render);
- $('liveOnlyShipping').addEventListener('change',render);
+ $('liveReload').addEventListener('click',()=>scanAll(true));
+ $('liveMore').addEventListener('click',()=>state.loading?pauseScan():scanAll(false));
+ $('liveShowMore').addEventListener('click',()=>{state.visibleCount+=PAGE_SIZE;render()});
+ $('liveSort').addEventListener('change',()=>{state.visibleCount=PAGE_SIZE;render()});
+ $('liveOnlyShipping').addEventListener('change',()=>{state.visibleCount=PAGE_SIZE;render()});
  $('livePostal').addEventListener('change',()=>{
   const value=$('livePostal').value.trim();
-  if(value&&!/^[0-9]{7}$/.test(value)){state.error='נא להזין מיקוד ישראלי בן 7 ספרות';render();return}
+  if(value&&!/^[0-9]{7}$/.test(value)){state.error='נא להזין מיקוד ישראלי בן 7 ספרות';state.paused=true;render();return}
   try{if(value)localStorage.setItem(POSTAL_STORAGE_KEY,value);else localStorage.removeItem(POSTAL_STORAGE_KEY)}catch(_){}
-  if(state.status==='ready'&&!state.loading)findMore(true);
+  if(state.loading)pauseScan();
+  if(state.status==='ready')scanAll(true);
  });
  gradeSelector.addEventListener('click',e=>{
   const button=e.target.closest('button[data-grade]');
@@ -203,9 +293,13 @@
    if(state.loading)return;
    if(!state.endpoint){render();return}
    if(state.status!=='ready'){if(!await connect())return}
-   if(!state.fetchedAt || Date.now()-new Date(state.fetchedAt).getTime()>10*60*1000)await findMore(true);
+   if(state.paused){render();return}
+   const currentCards=list();
+   const wishlistChanged=currentCards.length!==scanCards.length||currentCards.some((card,i)=>card.id!==scanCards[i]?.id||card.firstEdition!==scanCards[i]?.firstEdition);
+   if(wishlistChanged||!state.done||!state.lastScanAt||Date.now()-state.lastScanAt>SCAN_TTL_MS)await scanAll(true);
+   else render();
   },
-  refreshCards:()=>{if(state.items.length)render()}
+  refreshCards:()=>{if(state.items.length||state.loading||state.done)render()}
  };
  render();
  if(state.endpoint)connect();
