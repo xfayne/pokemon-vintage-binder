@@ -4,7 +4,7 @@
  * Env: ALLOWED_ORIGIN=https://xfayne.github.io
  */
 const API = 'https://api.ebay.com';
-const MARKETS = ['EBAY_US','EBAY_DE'];
+const MARKETS = ['EBAY_US','EBAY_GB','EBAY_DE'];
 let tokenCache = { value:null, expires:0 };
 function reply(data,status,cors) {
  return new Response(JSON.stringify(data),{status:status||200,headers:Object.assign({'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff'},cors)});
@@ -41,6 +41,8 @@ function titleMatch(raw,card) {
  if(!card.firstEdition && /\b(1st|first) edition\b/.test(t))return null;
  const warnings=[];let confidence=45;
  if((' '+t+' ').includes(' '+set+' '))confidence+=28;else warnings.push('שם הסדרה אינו מופיע בכותרת');
+ const statedNumbers=t.match(/\b\d{1,3}\s*\/\s*\d{2,3}\b/g)||[];
+ if(num && statedNumbers.length && !statedNumbers.some(n=>normalized(n)===num))return null;
  if(num && (' '+t+' ').includes(' '+num+' ')) confidence+=18;else warnings.push('מספר הקלף לא אומת');
  if(card.firstEdition) {
   if(/\b(1st|first) edition\b/.test(t))confidence+=9;else warnings.push('הדפסת 1st Edition לא אומתה');
@@ -51,48 +53,112 @@ function titleMatch(raw,card) {
  return {confidence:Math.max(0,Math.min(100,confidence)),warnings};
 }
 function cash(x) {const n=Number(x?.value);return x&&Number.isFinite(n)&&n>=0&&/^[A-Z]{3}$/.test(String(x.currency))?{value:n,currency:String(x.currency)}:null}
-function mapItem(item,card,market) {
- if(!Array.isArray(item?.buyingOptions)||!item.buyingOptions.includes('AUCTION'))return null;
+// Grade inference is explicitly separated from eBay's structured condition.
+// An "Ungraded" summary is not evidence of an NM/LP/MP/HP/DMG grade.
+function gradeFromText(value){
+ const t=String(value||'').toLowerCase();
+ if(/\b(damaged?|dmg|poor|creased?|folded|bent)\b/.test(t))return 'DMG';
+ if(/\b(heavy played|heavily played|heavy play|hp\b|good condition)\b/.test(t))return 'HP';
+ if(/\b(moderately played|moderate play|mod(?:erate)? played|mp\b|very good)\b/.test(t))return 'MP';
+ if(/\b(lightly played|light play|lp\b|excellent)\b/.test(t))return 'LP';
+ if(/\b(near mint|nm\b|mint condition|like new)\b/.test(t))return 'NM';
+ return null;
+}
+function gradeFromDescriptors(descriptors){
+ if(!Array.isArray(descriptors))return null;
+ for(const descriptor of descriptors){
+  if(!/card condition/i.test(String(descriptor?.name||'')))continue;
+  for(const value of descriptor.values||[]){
+   const grade=gradeFromText(value?.content);
+   if(grade)return {grade,label:clean(value.content,80)};
+  }
+ }
+ return null;
+}
+function mapItem(item,card,market){
+ if(!Array.isArray(item?.buyingOptions))return null;
+ const auction=item.buyingOptions.includes('AUCTION');
+ const fixed=item.buyingOptions.includes('FIXED_PRICE');
+ if(!auction&&!fixed)return null;
  const match=titleMatch(item.title,card);if(!match)return null;
- const price=cash(item.currentBidPrice)||cash(item.price);if(!price)return null;
- const url=String(item.itemWebUrl||'');if(!/^https:\/\/(www\.)?ebay\.[a-z.]+\/itm\//i.test(url))return null;
+ const price=auction?(cash(item.currentBidPrice)||cash(item.price)):cash(item.price);
+ if(!price)return null;
+ const url=String(item.itemWebUrl||'');
+ if(!/^https:\/\/(www\.)?ebay\.[a-z.]+\/itm\//i.test(url))return null;
  const shipping=Array.isArray(item.shippingOptions)?item.shippingOptions.map(x=>cash(x.shippingCost)).find(Boolean)||null:null;
  const fb=Number(item.seller?.feedbackPercentage);
  const img=String(item.image?.imageUrl||'');
+ const rawCondition=clean(item.condition,80);
+ const structured=gradeFromDescriptors(item.conditionDescriptors);
+ const explicit=gradeFromText(rawCondition);
+ const guessed=gradeFromText(item.title);
+ const conditionGrade=structured?.grade||explicit||guessed||null;
+ const conditionSource=structured?'seller':explicit?'seller':guessed?'title':'unknown';
  return {
   cardId:card.id,itemId:clean(item.itemId,90),title:clean(item.title,200),
   url,image:/^https:\/\//.test(img)?img:null,
-  currentBid:price,shipping,bidCount:Number.isInteger(item.bidCount)?item.bidCount:null,
-  endTime:item.itemEndDate||null,sellerFeedback:Number.isFinite(fb)&&fb>=0&&fb<=100?fb:null,
-  sellerName:clean(item.seller?.username,70),condition:clean(item.condition,60),
+  currentBid:price,shipping,bidCount:auction&&Number.isInteger(item.bidCount)?item.bidCount:null,
+  endTime:auction?item.itemEndDate||null:null,
+  sellerFeedback:Number.isFinite(fb)&&fb>=0&&fb<=100?fb:null,
+  sellerName:clean(item.seller?.username,70),condition:rawCondition,
+  conditionGrade,conditionSource,conditionLabel:structured?.label||rawCondition,
+  format:auction?'AUCTION':'FIXED_PRICE',
+  bestOffer:item.buyingOptions.includes('BEST_OFFER'),
   marketplace:market,matchConfidence:match.confidence,warnings:match.warnings
  };
 }
-async function search(c,market,token,env,postalCode){
- // The buyer's postal code is private, configured as a Cloudflare Worker secret.
+async function search(c,market,token,env,postalCode,format){
  const postal=String(postalCode||env.EBAY_DELIVERY_POSTAL_CODE||'').trim();
  const zip=/^[0-9]{5,10}$/.test(postal)?postal:null;
- const deliveryFilter='buyingOptions:{AUCTION},deliveryCountry:IL'+(zip?',deliveryPostalCode:'+zip:'');
+ const deliveryFilter='buyingOptions:{'+format+'},deliveryCountry:IL'+(zip?',deliveryPostalCode:'+zip:'');
  const destination='country=IL'+(zip?',zip='+zip:'');
  const u=new URL(API+'/buy/browse/v1/item_summary/search');
  u.search=new URLSearchParams({
-  q:[c.name,c.setName,'pokemon'].join(' ').slice(0,100),limit:'30',
-  filter:deliveryFilter,sort:'endingSoonest'
+  // A shorter query finds items without the set name; titleMatch verifies each result.
+  q:[c.name,c.setName].join(' ').slice(0,100),limit:'45',
+  filter:deliveryFilter,sort:format==='AUCTION'?'endingSoonest':'price'
  }).toString();
- const r=await fetch(u,{headers:{authorization:'Bearer '+token,'X-EBAY-C-MARKETPLACE-ID':market,'X-EBAY-C-ENDUSERCTX':'contextualLocation='+encodeURIComponent(destination),accept:'application/json'}});
- if(!r.ok)throw Error('eBay '+market+' returned HTTP '+r.status);
+ const r=await fetch(u,{headers:{
+  authorization:'Bearer '+token,'X-EBAY-C-MARKETPLACE-ID':market,
+  'X-EBAY-C-ENDUSERCTX':'contextualLocation='+encodeURIComponent(destination),accept:'application/json'
+ }});
+ if(!r.ok)throw Error('eBay '+market+' '+format+' returned HTTP '+r.status);
  const data=await r.json();
  return (Array.isArray(data.itemSummaries)?data.itemSummaries:[]).map(x=>mapItem(x,c,market)).filter(Boolean);
 }
 async function searchBatch(cards,env,postalCode){
  const token=await bearer(env);const items=[];const errors=[];
  for(const c of cards){
-  const outcomes=await Promise.allSettled(MARKETS.map(m=>search(c,m,token,env,postalCode)));
-  outcomes.forEach((result,i)=>{if(result.status==='fulfilled')items.push(...result.value);else errors.push({cardId:c.id,marketplace:MARKETS[i],error:String(result.reason?.message||'Unknown').slice(0,110)})});
+  const tasks=MARKETS.flatMap(market=>['AUCTION','FIXED_PRICE'].map(format=>({market,format})));
+  const outcomes=await Promise.allSettled(tasks.map(t=>search(c,t.market,token,env,postalCode,t.format)));
+  outcomes.forEach((result,i)=>{
+   if(result.status==='fulfilled')items.push(...result.value);
+   else errors.push({cardId:c.id,marketplace:tasks[i].market,format:tasks[i].format,error:String(result.reason?.message||'Unknown').slice(0,110)});
+  });
  }
  const unique=new Set();
  return {source:'eBay Browse API',fetchedAt:new Date().toISOString(),searchedCards:cards.length,
-  items:items.filter(x=>{const k=x.itemId||x.url;if(unique.has(k))return false;unique.add(k);return true}).sort((a,b)=>b.matchConfidence-a.matchConfidence).slice(0,120),errors};
+  items:items.filter(x=>{const k=x.itemId||x.url;if(unique.has(k))return false;unique.add(k);return true})
+   .sort((a,b)=>b.matchConfidence-a.matchConfidence).slice(0,240),errors};
+}
+async function getItemCondition(itemId,market,env,postalCode){
+ const token=await bearer(env);
+ const postal=String(postalCode||env.EBAY_DELIVERY_POSTAL_CODE||'').trim();
+ const zip=/^[0-9]{5,10}$/.test(postal)?postal:null;
+ const destination='country=IL'+(zip?',zip='+zip:'');
+ const url=API+'/buy/browse/v1/item/'+encodeURIComponent(itemId);
+ const response=await fetch(url,{headers:{
+  authorization:'Bearer '+token,'X-EBAY-C-MARKETPLACE-ID':market,
+  'X-EBAY-C-ENDUSERCTX':'contextualLocation='+encodeURIComponent(destination),accept:'application/json'
+ }});
+ if(!response.ok)throw Error('eBay item detail returned HTTP '+response.status);
+ const item=await response.json();
+ const desc=gradeFromDescriptors(item.conditionDescriptors);
+ const cond=clean(item.condition,80);
+ const explicit=gradeFromText(cond);
+ return {condition:cond,grade:desc?.grade||explicit||null,
+  label:desc?.label||cond||null,
+  source:desc||explicit?'seller':'unknown'};
 }
 
 /* SHIPMENT_API: 17TRACK V2.4 integration.
@@ -208,6 +274,15 @@ export default {
   if(!allowedOrigin(origin,env))return reply({error:'Origin not allowed'},403,headers);
   if(u.pathname.startsWith('/api/shipments/'))return shipmentsApi(request,env,headers,u);
   if(request.method==='GET'&&u.pathname==='/health')return reply({ready:!!(env.EBAY_CLIENT_ID&&env.EBAY_CLIENT_SECRET),provider:'eBay Browse API',shippingDestinationConfigured:/^[0-9]{5,10}$/.test(String(env.EBAY_DELIVERY_POSTAL_CODE||'').trim())},200,headers);
+  if(request.method==='POST'&&u.pathname==='/api/item-condition'){
+   let body;try{body=await request.json()}catch{return reply({error:'Invalid JSON'},400,headers)}
+   const itemId=String(body?.itemId||'');
+   const marketplace=String(body?.marketplace||'');
+   if(!/^v\d\|\d{3,20}\|\d{1,6}$/.test(itemId)||!MARKETS.includes(marketplace))
+    return reply({error:'Invalid item'},400,headers);
+   try{return reply(await getItemCondition(itemId,marketplace,env,body.postalCode),200,headers)}
+   catch(e){return reply({error:String(e.message||'ITEM_CONDITION_UNAVAILABLE')},502,headers)}
+  }
   if(request.method!=='POST'||u.pathname!=='/api/search')return reply({error:'Not found'},404,headers);
   if(Number(request.headers.get('content-length')||0)>6000)return reply({error:'Payload too large'},413,headers);
   let body;try{body=await request.json()}catch(_){return reply({error:'Invalid JSON'},400,headers)}
