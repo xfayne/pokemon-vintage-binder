@@ -16,6 +16,7 @@
  let scanCards=[];
  let scanSerial=0;
  let activeRequest=null;
+ let conditionEnrichmentRunning=false;
  const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
  // The public endpoint is fixed in code, not a per-device setup step.
 
@@ -208,6 +209,34 @@
    state.status='ready';state.error='';render();return true;
   }catch(error){state.status='error';state.error='אי אפשר להתחבר לשרת: '+String(error.message||error);render();return false}
  }
+ async function enrichTopSellerConditions(){
+  if(conditionEnrichmentRunning||state.status!=='ready'||!state.done)return;
+  conditionEnrichmentRunning=true;
+  try{
+   const index=cardIndex();
+   const candidates=state.items.filter(item=>!japaneseTitle(item.title)&&item.conditionSource!=='seller'&&!state.conditionDetails.has(keyFor(item)))
+    .map(item=>({item,score:evaluation(item,index.get(item.cardId))}))
+    .sort((a,b)=>a.score.group-b.score.group||b.score.score-a.score.score)
+    .slice(0,10);
+   for(const {item} of candidates){
+    if(state.loading||state.status!=='ready')break;
+    const key=keyFor(item);
+    if(state.conditionDetails.has(key))continue;
+    state.conditionLoading.add(key);
+    try{
+     const postalCode=$('livePostal').value.trim();
+     const response=await fetch(state.endpoint+'/api/item-condition',{
+      method:'POST',headers:{'content-type':'application/json'},
+      body:JSON.stringify({itemId:item.itemId,marketplace:item.marketplace,...(postalCode?{postalCode}:{})})
+     });
+     const data=await response.json();
+     state.conditionDetails.set(key,response.ok?data:{source:'unknown',grade:null,label:''});
+    }catch(e){state.conditionDetails.set(key,{source:'unknown',grade:null,label:''})}
+    finally{state.conditionLoading.delete(key);render()}
+   }
+  }finally{conditionEnrichmentRunning=false}
+ }
+
  function pauseScan(){
   if(!state.loading)return;
   scanSerial++;
@@ -231,8 +260,7 @@
    state.error='';
    state.fetchedAt=null;
    state.lastScanAt=0;
-   state.conditionDetails.clear();
-   state.gradeOverrides.clear();
+   // Keep manual grade selections and fetched seller data across refreshes of the same listings.
    state.visibleCount=PAGE_SIZE;
   }
   if(!scanCards.length){
@@ -300,6 +328,7 @@
      state.lastScanAt=Date.now();
     }else if(!state.done)state.paused=true;
     render();
+    if(state.done)void enrichTopSellerConditions();
    }
   }
  }
