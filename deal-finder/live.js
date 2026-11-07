@@ -14,29 +14,46 @@
  const ui=document.createElement('section');
  ui.className='live-auctions';
  ui.setAttribute('aria-label','מכרזים חיים מ־eBay');
- ui.innerHTML="<div class=\"live-title\"><span id=\"liveBadge\" class=\"live-badge\">בודק חיבור…</span></div>\n<div id=\"liveStatus\" class=\"live-status\" role=\"status\"></div>\n<div id=\"liveControls\" class=\"live-toolbar\" hidden>\n <button type=\"button\" id=\"liveReload\" class=\"btn primary\">↻ חפש מכרזים</button>\n <label for=\"dealGrade\">מצב להערכת מחיר <select id=\"dealGrade\"><option>NM</option><option>LP</option><option selected>MP</option><option>HP</option><option>DMG</option></select></label>\n <label for=\"liveSort\">מיון <select id=\"liveSort\"><option value=\"discount\">הנחה משוערת</option><option value=\"closing\">מסתיימים בקרוב</option><option value=\"bids\">מעט הצעות</option><option value=\"match\">התאמת קלף</option></select></label>\n <label class=\"live-only-shipping\"><input type=\"checkbox\" id=\"liveOnlyShipping\"> רק משלוח ידוע</label>\n</div>\n<div id=\"liveListings\" class=\"live-results\" role=\"list\"></div>\n<div class=\"live-more\"><button type=\"button\" class=\"btn\" id=\"liveMore\" hidden>חפש בארבעה קלפים נוספים ↓</button></div>\n<p class=\"live-disclaimer\" id=\"liveDisclaimer\" hidden>הערכת ההנחה מניחה את מצב הקלף שנבחר. יש לבדוק מצב, מקוריות, משלוח ועמלות לפני הצעה; נתוני מכרז משתנים בזמן אמת.</p>";
+ ui.innerHTML="<div class=\"live-title\"><span id=\"liveBadge\" class=\"live-badge\">בודק חיבור…</span></div>\n<div id=\"liveStatus\" class=\"live-status\" role=\"status\"></div>\n<div id=\"liveControls\" class=\"live-toolbar\" hidden>\n <button type=\"button\" id=\"liveReload\" class=\"btn primary\">↻ חפש מכרזים</button>\n <label for=\"dealGrade\">מצב להערכת מחיר <select id=\"dealGrade\"><option>NM</option><option>LP</option><option selected>MP</option><option>HP</option><option>DMG</option></select></label>\n <label for=\"liveSort\">מיון <select id=\"liveSort\"><option value=\"discount\">פער שמרני מול מחירון</option><option value=\"closing\">מסתיימים בקרוב</option><option value=\"bids\">מעט הצעות</option><option value=\"match\">התאמת קלף</option></select></label>\n <label class=\"live-only-shipping\"><input type=\"checkbox\" id=\"liveOnlyShipping\"> רק משלוח ידוע</label>\n</div>\n<div id=\"liveListings\" class=\"live-results\" role=\"list\"></div>\n<div class=\"live-more\"><button type=\"button\" class=\"btn\" id=\"liveMore\" hidden>חפש בארבעה קלפים נוספים ↓</button></div>\n<p class=\"live-disclaimer\" id=\"liveDisclaimer\" hidden>ההשוואה מבוססת על מצבי הקלף שסימנת, לא על בדיקת מצב המכרז. הסינון מסיר כותרות המזוהות כיפניות, אך אינו מאמת שפה מתמונות. מחירים ומכרזים עשויים להשתנות.</p>";
+
+ const GRADES=['NM','LP','MP','HP','DMG'];
+ const selectedGrades=new Set(['LP','MP','HP']);
+ const gradeSelector=document.createElement('div');
+ gradeSelector.className='live-grade-filter';
+ gradeSelector.setAttribute('role','group');
+ gradeSelector.setAttribute('aria-label','מצבי קלף להשוואה');
+ gradeSelector.innerHTML='<span class="live-grade-title">מצבים להשוואה</span><div class="live-grade-options">'+GRADES.map(g=>'<button type="button" class="live-grade-choice'+(selectedGrades.has(g)?' selected':'')+'" data-grade="'+g+'" aria-pressed="'+selectedGrades.has(g)+'">'+g+'</button>').join('')+'</div>';
+ ui.querySelector('label[for="dealGrade"]').replaceWith(gradeSelector);
+ const refreshGradeButtons=()=>gradeSelector.querySelectorAll('[data-grade]').forEach(btn=>{
+  const active=selectedGrades.has(btn.dataset.grade);
+  btn.classList.toggle('selected',active);
+  btn.setAttribute('aria-pressed',String(active));
+ });
+ const japaneseTitle=title=>/[\u3040-\u30ff\u3400-\u9fff]/u.test(String(title||''))||/\b(?:japanese|japanisch\w*|jpn|jap|japonais\w*|japon[eé]s\w*|japan\s+(?:edition|version|print|language|import|card))\b/i.test(String(title||''));
+ const usdMoney=value=>typeof value==='number'&&Number.isFinite(value)?new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:2}).format(value):'—';
  page.querySelector('.collection-heading').after(ui);
 
  const list=()=>bridge()?.getWishlistCards?.()||[];
  const usd=(a)=>{if(!a||typeof a.value!=='number')return null;return window.VintageDealsDashboard?.convertToUSD?.(a.value,a.currency)??null};
- const marketFor=c=>{
-  const grade=$('dealGrade')?.value||'MP';
-  return bridge()?.getMarketPrice?.(c.id,grade);
- };
+ const marketFor=(c,grade)=>bridge()?.getMarketPrice?.(c.id,grade);
  const cardIndex=()=>new Map(list().map(c=>[c.id,c]));
  function evaluation(item,card){
-  const market=card?marketFor(card):null;
   const current=usd(item.currentBid);
   const shipping=usd(item.shipping);
-  const allIn=current!==null && shipping!==null?current+shipping:null;
-  const rate=typeof market==='number'&&Number.isFinite(market)&&market>0;
-  const discount=rate&&allIn!==null?(market-allIn)/market:null;
+  const allIn=current!==null&&shipping!==null?current+shipping:null;
+  const comparisons=GRADES.filter(g=>selectedGrades.has(g)).map(grade=>{
+   const raw=card?marketFor(card,grade):null;
+   const market=typeof raw==='number'&&Number.isFinite(raw)&&raw>0?raw:null;
+   return {grade,market,discount:market!==null&&allIn!==null?(market-allIn)/market:null};
+  });
+  // Conservative sort: a listing must be inexpensive against EVERY selected, priced grade.
+  const complete=comparisons.length>0&&comparisons.every(x=>x.discount!==null);
+  const discount=complete?Math.min(...comparisons.map(x=>x.discount)):null;
   const warnings=Array.isArray(item.warnings)?item.warnings.slice():[];
   if(item.shipping===null)warnings.push('מחיר משלוח לישראל לא ידוע');
   if(item.matchConfidence<70)warnings.push('התאמת קלף לא ודאית');
-  if(item.sellerFeedback!==null && item.sellerFeedback<95)warnings.push('דירוג מוכר נמוך');
-  warnings.push('מצב הקלף לא אומת; החישוב מניח '+($('dealGrade')?.value||'MP'));
-  return {market,allIn,discount,warnings};
+  if(item.sellerFeedback!==null&&item.sellerFeedback<95)warnings.push('דירוג מוכר נמוך');
+  return {allIn,comparisons,discount,warnings};
  }
  const timeLabel=d=>{
   const t=new Date(d||'').getTime();if(!Number.isFinite(t))return 'זמן סיום לא ידוע';
@@ -66,15 +83,13 @@
   const enriched=state.items.map(item=>{
    const card=lookup.get(item.cardId);
    return {item,card,score:evaluation(item,card)};
-  }).filter(x=>!shippingOnly || x.item.shipping!==null);
+  }).filter(x=>!japaneseTitle(x.item.title)&&(!shippingOnly || x.item.shipping!==null));
   if(sort==='discount')enriched.sort((a,b)=>(b.score.discount??-999)-(a.score.discount??-999)||b.item.matchConfidence-a.item.matchConfidence);
   if(sort==='closing')enriched.sort((a,b)=>(new Date(a.item.endTime).getTime()||Infinity)-(new Date(b.item.endTime).getTime()||Infinity));
   if(sort==='bids')enriched.sort((a,b)=>(a.item.bidCount??Infinity)-(b.item.bidCount??Infinity));
   if(sort==='match')enriched.sort((a,b)=>b.item.matchConfidence-a.item.matchConfidence);
   $('liveListings').innerHTML=enriched.length ? enriched.map(({item,card,score})=>{
-   const pct=score.discount!==null?Math.round(score.discount*100):null;
-   const target=35;
-   const flag=pct!==null&&pct>=target&&item.matchConfidence>=70&&item.shipping!==null;
+   const flag=score.discount!==null&&score.discount>=0.35&&item.matchConfidence>=70&&item.shipping!==null&&!/\b(damaged?|creased?|poor|heavy played)\b/i.test(item.title);
    const dt=Number.isFinite(new Date(item.endTime).getTime())?timeLabel(item.endTime):'זמן סיום לא ידוע';
    const amount=score.allIn===null?'—':'$'+score.allIn.toFixed(2);
    const name=card?card.name+' · '+card.setName:'קלף לא מזוהה';
@@ -87,8 +102,13 @@
      (flag?'<span class="live-candidate">מחיר נמוך*</span>':'')+'</div>'+
      '<div class="live-item-numbers"><span>הצעה נוכחית <b>'+escape(money(item.currentBid))+'</b></span>'+
      '<span>משלוח לישראל <b>'+escape(item.shipping?money(item.shipping):'לא ידוע')+'</b></span>'+
-     '<span>כולל משלוח בדולר <b>'+amount+'</b></span>'+
-     '<span>הנחה משוערת* <b class="'+(pct!==null&&pct>0?'positive':'')+'">'+(pct===null?'לא ניתן לחשב':pct+'%')+'</b></span></div>'+warnings+
+     '<span>כולל משלוח בדולר <b>'+amount+'</b></span></div>'+
+     '<div class="live-pricebook"><div class="live-pricebook-heading">מחירון לפי מצב <small>לעומת המחיר כולל משלוח</small></div>'+
+     score.comparisons.map(row=>{
+      const difference=row.discount===null?'לא ניתן להשוות':Math.abs(row.discount)<0.005?'כמו במחירון':(row.discount>0?'זול ב־':'יקר ב־')+Math.round(Math.abs(row.discount)*100)+'%';
+      const tone=row.discount===null?'unknown':row.discount>0.005?'cheaper':row.discount< -0.005?'pricier':'equal';
+      return '<div class="live-pricebook-row"><strong>'+row.grade+'</strong><span>מחירון: <b>'+usdMoney(row.market)+'</b></span><span class="live-pricebook-difference '+tone+'">'+difference+'</span></div>';
+     }).join('')+'</div>'+warnings+
      '<div class="live-footer"><span>התאמת כותרת: '+Math.round(item.matchConfidence)+'% (לא אימות מקוריות)</span>'+
      '<a href="'+escape(item.url)+'" target="_blank" rel="noopener noreferrer">למכרז ב־eBay ↗</a></div></article>';
   }).join('') : state.status==='ready'&&!state.loading?
@@ -136,7 +156,15 @@
  $('liveMore').addEventListener('click',()=>findMore(false));
  $('liveSort').addEventListener('change',render);
  $('liveOnlyShipping').addEventListener('change',render);
- $('dealGrade').addEventListener('change',render);
+ gradeSelector.addEventListener('click',e=>{
+  const button=e.target.closest('button[data-grade]');
+  if(!button||!gradeSelector.contains(button))return;
+  const grade=button.dataset.grade;
+  if(selectedGrades.has(grade)){if(selectedGrades.size===1)return;selectedGrades.delete(grade)}
+  else selectedGrades.add(grade);
+  refreshGradeButtons();
+  render();
+ });
  window.VintageEbayLive={
   open:async()=>{
    if(state.loading)return;
