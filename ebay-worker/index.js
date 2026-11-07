@@ -41,7 +41,7 @@ function titleMatch(raw,card) {
  if(!card.firstEdition && /\b(1st|first) edition\b/.test(t))return null;
  const warnings=[];let confidence=45;
  if((' '+t+' ').includes(' '+set+' '))confidence+=28;else warnings.push('שם הסדרה אינו מופיע בכותרת');
- const statedNumbers=t.match(/\b\d{1,3}\s*\/\s*\d{2,3}\b/g)||[];
+ const statedNumbers=String(raw||'').match(/\b\d{1,3}\s*\/\s*\d{2,3}\b/g)||[];
  if(num && statedNumbers.length && !statedNumbers.some(n=>normalized(n)===num))return null;
  if(num && (' '+t+' ').includes(' '+num+' ')) confidence+=18;else warnings.push('מספר הקלף לא אומת');
  if(card.firstEdition) {
