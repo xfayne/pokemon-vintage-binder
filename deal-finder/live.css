@@ -133,3 +133,9 @@
 .live-condition-note{display:block;color:#8a94a7;font-size:10px;padding-top:8px}
 .live-single-grade .live-pricebook-note{margin-top:8px;border-radius:6px;padding:7px}
 @media(max-width:650px){.live-filter-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.live-advanced{padding:0 10px}.live-filter-grid select{font-size:12px}.live-watch,.live-candidate{max-width:85px}}
+
+/* Matching reliability: only strong verified identity can show price-book discounts */
+.live-verify-badge{border:1px solid #f2d5aa;background:#fff5e5;color:#875b22;border-radius:7px;font-size:10px;font-weight:750;padding:5px 6px;max-width:105px}
+.live-strong-badge{border:1px solid #d0e8db;background:#ebf7f0;color:#246a4c;border-radius:7px;font-size:10px;font-weight:750;padding:5px 6px;max-width:100px}
+.live-match-review-note{font-size:11px;color:#88682d;background:#fff8eb;border:1px solid #f2e7d1;padding:8px;border-radius:7px;line-height:1.65;margin:8px 0 0}
+.live-single-price strong.unknown{color:#738297}
