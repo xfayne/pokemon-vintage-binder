@@ -17,7 +17,19 @@
  ui.innerHTML="<div class=\"live-title\"><span id=\"liveBadge\" class=\"live-badge\">בודק חיבור…</span></div>\n<div id=\"liveStatus\" class=\"live-status\" role=\"status\"></div>\n<div id=\"liveControls\" class=\"live-toolbar\" hidden>\n <button type=\"button\" id=\"liveReload\" class=\"btn primary\">↻ חפש מכרזים</button>\n <label for=\"dealGrade\">מצב להערכת מחיר <select id=\"dealGrade\"><option>NM</option><option>LP</option><option selected>MP</option><option>HP</option><option>DMG</option></select></label>\n <label for=\"liveSort\">מיון <select id=\"liveSort\"><option value=\"discount\">פער שמרני מול מחירון</option><option value=\"closing\">מסתיימים בקרוב</option><option value=\"bids\">מעט הצעות</option><option value=\"match\">התאמת קלף</option><option value=\"shipping\">משלוח: מהזול ליקר</option><option value=\"shippingDesc\">משלוח: מהיקר לזול</option></select></label>\n <label class=\"live-only-shipping\"><input type=\"checkbox\" id=\"liveOnlyShipping\"> רק משלוח ידוע</label>\n <label for=\"livePostal\" class=\"live-postal-label\">מיקוד למשלוח <input id=\"livePostal\" type=\"text\" inputmode=\"numeric\" autocomplete=\"postal-code\" maxlength=\"7\" placeholder=\"7 ספרות\" aria-label=\"מיקוד ישראלי לחישוב משלוח\"></label>\n</div>\n<div id=\"liveListings\" class=\"live-results\" role=\"list\"></div>\n<div class=\"live-more\"><button type=\"button\" class=\"btn\" id=\"liveMore\" hidden>חפש בארבעה קלפים נוספים ↓</button></div>\n<p class=\"live-disclaimer\" id=\"liveDisclaimer\" hidden>ההשוואה מבוססת על מצבי הקלף שסימנת, לא על בדיקת מצב המכרז. הסינון מסיר כותרות המזוהות כיפניות, אך אינו מאמת שפה מתמונות. מחירים ומכרזים עשויים להשתנות.</p>";
 
  const POSTAL_STORAGE_KEY='pokemon-ebay-delivery-postal';
- try{const stored=localStorage.getItem(POSTAL_STORAGE_KEY);if(stored&&/^[0-9]{7}$/.test(stored))ui.querySelector('#livePostal').value=stored;}catch(_){}
+ try{
+  const hash=location.hash.replace(/^#/,'');
+  const imported=hash.startsWith('deliveryPostal=')?new URLSearchParams(hash).get('deliveryPostal'):null;
+  const stored=localStorage.getItem(POSTAL_STORAGE_KEY);
+  const postal=/^[0-9]{7}$/.test(imported||'')?imported:stored;
+  if(postal&&/^[0-9]{7}$/.test(postal)){
+   ui.querySelector('#livePostal').value=postal;
+   if(postal===imported){
+    localStorage.setItem(POSTAL_STORAGE_KEY,postal);
+    history.replaceState(null,'',location.pathname+location.search);
+   }
+  }
+ }catch(_){}
  const GRADES=['NM','LP','MP','HP','DMG'];
  const selectedGrades=new Set(['LP','MP','HP']);
  const gradeSelector=document.createElement('div');
