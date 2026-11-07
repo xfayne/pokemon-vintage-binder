@@ -131,9 +131,10 @@
     if(totalMax!=='all'&&(score.allIn===null||score.allIn>Number(totalMax)))return false;
     if(minDiscount!=='all'&&(score.discount===null||score.discount*100<Number(minDiscount)))return false;
     if(minCondition!=='all'){
-     const grade=score.gradeInfo.grade;
-     if(score.gradeInfo.source==='unknown'||gradeRank[grade]===undefined)return false;
-     if(gradeRank[grade]>gradeRank[minCondition])return false;
+     const detail=state.conditionDetails.get(keyFor(item));
+     const sellerGrade=detail?.source==='seller'&&detail.grade?detail.grade:item.conditionGrade;
+     if(!sellerGrade||gradeRank[sellerGrade]===undefined)return false;
+     if(gradeRank[sellerGrade]>gradeRank[minCondition])return false;
     }
     return true;
    });
@@ -159,7 +160,7 @@
    const grade=score.gradeInfo.grade, pct=score.difference===null?null:Math.round(Math.abs(score.difference)*100);
    const discountText=pct===null?'מחירון לא זמין':
     score.provisional?(score.difference>=0?'המחיר לפני משלוח נמוך ב־':'המחיר לפני משלוח גבוה ב־')+pct+'%':
-    score.difference>=0?'זול ב־'+pct+'%':'יקר ב־'+pct+'%';
+    score.difference>=0?(item.format==='AUCTION'?'ההצעה כרגע נמוכה ב־':'זול ב־')+pct+'%':(item.format==='AUCTION'?'ההצעה כרגע גבוהה ב־':'יקר ב־')+pct+'%';
    const tone=score.provisional?'provisional':score.discount===null?'unknown':score.discount>=0?'cheaper':'pricier';
    const key=keyFor(item);
    const conditionText=score.gradeInfo.source==='seller'?'על פי eBay':score.gradeInfo.source==='title'?'מזוהה בכותרת':'לא ידוע (MP כברירת מחדל)';
