@@ -68,13 +68,18 @@ function mapItem(item,card,market) {
   marketplace:market,matchConfidence:match.confidence,warnings:match.warnings
  };
 }
-async function search(c,market,token){
+async function search(c,market,token,env){
+ // The buyer's postal code is private, configured as a Cloudflare Worker secret.
+ const postal=String(env.EBAY_DELIVERY_POSTAL_CODE||'').trim();
+ const zip=/^[0-9]{5,10}$/.test(postal)?postal:null;
+ const deliveryFilter='buyingOptions:{AUCTION},deliveryCountry:IL'+(zip?',deliveryPostalCode:'+zip:'');
+ const destination='country=IL'+(zip?',zip='+zip:'');
  const u=new URL(API+'/buy/browse/v1/item_summary/search');
  u.search=new URLSearchParams({
   q:[c.name,c.setName,'pokemon'].join(' ').slice(0,100),limit:'30',
-  filter:'buyingOptions:{AUCTION},deliveryCountry:IL',sort:'endingSoonest'
+  filter:deliveryFilter,sort:'endingSoonest'
  }).toString();
- const r=await fetch(u,{headers:{authorization:'Bearer '+token,'X-EBAY-C-MARKETPLACE-ID':market,accept:'application/json'}});
+ const r=await fetch(u,{headers:{authorization:'Bearer '+token,'X-EBAY-C-MARKETPLACE-ID':market,'X-EBAY-C-ENDUSERCTX':'contextualLocation='+encodeURIComponent(destination),accept:'application/json'}});
  if(!r.ok)throw Error('eBay '+market+' returned HTTP '+r.status);
  const data=await r.json();
  return (Array.isArray(data.itemSummaries)?data.itemSummaries:[]).map(x=>mapItem(x,c,market)).filter(Boolean);
@@ -82,7 +87,7 @@ async function search(c,market,token){
 async function searchBatch(cards,env){
  const token=await bearer(env);const items=[];const errors=[];
  for(const c of cards){
-  const outcomes=await Promise.allSettled(MARKETS.map(m=>search(c,m,token)));
+  const outcomes=await Promise.allSettled(MARKETS.map(m=>search(c,m,token,env)));
   outcomes.forEach((result,i)=>{if(result.status==='fulfilled')items.push(...result.value);else errors.push({cardId:c.id,marketplace:MARKETS[i],error:String(result.reason?.message||'Unknown').slice(0,110)})});
  }
  const unique=new Set();
@@ -202,7 +207,7 @@ export default {
   if(request.method==='OPTIONS')return new Response(null,{status:204,headers});
   if(!allowedOrigin(origin,env))return reply({error:'Origin not allowed'},403,headers);
   if(u.pathname.startsWith('/api/shipments/'))return shipmentsApi(request,env,headers,u);
-  if(request.method==='GET'&&u.pathname==='/health')return reply({ready:!!(env.EBAY_CLIENT_ID&&env.EBAY_CLIENT_SECRET),provider:'eBay Browse API'},200,headers);
+  if(request.method==='GET'&&u.pathname==='/health')return reply({ready:!!(env.EBAY_CLIENT_ID&&env.EBAY_CLIENT_SECRET),provider:'eBay Browse API',shippingDestinationConfigured:/^[0-9]{5,10}$/.test(String(env.EBAY_DELIVERY_POSTAL_CODE||'').trim())},200,headers);
   if(request.method!=='POST'||u.pathname!=='/api/search')return reply({error:'Not found'},404,headers);
   if(Number(request.headers.get('content-length')||0)>6000)return reply({error:'Payload too large'},413,headers);
   let body;try{body=await request.json()}catch(_){return reply({error:'Invalid JSON'},400,headers)}
