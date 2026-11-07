@@ -75,3 +75,7 @@
  .live-grade-choice{min-width:40px;padding:6px 8px}
  .live-pricebook-row{grid-template-columns:35px minmax(0,1fr) auto;padding:8px}
 }
+
+/* A bid-only comparison is informative, but not a confirmed savings estimate. */
+.live-pricebook-row .live-pricebook-difference.provisional{color:#556a92}
+.live-pricebook-note{margin:0;padding:8px 10px;border-top:1px solid #e8edf5;background:#f7f9fd;color:#62718a;font-size:10px;line-height:1.7}
