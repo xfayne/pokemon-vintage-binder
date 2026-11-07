@@ -85,3 +85,11 @@
 .live-postal-label input{font:inherit;font-size:12px;direction:ltr;text-align:center;border:1px solid #d5deef;border-radius:8px;background:#fff;color:#283b62;padding:7px;width:99px;max-width:100%;letter-spacing:.025em}
 .live-postal-label input:focus-visible{outline:2px solid #748fe2;outline-offset:1px}
 @media(max-width:650px){.live-postal-label{width:100%;justify-content:space-between}}
+
+/* Automatic, rate-paced Wishlist scan */
+.live-progress{height:8px;border-radius:999px;background:#e4eaf7;overflow:hidden;margin:7px 0 13px}
+.live-progress[hidden]{display:none!important}
+.live-progress-fill{width:0;height:100%;border-radius:inherit;background:linear-gradient(90deg,#617bdb,#3f62c5);transition:width .25s ease}
+.live-more{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
+.live-more button{max-width:100%}
+@media(max-width:650px){.live-more button{flex:1;min-width:130px}.live-progress{margin:8px 0 10px}}
