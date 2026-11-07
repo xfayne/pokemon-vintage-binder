@@ -82,13 +82,14 @@ function strictCardMatch(raw,card,aspects){
  const aspectData=Array.isArray(aspects)?aspects:[];
  let evidence=0;
  for(const a of aspectData){
-  const field=normalized(a?.name),value=normalized(Array.isArray(a?.value)?a.value.join(' '):a?.value||a?.values?.join(' ')||'');
+  const field=normalized(a?.name),rawValue=Array.isArray(a?.value)?a.value.join(' '):a?.value||a?.values?.join(' ')||'';
+  const value=normalized(rawValue);
   if(!field||!value)continue;
   if(/\b(?:language|sprache|lingua|langue|idioma)\b/.test(field)){
    if(isNonEnglish(value))return null;
   }
   if(/\b(?:card number|card no|number)\b/.test(field)){
-   const vals=titleNumbers(value);
+   const vals=titleNumbers(rawValue);
    if(num&&vals.length&&!vals.includes(num))return null;
    if(num&&vals.includes(num))evidence++;
   }
@@ -228,10 +229,10 @@ async function getItemCondition(itemId,market,env,postalCode,card){
  const desc=gradeFromDescriptors(item.conditionDescriptors);
  const cond=clean(item.condition,80);
  const explicit=gradeFromText(cond);
- const match=card?strictCardMatch(item.title||'',card,item.localizedAspects):null;
+ const match=card&&item.title?strictCardMatch(item.title,card,item.localizedAspects):null;
  return {condition:cond,grade:desc?.grade||explicit||null,
   label:desc?.label||cond||null,
-  source:desc||explicit?'seller':'unknown',verificationStatus:match?.status||'rejected',
+  source:desc||explicit?'seller':'unknown',verificationStatus:!card?'unknown':!item.title?'review':match?.status||'rejected',
   verificationReasons:match?.reasons||[],matchConfidence:match?.confidence||0};
 }
 
