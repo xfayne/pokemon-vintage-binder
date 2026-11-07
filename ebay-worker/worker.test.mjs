@@ -151,3 +151,76 @@ test('reads seller-declared card condition on request through eBay item detail',
   assert.equal(data.source,'seller');
  }finally{globalThis.fetch=orig}
 });
+
+
+test('rejects foreign, digital, poster, wrong-number and card-choice keyword spam',async()=>{
+ const original=globalThis.fetch;
+ const jolteon={id:'base2-4',name:'Jolteon',setName:'Jungle',number:'4/64',firstEdition:false,finish:'holo'};
+ const variants=[
+  ['chinese','JOLTEON 0301/14 GEM PACK 2 CBB2C ENERGY HOLO CHINESE POKEMON CARD NM'],
+  ['digital','pokemon pocket mobile game card genetic apex pikachu set jolteon Rare Trade DIGITAL CARD'],
+  ['poster','Pokemon Jolteon Jungle 4/64 Vintage Poster Print'],
+  ['wrongNumber','Jolteon 20/64 Jungle Rare Non Holo'],
+  ['choose','Choose your card Jolteon Jungle 4/64 Eevee Vaporeon'],
+  ['strong','Jolteon 4/64 Jungle 1999 Rare Holo English'],
+  ['needsReview','Jolteon Jungle 1999 original Pokemon card']
+ ];
+ globalThis.fetch=async url=>{
+  if(String(url).includes('/oauth2/token'))return Response.json({access_token:'test-x',expires_in:3600});
+  return Response.json({itemSummaries:variants.map(([id,title])=>item({itemId:id,title}))});
+ };
+ try{
+  const response=await worker.fetch(request([jolteon]),env);
+  const data=await response.json();
+  assert.equal(response.status,200);
+  assert.deepEqual(new Set(data.items.map(x=>x.itemId)),new Set(['strong','needsReview']));
+  assert.equal(data.items.find(x=>x.itemId==='strong').verificationStatus,'strong');
+  assert.equal(data.items.find(x=>x.itemId==='needsReview').verificationStatus,'review');
+  assert.ok(data.items.find(x=>x.itemId==='needsReview').verificationReasons.some(x=>x.includes('מספר הקלף')));
+ }finally{globalThis.fetch=original}
+});
+
+test('mentions of a different Pokemon keep listings in review rather than implying a Lugia bargain',async()=>{
+ const original=globalThis.fetch;
+ const lugia={id:'neo1-9',name:'Lugia',setName:'Neo Genesis',number:'9/111',firstEdition:false,finish:'holo'};
+ globalThis.fetch=async url=>{
+  if(String(url).includes('/oauth2/token'))return Response.json({access_token:'test-x',expires_in:3600});
+  return Response.json({itemSummaries:[
+   item({itemId:'keywordspam',title:'1st ed unli /111 LUGIA FERALIGATOR NEO GENESIS SET HOLO RARE NR MT POKEMON CARDS'}),
+   item({itemId:'valid',title:'2000 Lugia 9/111 Neo Genesis Holo Rare English'})
+  ]});
+ };
+ try{
+  const data=await (await worker.fetch(request([lugia]),env)).json();
+  assert.equal(data.items.find(x=>x.itemId==='keywordspam').verificationStatus,'review');
+  assert.ok(data.items.find(x=>x.itemId==='keywordspam').verificationReasons.some(x=>x.includes('קלפים נוספים')));
+  assert.equal(data.items.find(x=>x.itemId==='valid').verificationStatus,'strong');
+ }finally{globalThis.fetch=original}
+});
+
+test('item details upgrade a review listing only with corroborating structured fields',async()=>{
+ const original=globalThis.fetch;
+ let aspects=[
+  {name:'Card Number',value:'4/64'},
+  {name:'Set',value:'Jungle'},
+  {name:'Language',value:'English'}
+ ];
+ globalThis.fetch=async url=>{
+  if(String(url).includes('/oauth2/token'))return Response.json({access_token:'test-x',expires_in:3600});
+  return Response.json({title:'Jolteon Jungle Vintage Holo',condition:'Ungraded',localizedAspects:aspects});
+ };
+ try{
+  const card={id:'base2-4',name:'Jolteon',setName:'Jungle',number:'4/64',firstEdition:false,finish:'holo'};
+  async function inspect(){return (await worker.fetch(new Request('https://worker.example/api/item-condition',{
+   method:'POST',headers:{origin:allowed,'content-type':'application/json'},
+   body:JSON.stringify({itemId:'v1|123|0',marketplace:'EBAY_GB',card})
+  }),env)).json();}
+  assert.equal((await inspect()).verificationStatus,'strong');
+  aspects=[{name:'Card Number',value:'20/64'},{name:'Set',value:'Jungle'}];
+  assert.equal((await inspect()).verificationStatus,'rejected');
+  aspects=[{name:'Language',value:'Chinese'}];
+  assert.equal((await inspect()).verificationStatus,'rejected');
+  aspects=[];
+  assert.equal((await inspect()).verificationStatus,'review');
+ }finally{globalThis.fetch=original}
+});
