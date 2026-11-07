@@ -102,7 +102,7 @@ test('blocks explicit first-edition mismatches, replicas and graded cards but in
     item({itemId:'1',title:'1st Edition Espeon 1/75 Neo Discovery Pokemon'}),
     item({itemId:'2',title:'Replica Espeon 1/75 Neo Discovery Pokemon'}),
     item({itemId:'3',title:'PSA 9 Espeon 1/75 Neo Discovery Pokemon'}),
-    item({itemId:'4',buyingOptions:['FIXED_PRICE']}),
+    item({itemId:'4',buyingOptions:['FIXED_PRICE'],price:{value:'50',currency:'EUR'}}),
     item({itemId:'5',shippingOptions:[]})
   ]});
  };
