@@ -47,3 +47,31 @@
 .live-toolbar[hidden], .live-disclaimer[hidden], .live-more button[hidden]{display:none !important}
 .live-auctions{margin:12px 0;padding:14px 16px;background:#fbfcff}
 .live-status{font-size:13px;line-height:1.7}
+
+
+/* Multi-grade comparison: compact, readable on phones and desktop. */
+.live-grade-filter{display:flex;align-items:center;gap:8px;flex-wrap:wrap;color:#637188;font-size:12px}
+.live-grade-title{white-space:nowrap}
+.live-grade-options{display:flex;gap:5px;flex-wrap:wrap}
+.live-grade-choice{appearance:none;cursor:pointer;font-family:inherit;border:1px solid #cdd8e9;border-radius:8px;background:#fff;color:#405171;padding:6px 10px;font-size:12px;font-weight:750;min-width:42px}
+.live-grade-choice.selected{background:#273c6d;border-color:#273c6d;color:#fff}
+.live-grade-choice:focus-visible{outline:3px solid #a6bafa;outline-offset:2px}
+.live-item-numbers{grid-template-columns:repeat(2,minmax(0,1fr))}
+.live-item-numbers span:last-child{grid-column:1/-1}
+.live-pricebook{border:1px solid #e4e9f3;border-radius:10px;overflow:hidden;margin:9px 0;background:#fbfcff}
+.live-pricebook-heading{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap;padding:9px 10px;background:#eef2fa;color:#283b62;font-weight:800;font-size:12px}
+.live-pricebook-heading small{color:#64748b;font-size:10px;font-weight:500}
+.live-pricebook-row{display:grid;grid-template-columns:38px minmax(0,1fr) auto;align-items:center;gap:7px;padding:8px 10px;border-top:1px solid #e8edf5;font-size:11px}
+.live-pricebook-row>strong{color:#324b85;font-size:12px}
+.live-pricebook-row>span{color:#63718a}
+.live-pricebook-row b{color:#243a63;font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.live-pricebook-difference{font-weight:750;text-align:end;white-space:nowrap}
+.live-pricebook-row .live-pricebook-difference.cheaper{color:#117857}
+.live-pricebook-row .live-pricebook-difference.pricier{color:#ad483a}
+.live-pricebook-row .live-pricebook-difference.unknown{color:#8c97a8}
+@media(max-width:650px){
+ .live-grade-filter{width:100%;justify-content:space-between}
+ .live-grade-options{gap:4px}
+ .live-grade-choice{min-width:40px;padding:6px 8px}
+ .live-pricebook-row{grid-template-columns:35px minmax(0,1fr) auto;padding:8px}
+}
