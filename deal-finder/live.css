@@ -93,3 +93,7 @@
 .live-more{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
 .live-more button{max-width:100%}
 @media(max-width:650px){.live-more button{flex:1;min-width:130px}.live-progress{margin:8px 0 10px}}
+
+.live-scan-actions{display:flex;justify-content:flex-start;margin:-4px 0 12px}
+.live-scan-actions button{font-size:12px;padding:7px 12px}
+.live-scan-actions button[hidden]{display:none!important}
