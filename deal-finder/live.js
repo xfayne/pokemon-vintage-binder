@@ -41,19 +41,22 @@
   const current=usd(item.currentBid);
   const shipping=usd(item.shipping);
   const allIn=current!==null&&shipping!==null?current+shipping:null;
+  // When shipping is unknown, a bid-only comparison is informative but cannot prove a deal.
+  const comparable=allIn!==null?allIn:current;
+  const provisional=allIn===null&&current!==null;
   const comparisons=GRADES.filter(g=>selectedGrades.has(g)).map(grade=>{
    const raw=card?marketFor(card,grade):null;
    const market=typeof raw==='number'&&Number.isFinite(raw)&&raw>0?raw:null;
-   return {grade,market,discount:market!==null&&allIn!==null?(market-allIn)/market:null};
+   return {grade,market,discount:market!==null&&comparable!==null?(market-comparable)/market:null};
   });
   // Conservative sort: a listing must be inexpensive against EVERY selected, priced grade.
   const complete=comparisons.length>0&&comparisons.every(x=>x.discount!==null);
-  const discount=complete?Math.min(...comparisons.map(x=>x.discount)):null;
+  const discount=complete&&!provisional?Math.min(...comparisons.map(x=>x.discount)):null;
   const warnings=Array.isArray(item.warnings)?item.warnings.slice():[];
   if(item.shipping===null)warnings.push('מחיר משלוח לישראל לא ידוע');
   if(item.matchConfidence<70)warnings.push('התאמת קלף לא ודאית');
   if(item.sellerFeedback!==null&&item.sellerFeedback<95)warnings.push('דירוג מוכר נמוך');
-  return {allIn,comparisons,discount,warnings};
+  return {allIn,comparisons,discount,warnings,provisional};
  }
  const timeLabel=d=>{
   const t=new Date(d||'').getTime();if(!Number.isFinite(t))return 'זמן סיום לא ידוע';
@@ -103,12 +106,14 @@
      '<div class="live-item-numbers"><span>הצעה נוכחית <b>'+escape(money(item.currentBid))+'</b></span>'+
      '<span>משלוח לישראל <b>'+escape(item.shipping?money(item.shipping):'לא ידוע')+'</b></span>'+
      '<span>כולל משלוח בדולר <b>'+amount+'</b></span></div>'+
-     '<div class="live-pricebook"><div class="live-pricebook-heading">מחירון לפי מצב <small>לעומת המחיר כולל משלוח</small></div>'+
+     '<div class="live-pricebook"><div class="live-pricebook-heading">מחירון לפי מצב <small>'+(score.provisional?'השוואה להצעה הנוכחית בלבד · לפני משלוח':'לעומת המחיר כולל משלוח')+'</small></div>'+
      score.comparisons.map(row=>{
-      const difference=row.discount===null?'לא ניתן להשוות':Math.abs(row.discount)<0.005?'כמו במחירון':(row.discount>0?'זול ב־':'יקר ב־')+Math.round(Math.abs(row.discount)*100)+'%';
-      const tone=row.discount===null?'unknown':row.discount>0.005?'cheaper':row.discount< -0.005?'pricier':'equal';
+      const difference=row.discount===null?'לא ניתן לחשב':Math.abs(row.discount)<0.005?'כמו במחירון':score.provisional
+       ?(row.discount>0?'מתחת למחירון ב־':'מעל למחירון ב־')+Math.round(Math.abs(row.discount)*100)+'%'+(row.discount<0?' לפחות':'*')
+       :(row.discount>0?'זול ב־':'יקר ב־')+Math.round(Math.abs(row.discount)*100)+'%';
+      const tone=row.discount===null?'unknown':row.discount>0.005?(score.provisional?'provisional':'cheaper'):row.discount< -0.005?'pricier':'equal';
       return '<div class="live-pricebook-row"><strong>'+row.grade+'</strong><span>מחירון: <b>'+usdMoney(row.market)+'</b></span><span class="live-pricebook-difference '+tone+'">'+difference+'</span></div>';
-     }).join('')+'</div>'+warnings+
+     }).join('')+(score.provisional?'<p class="live-pricebook-note">* משלוח לישראל לא ידוע. ההשוואה היא לפני משלוח, והמחיר עשוי לעלות במהלך המכרז.</p>':'')+'</div>'+warnings+
      '<div class="live-footer"><span>התאמת כותרת: '+Math.round(item.matchConfidence)+'% (לא אימות מקוריות)</span>'+
      '<a href="'+escape(item.url)+'" target="_blank" rel="noopener noreferrer">למכרז ב־eBay ↗</a></div></article>';
   }).join('') : state.status==='ready'&&!state.loading?
