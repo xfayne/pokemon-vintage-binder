@@ -23,6 +23,14 @@ Credentials are **not** stored in the GitHub Pages source. Put approved eBay Pro
 
 The worker's `GET /health` reports whether those secrets are configured and `POST /api/search` searches live US and German eBay marketplaces for auction listings shipping to Israel.
 
+## Card-identity verification (three layers)
+
+- The Worker immediately rejects clearly incompatible listings: digital/TCG Pocket items, posters, proxies, sealed packs, explicit non-English languages, contradictory card numbers, and card-choice listing formats. It uses the binder's vintage card-name catalog to flag titles mentioning other Pokémon.
+- Listings with exact card name, matching set, and matching card number and no unresolved conflicts are labeled **strong match**. Listings missing necessary evidence, mentioning multiple cards, or showing conflicting Holo signals are **needs review** and remain visible below strong matches.
+- Needs-review listings do not show market-value discounts or get recommended-deal badges, even if the current eBay price is low. Their raw listing price and shipping remain visible. The advanced-filter toggle can hide/show them; resetting filters shows all *retained relevant or reviewable* listings, not hard-rejected products.
+- After scanning, the UI fetches full Browse item details for up to 18 candidate listings to inspect structured card number, set, language, and condition (when available). A listing is promoted only when those extra fields corroborate the target; conflicting fields can cause rejection. Manual per-item lookup remains available.
+- Even a strong match is **not** proof that the photo, item condition or authenticity are correct. Seller-supplied text and eBay item aspects may be wrong, and no automated image recognition has been added.
+
 ## Accuracy and safety
 
 - No fake or cached sample auctions are shown as real.
