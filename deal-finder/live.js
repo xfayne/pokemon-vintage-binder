@@ -14,7 +14,7 @@
  const ui=document.createElement('section');
  ui.className='live-auctions';
  ui.setAttribute('aria-label','מכרזים חיים מ־eBay');
- ui.innerHTML="<div class=\"live-title\"><span id=\"liveBadge\" class=\"live-badge\">בודק חיבור…</span></div>\n<div id=\"liveStatus\" class=\"live-status\" role=\"status\"></div>\n<div id=\"liveControls\" class=\"live-toolbar\" hidden>\n <button type=\"button\" id=\"liveReload\" class=\"btn primary\">↻ חפש מכרזים</button>\n <label for=\"dealGrade\">מצב להערכת מחיר <select id=\"dealGrade\"><option>NM</option><option>LP</option><option selected>MP</option><option>HP</option><option>DMG</option></select></label>\n <label for=\"liveSort\">מיון <select id=\"liveSort\"><option value=\"discount\">פער שמרני מול מחירון</option><option value=\"closing\">מסתיימים בקרוב</option><option value=\"bids\">מעט הצעות</option><option value=\"match\">התאמת קלף</option></select></label>\n <label class=\"live-only-shipping\"><input type=\"checkbox\" id=\"liveOnlyShipping\"> רק משלוח ידוע</label>\n</div>\n<div id=\"liveListings\" class=\"live-results\" role=\"list\"></div>\n<div class=\"live-more\"><button type=\"button\" class=\"btn\" id=\"liveMore\" hidden>חפש בארבעה קלפים נוספים ↓</button></div>\n<p class=\"live-disclaimer\" id=\"liveDisclaimer\" hidden>ההשוואה מבוססת על מצבי הקלף שסימנת, לא על בדיקת מצב המכרז. הסינון מסיר כותרות המזוהות כיפניות, אך אינו מאמת שפה מתמונות. מחירים ומכרזים עשויים להשתנות.</p>";
+ ui.innerHTML="<div class=\"live-title\"><span id=\"liveBadge\" class=\"live-badge\">בודק חיבור…</span></div>\n<div id=\"liveStatus\" class=\"live-status\" role=\"status\"></div>\n<div id=\"liveControls\" class=\"live-toolbar\" hidden>\n <button type=\"button\" id=\"liveReload\" class=\"btn primary\">↻ חפש מכרזים</button>\n <label for=\"dealGrade\">מצב להערכת מחיר <select id=\"dealGrade\"><option>NM</option><option>LP</option><option selected>MP</option><option>HP</option><option>DMG</option></select></label>\n <label for=\"liveSort\">מיון <select id=\"liveSort\"><option value=\"discount\">פער שמרני מול מחירון</option><option value=\"closing\">מסתיימים בקרוב</option><option value=\"bids\">מעט הצעות</option><option value=\"match\">התאמת קלף</option><option value=\"shipping\">משלוח: מהזול ליקר</option><option value=\"shippingDesc\">משלוח: מהיקר לזול</option></select></label>\n <label class=\"live-only-shipping\"><input type=\"checkbox\" id=\"liveOnlyShipping\"> רק משלוח ידוע</label>\n</div>\n<div id=\"liveListings\" class=\"live-results\" role=\"list\"></div>\n<div class=\"live-more\"><button type=\"button\" class=\"btn\" id=\"liveMore\" hidden>חפש בארבעה קלפים נוספים ↓</button></div>\n<p class=\"live-disclaimer\" id=\"liveDisclaimer\" hidden>ההשוואה מבוססת על מצבי הקלף שסימנת, לא על בדיקת מצב המכרז. הסינון מסיר כותרות המזוהות כיפניות, אך אינו מאמת שפה מתמונות. מחירים ומכרזים עשויים להשתנות.</p>";
 
  const GRADES=['NM','LP','MP','HP','DMG'];
  const selectedGrades=new Set(['LP','MP','HP']);
@@ -91,6 +91,13 @@
   if(sort==='closing')enriched.sort((a,b)=>(new Date(a.item.endTime).getTime()||Infinity)-(new Date(b.item.endTime).getTime()||Infinity));
   if(sort==='bids')enriched.sort((a,b)=>(a.item.bidCount??Infinity)-(b.item.bidCount??Infinity));
   if(sort==='match')enriched.sort((a,b)=>b.item.matchConfidence-a.item.matchConfidence);
+  if(sort==='shipping'||sort==='shippingDesc')enriched.sort((a,b)=>{
+   const x=usd(a.item.shipping),y=usd(b.item.shipping);
+   // Shipping without a reliable conversion is UNKNOWN; never treat it as zero.
+   if(x===null)return y===null?0:1;
+   if(y===null)return -1;
+   return (sort==='shipping'?x-y:y-x)||b.item.matchConfidence-a.item.matchConfidence;
+  });
   $('liveListings').innerHTML=enriched.length ? enriched.map(({item,card,score})=>{
    const flag=score.discount!==null&&score.discount>=0.35&&item.matchConfidence>=70&&item.shipping!==null&&!/\b(damaged?|creased?|poor|heavy played)\b/i.test(item.title);
    const dt=Number.isFinite(new Date(item.endTime).getTime())?timeLabel(item.endTime):'זמן סיום לא ידוע';
