@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import worker from './index.js';
 
 const allowed='https://xfayne.github.io';
-const env={ALLOWED_ORIGIN:allowed,EBAY_CLIENT_ID:'test-id',EBAY_CLIENT_SECRET:'test-secret'};
+const env={ALLOWED_ORIGIN:allowed,EBAY_CLIENT_ID:'test-id',EBAY_CLIENT_SECRET:'test-secret',EBAY_DELIVERY_POSTAL_CODE:'1234567'};
 const request=(cards,origin=allowed)=>new Request('https://worker.example/api/search',{
  method:'POST',headers:{origin,'content-type':'application/json'},body:JSON.stringify({cards})
 });
@@ -58,6 +58,8 @@ test('fetches and deduplicates real-format eBay AUCTION items, including shippin
   assert.equal(searches.length,2);
   for(const call of searches){
    assert.match(call.target,/deliveryCountry%3AIL/);
+   assert.match(call.target,/deliveryPostalCode%3A1234567/);
+   assert.equal(call.options.headers['X-EBAY-C-ENDUSERCTX'],'contextualLocation=country%3DIL%2Czip%3D1234567');
    assert.match(call.target,/AUCTION/);
    assert.match(call.options.headers.authorization,/mock-bearer/);
   }
