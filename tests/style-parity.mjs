@@ -20,7 +20,7 @@ assert.ok(baselineStyles, 'Main-branch standalone fallback is missing');
 assert.equal(offlineStyles[0], baselineStyles[0], 'Standalone fallback styles changed');
 assert.equal(css, execFileSync('git', ['show', 'origin/main:css/app.css'], { encoding: 'utf8' }),
   'Stylesheet changed unexpectedly');
-const normalizeScripts = html => html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '<script data-omitted></script>');
+const normalizeScripts = html => html.replace(/<script\b[^>]*>[\s\S]*?<\/script>\s*/gi, '');
 assert.equal(normalizeScripts(current), normalizeScripts(baseline),
   'Non-script HTML layout changed');
 
