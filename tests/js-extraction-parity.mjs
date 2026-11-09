@@ -31,7 +31,32 @@ for (let i = 0; i < paths.length; i++) {
 if (extractionPR) {
   assert.equal(restored, original, 'Index changed beyond lossless script extraction');
 }
+// Verify that the new catalog data represents a literal, lossless move
+// of the original metadata, not an edited set of card names or numbers.
+if (updated.includes('js/catalog-data.js')) {
+  const oldBinder = execFileSync('git', ['show', 'origin/main:js/binder.js'], { encoding: 'utf8' });
+  const newBinder = readFileSync('js/binder.js', 'utf8');
+  const setsStart = oldBinder.indexOf('const SETS=[');
+  const setsEnd = oldBinder.indexOf('];', setsStart) + 2;
+  const packsStart = oldBinder.indexOf('const OFFLINE_PACKS=');
+  const packsEnd = oldBinder.indexOf(';\nfunction embeddedCards', packsStart) + 1;
+  assert.ok(setsStart >= 0 && packsStart >= 0 && packsEnd > packsStart, 'Catalog source anchors missing');
+  const sets = oldBinder.slice(setsStart, setsEnd);
+  const packs = oldBinder.slice(packsStart, packsEnd);
+  const data = readFileSync('js/catalog-data.js', 'utf8');
+  assert.ok(data.includes(sets) && data.includes(packs), 'Catalog data was modified');
+  const rebuilt = newBinder.replace('const {SETS,OFFLINE_PACKS}=window.VintageCatalogData;', () => sets)
+    .replace('\nfunction embeddedCards(){', () => '\n' + packs + '\nfunction embeddedCards(){');
+  assert.equal(rebuilt, oldBinder, 'Catalog extraction changed binder code beyond the dependency');
+}
 const root = process.cwd();
+const mainAssets = new Map();
+function readMainAsset(name) {
+  if (!mainAssets.has(name)) {
+    mainAssets.set(name, execFileSync('git', ['show', 'origin/main:' + name], { maxBuffer: 20 * 1024 * 1024 }));
+  }
+  return mainAssets.get(name);
+}
 const app = createServer((request, response) => {
   const path = decodeURIComponent(new URL(request.url, 'http://localhost').pathname);
   const match = /^\/(original|updated)\/(.*)$/.exec(path);
@@ -51,7 +76,11 @@ const app = createServer((request, response) => {
     const extensions = { '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json',
       '.jpg': 'image/jpeg', '.png': 'image/png', '.svg': 'image/svg+xml' };
     response.setHeader('Content-Type', extensions[extname(name)] || 'application/octet-stream');
-    response.end(readFileSync(absolute));
+    // Baseline MUST load the main-branch files, not modified assets from the PR.
+    // Otherwise a JavaScript refactor could accidentally be compared against itself.
+    const data = version === 'original' && /^(js|deal-finder|css|assets)\//.test(name)
+      ? readMainAsset(name) : readFileSync(absolute);
+    response.end(data);
   } catch {
     response.writeHead(404); response.end();
   }
@@ -103,6 +132,14 @@ async function exercise(version, viewport) {
     cards: document.querySelectorAll('#cards .poke-card').length,
     search: document.querySelector('#search').value
   }));
+  // A separately loaded catalog metadata file must initialize before binder.js.
+  if (version === 'updated' && updated.includes('js/catalog-data.js')) {
+    assert.ok(fetched.some(item => item.file === 'catalog-data.js' && item.status === 200),
+      'Catalog data script did not load successfully');
+    const dataReady = await page.evaluate(() => window.VintageCatalogData?.SETS?.length >= 14
+      && Object.keys(window.VintageCatalogData.OFFLINE_PACKS || {}).length >= 14);
+    assert.ok(dataReady, 'Catalog metadata missing at runtime');
+  }
   // Explicitly verify the refactored browser can fetch and parse all four extracted scripts.
   if (version === 'updated') {
     for (const file of paths) {
