@@ -143,12 +143,42 @@ if (updated.includes('js/collection-drag.js')) {
   const i=dragModule.indexOf(open), j=dragModule.indexOf(close,i);
   assert.ok(i>=0&&j>i,'Collection drag module source boundaries missing');
   const extracted=dragModule.slice(i+open.length,j);
-  assert.equal(branchBinder.replace(call,()=>extracted),mainBinder,
-    'Drag extraction modified unrelated collection logic or listeners');
+  if (mainBinder.includes(call)) {
+    assert.equal(dragModule,execFileSync('git',['show','origin/main:js/collection-drag.js'],{encoding:'utf8'}),
+      'Previously extracted drag module changed unexpectedly');
+  } else {
+    assert.equal(branchBinder.replace(call,()=>extracted),mainBinder,
+      'Drag extraction modified unrelated collection logic or listeners');
+  }
   const dragTag='<script src="js/collection-drag.js?v=20261109-drag1"></script>';
   const binderTag='<script src="js/binder.js?v=20261109-js1"></script>';
   assert.ok(updated.indexOf(dragTag)>0&&updated.indexOf(dragTag)<updated.indexOf(binderTag),
     'Drag module must be available before the binder controller');
+}
+// The entire collection ordering controller must be moved without changing its logic.
+if (updated.includes('js/collection-ordering.js')) {
+  const before=execFileSync('git',['show','origin/main:js/binder.js'],{encoding:'utf8'});
+  const after=readFileSync('js/binder.js','utf8');
+  const ordering=readFileSync('js/collection-ordering.js','utf8');
+  const i1=before.indexOf('// Collection organization:');
+  const j1=before.indexOf('let binderSelectedId=null;',i1);
+  const i2=before.indexOf('function binderPageCount(){');
+  const j2=before.indexOf('\nfunction refreshPlacementTargets(',i2);
+  const i3=before.indexOf('function reorder(kind,from,to){');
+  const j3=before.indexOf('\nfunction removeFromBinder(',i3);
+  assert.ok([i1,j1,i2,j2,i3,j3].every(x=>x>=0),'Ordering source anchors missing');
+  const first=before.slice(i1,j1),pageCount=before.slice(i2,j2),reorder=before.slice(i3,j3);
+  const call='const {normalizeOrders,binderVisible,binderPageCount,reorder}=window.VintageCollectionOrdering.create({state,ensureCloudEdit,save});\n';
+  const expected=before.replace(first,()=>call).replace(pageCount,'').replace(reorder,'');
+  assert.equal(after,expected,'Collection ordering extraction changed other binder code');
+  const module="(()=>{'use strict';\nwindow.VintageCollectionOrdering={create({state,ensureCloudEdit,save}){\n"+
+    first+pageCount+'\n'+reorder+
+    '\nreturn {normalizeOrders,binderVisible,binderPageCount,reorder};\n}};\n})();\n';
+  assert.equal(ordering,module,'Collection order implementation was changed during extraction');
+  const tag='<script src="js/collection-ordering.js?v=20261109-order1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261109-js1"></script>';
+  assert.ok(updated.indexOf(tag)>0&&updated.indexOf(tag)<updated.indexOf(binderTag),
+    'Collection order module must load before binder');
 }
 const root = process.cwd();
 const mainAssets = new Map();
@@ -395,6 +425,30 @@ async function exercise(version, viewport) {
     assert.ok(fetched.some(e=>e.file==='collection-drag.js'&&e.status===200),
       'Collection drag script did not load with HTTP 200');
   }
+  // Normalize legacy, duplicated or inconsistent order arrays deterministically.
+  const normalized = await page.evaluate(() => {
+    window.VintageBinder.adoptProgress({
+      owned:{'base1-1':true,'base1-2':true},
+      wish:{'base1-1':true,'base2-3':true},
+      binderOrder:['base2-3','base1-1','base2-3','missing-card'],
+      wishOrder:['missing-card','base2-3','base2-3']
+    });
+    const progress=window.VintageBinder.getProgress();
+    return {
+      owned:progress.owned,
+      wish:progress.wish,
+      wishOrder:progress.wishOrder,
+      binderOrder:progress.binderOrder
+    };
+  });
+  assert.deepEqual(normalized.wishOrder,['base2-3'],'Wishlist normalization broke');
+  assert.deepEqual(normalized.binderOrder,['base2-3','base1-1','base1-2'],
+    'Binder deduplication or append behavior changed');
+  assert.equal(!!normalized.wish['base1-1'],false,'Owned and wishlist overlap');
+  if(version==='updated'&&updated.includes('js/collection-ordering.js')){
+    assert.ok(fetched.some(e=>e.file==='collection-ordering.js'&&e.status===200),
+      'Collection ordering script failed to load');
+  }
   // Shipment controller: ownership rendering and edit form must remain identical.
   const shipmentState = await page.evaluate(() => {
     window.VintageBinder.adoptProgress({shipments: [
@@ -452,7 +506,7 @@ async function exercise(version, viewport) {
     }
   }
   await context.close();
-  return {initial,states,filtered,ownedState,collectionState,dragState,shipmentState,errors};
+  return {initial,states,filtered,ownedState,collectionState,dragState,normalized,shipmentState,errors};
 }
 try {
   for (const viewport of [{width:390,height:844},{width:1440,height:900}]) {
@@ -464,6 +518,7 @@ try {
     assert.deepEqual(b.ownedState, a.ownedState, 'Owned cards sort/filter/value changed at '+viewport.width);
     assert.deepEqual(b.collectionState, a.collectionState, 'Binder/Wishlist interaction changed at '+viewport.width);
     assert.deepEqual(b.dragState, a.dragState, 'Pointer/touch drag behavior differs at '+viewport.width);
+    assert.deepEqual(b.normalized, a.normalized, 'Order normalization changed at '+viewport.width);
     assert.deepEqual(b.shipmentState, a.shipmentState, 'Shipment UI/editor state changed at '+viewport.width);
     assert.equal(b.shipmentState.editor.open, true, 'Shipment edit dialog did not open');
     assert.equal(b.shipmentState.afterName, 'שם מעודכן', 'Shipment edit did not persist');
