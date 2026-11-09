@@ -95,7 +95,9 @@ if (updated.includes('js/collection-views.js')) {
   assert.ok(i >= 0 && j > i,'Collection renderer factory has unexpected boundaries');
   const extracted=views.slice(i+start.length,j);
   if (oldBinder.includes(call)) {
-    assert.equal(newBinder,oldBinder,'Binder code changed outside collection views');
+    if (!updated.includes('js/owned-cards.js')) {
+      assert.equal(newBinder,oldBinder,'Binder code changed outside collection views');
+    }
     assert.equal(views,execFileSync('git',['show','origin/main:js/collection-views.js'],{encoding:'utf8'}),
       'Collection renderer changed unexpectedly');
   } else {
@@ -106,6 +108,23 @@ if (updated.includes('js/collection-views.js')) {
   const binderScript='<script src="js/binder.js?v=20261109-js1"></script>';
   assert.ok(updated.indexOf(viewScript)>0 && updated.indexOf(viewScript)<updated.indexOf(binderScript),
     'View renderer script must load before binder');
+}
+// Verify the owned-cards controller was extracted exactly from main.
+if (updated.includes('js/owned-cards.js')) {
+  const before=execFileSync('git',['show','origin/main:js/binder.js'],{encoding:'utf8'});
+  const after=readFileSync('js/binder.js','utf8');
+  const module=readFileSync('js/owned-cards.js','utf8');
+  const call='const {sortedOwnedCards,refreshOwned,renderOwnedList}=window.VintageOwnedCards.create({state,MAP,$,SETS,showHolo,normalNum,searchKey,searchText,rarityHtml,esc,cardNumber,renderCollections:()=>renderCollections()});';
+  const begin='window.VintageOwnedCards={create({state,MAP,$,SETS,showHolo,normalNum,searchKey,searchText,rarityHtml,esc,cardNumber,renderCollections}){\n';
+  const end='\nreturn {sortedOwnedCards,refreshOwned,renderOwnedList};\n}};';
+  const i=module.indexOf(begin),j=module.indexOf(end,i);
+  assert.ok(i>=0&&j>i,'Owned-cards factory has unexpected boundaries');
+  assert.equal(after.replace(call,()=>module.slice(i+begin.length,j)),before,
+    'Owned-cards extraction changed binder logic beyond this exact block');
+  const ownedTag='<script src="js/owned-cards.js?v=20261109-owned1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261109-js1"></script>';
+  assert.ok(updated.indexOf(ownedTag)>0&&updated.indexOf(ownedTag)<updated.indexOf(binderTag),
+    'Owned cards controller must load before binder');
 }
 const root = process.cwd();
 const mainAssets = new Map();
@@ -190,6 +209,52 @@ async function exercise(version, viewport) {
     cards: document.querySelectorAll('#cards .poke-card').length,
     search: document.querySelector('#search').value
   }));
+  // Owned collection regression: sorting, filter, holo counts and price totals.
+  // Use a deterministic local price stub; never touch live Firestore or price API.
+  const ownedState = await page.evaluate(() => {
+    window.VintageMarketPrices.getOwnedPrice=card=>({
+      'base1-1':45,'base1-16':70,'base1-17':2,'base2-3':25
+    })[card.id] ?? null;
+    window.VintageBinder.adoptProgress({
+      owned:{'base1-1':true,'base1-16':true,'base1-17':true,'base2-3':true},
+      conditions:{'base1-1':'LP','base1-16':'LP','base1-17':'LP','base2-3':'LP'},
+      ownedAddedAt:{'base1-1':100,'base1-16':200,'base1-17':300,'base2-3':400}
+    });
+    document.querySelector('[data-view-btn="owned"]').click();
+    const items=()=>[...document.querySelectorAll('#ownedItems .owned-item')]
+      .map(el=>({id:el.dataset.openOwned,condition:el.querySelector('.owned-condition')?.textContent||'',
+        price:el.querySelector('.owned-price')?.textContent||''}));
+    const select=document.querySelector('#ownedSort');
+    const sorted={};
+    for(const mode of ['added','holo','set','price']){
+      select.value=mode;
+      select.dispatchEvent(new Event('change',{bubbles:true}));
+      sorted[mode]=items();
+    }
+    const summary={
+      count:document.querySelector('#ownedCount').textContent,
+      holo:document.querySelector('#ownedCount').textContent,
+      value:document.querySelector('#ownedTotalValue').textContent,
+      valueTitle:document.querySelector('#ownedTotalValue').title
+    };
+    const input=document.querySelector('#ownedFind');
+    input.value='Flareon';
+    input.dispatchEvent(new Event('input',{bubbles:true}));
+    const filtered=items();
+    input.value='';
+    input.dispatchEvent(new Event('input',{bubbles:true}));
+    return {sorted,summary,filtered};
+  });
+  assert.equal(ownedState.sorted.added.length,4,'Owned card fixtures missing');
+  assert.deepEqual(ownedState.sorted.added.map(x=>x.id),
+    ['base2-3','base1-17','base1-16','base1-1'],'Added-time sorting failed');
+  assert.equal(ownedState.sorted.price[0].id,'base1-16','Price sorting failed');
+  assert.equal(ownedState.summary.value,'$142.00','Owned valuation total incorrect');
+  assert.deepEqual(ownedState.filtered.map(x=>x.id),['base2-3'],'Owned search incorrect');
+  if (version === 'updated' && updated.includes('js/owned-cards.js')) {
+    assert.ok(fetched.some(x=>x.file==='owned-cards.js'&&x.status===200),
+      'Owned-cards module did not load');
+  }
   // Collection interaction regression: wishlist move-to-top, independent binder
   // order, and visibility of wishlist-only pockets. No Firestore writes.
   const collectionState = await page.evaluate(() => {
@@ -295,7 +360,7 @@ async function exercise(version, viewport) {
     }
   }
   await context.close();
-  return {initial,states,filtered,collectionState,shipmentState,errors};
+  return {initial,states,filtered,ownedState,collectionState,shipmentState,errors};
 }
 try {
   for (const viewport of [{width:390,height:844},{width:1440,height:900}]) {
@@ -304,6 +369,7 @@ try {
     assert.deepEqual(b.initial, a.initial, 'Bootstrap output changed at '+viewport.width);
     assert.deepEqual(b.states, a.states, 'Navigation changed at '+viewport.width);
     assert.deepEqual(b.filtered, a.filtered, 'Catalog search changed at '+viewport.width);
+    assert.deepEqual(b.ownedState, a.ownedState, 'Owned cards sort/filter/value changed at '+viewport.width);
     assert.deepEqual(b.collectionState, a.collectionState, 'Binder/Wishlist interaction changed at '+viewport.width);
     assert.deepEqual(b.shipmentState, a.shipmentState, 'Shipment UI/editor state changed at '+viewport.width);
     assert.equal(b.shipmentState.editor.open, true, 'Shipment edit dialog did not open');
