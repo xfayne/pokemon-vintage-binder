@@ -114,8 +114,8 @@ if (updated.includes('js/owned-cards.js')) {
   const before=execFileSync('git',['show','origin/main:js/binder.js'],{encoding:'utf8'});
   const after=readFileSync('js/binder.js','utf8');
   const module=readFileSync('js/owned-cards.js','utf8');
-  const call='const {sortedOwnedCards,refreshOwned,renderOwnedList}=window.VintageOwnedCards.create({state,MAP,$,SETS,showHolo,normalNum,searchKey,searchText,rarityHtml,esc,renderCollections:()=>renderCollections()});';
-  const begin='window.VintageOwnedCards={create({state,MAP,$,SETS,showHolo,normalNum,searchKey,searchText,rarityHtml,esc,renderCollections}){\n';
+  const call='const {sortedOwnedCards,refreshOwned,renderOwnedList}=window.VintageOwnedCards.create({state,MAP,$,SETS,showHolo,normalNum,searchKey,searchText,rarityHtml,esc,cardNumber,renderCollections:()=>renderCollections()});';
+  const begin='window.VintageOwnedCards={create({state,MAP,$,SETS,showHolo,normalNum,searchKey,searchText,rarityHtml,esc,cardNumber,renderCollections}){\n';
   const end='\nreturn {sortedOwnedCards,refreshOwned,renderOwnedList};\n}};';
   const i=module.indexOf(begin),j=module.indexOf(end,i);
   assert.ok(i>=0&&j>i,'Owned-cards factory has unexpected boundaries');
