@@ -25,6 +25,7 @@ jobs:
       - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - run: npm install --no-save --no-package-lock playwright@1.57.0
       - run: |
+          node --check js/shipments.js
           node --check js/binder.js
           node --check js/market-prices.js
           node --check js/public-reader.js
