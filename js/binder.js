@@ -1,0 +1,837 @@
+
+(()=>{'use strict';
+const ROOT='https://raw.githubusercontent.com/PokemonTCG/pokemon-tcg-data/master/cards/en/';
+const SETS=[
+ {id:'base1',name:'Base Set',year:1999,group:'Base',count:102},
+ {id:'base2',name:'Jungle',year:1999,group:'Base',count:64},
+ {id:'base3',name:'Fossil',year:1999,group:'Base',count:62},
+ {id:'base4',name:'Base Set 2',year:2000,group:'Base',count:130},
+ {id:'base5',name:'Team Rocket',year:2000,group:'Base',count:83},
+ {id:'gym1',name:'Gym Heroes',year:2000,group:'Gym',count:132},
+ {id:'gym2',name:'Gym Challenge',year:2000,group:'Gym',count:132},
+ {id:'neo1',name:'Neo Genesis',year:2000,group:'Neo',count:111},
+ {id:'neo2',name:'Neo Discovery',year:2001,group:'Neo',count:75},
+ {id:'neo3',name:'Neo Revelation',year:2001,group:'Neo',count:66},
+ {id:'neo4',name:'Neo Destiny',year:2002,group:'Neo',count:113},
+ {id:'si1',name:'Southern Islands',year:2001,group:'Extra',count:18},
+ {id:'basep',name:'Wizards Black Star Promos',year:1999,group:'Extra',count:53},
+ {id:'base6',name:'Legendary Collection',year:2002,group:'Extra',count:110},
+ {id:'movie2000',name:'Movie Promo 2000',year:2000,group:'Extra',count:1},
+];
+const MAP=new Map(SETS.map(s=>[s.id,s]));const BASE_COUNT=SETS.filter(s=>s.group!=='Extra').reduce((n,s)=>n+s.count,0);
+const OFFLINE_PACKS={"base1":["Alakazam|Blastoise|Chansey|Charizard|Clefairy|Gyarados|Hitmonchan|Machamp|Magneton|Mewtwo|Nidoking|Ninetales|Poliwrath|Raichu|Venusaur|Zapdos|Beedrill|Dragonair|Dugtrio|Electabuzz|Electrode|Pidgeotto|Arcanine|Charmeleon|Dewgong|Dratini|Farfetch'd|Growlithe|Haunter|Ivysaur|Jynx|Kadabra|Kakuna|Machoke|Magikarp|Magmar|Nidorino|Poliwhirl|Porygon|Raticate|Seel|Wartortle|Abra|Bulbasaur|Caterpie|Charmander|Diglett|Doduo|Drowzee|Gastly|Koffing|Machop|Magnemite|Metapod|Nidoran ♂|Onix|Pidgey|Pikachu|Poliwag|Ponyta|Rattata|Sandshrew|Squirtle|Starmie|Staryu|Tangela|Voltorb|Vulpix|Weedle|Clefairy Doll|Computer Search|Devolution Spray|Impostor Professor Oak|Item Finder|Lass|Pokémon Breeder|Pokémon Trader|Scoop Up|Super Energy Removal|Defender|Energy Retrieval|Full Heal|Maintenance|PlusPower|Pokémon Center|Pokémon Flute|Pokédex|Professor Oak|Revive|Super Potion|Bill|Energy Removal|Gust of Wind|Potion|Switch|Double Colorless Energy|Fighting Energy|Fire Energy|Grass Energy|Lightning Energy|Psychic Energy|Water Energy","16:H;22:R;42:U;69:C;79:R;90:U;95:C;96:U;102:E",69,96],"base2":["Clefable|Electrode|Flareon|Jolteon|Kangaskhan|Mr. Mime|Nidoqueen|Pidgeot|Pinsir|Scyther|Snorlax|Vaporeon|Venomoth|Victreebel|Vileplume|Wigglytuff|Clefable|Electrode|Flareon|Jolteon|Kangaskhan|Mr. Mime|Nidoqueen|Pidgeot|Pinsir|Scyther|Snorlax|Vaporeon|Venomoth|Victreebel|Vileplume|Wigglytuff|Butterfree|Dodrio|Exeggutor|Fearow|Gloom|Lickitung|Marowak|Nidorina|Parasect|Persian|Primeape|Rapidash|Rhydon|Seaking|Tauros|Weepinbell|Bellsprout|Cubone|Eevee|Exeggcute|Goldeen|Jigglypuff|Mankey|Meowth|Nidoran ♀|Oddish|Paras|Pikachu|Rhyhorn|Spearow|Venonat|Poké Ball","16:H;32:R;48:U;64:C",63,null],"base3":["Aerodactyl|Articuno|Ditto|Dragonite|Gengar|Haunter|Hitmonlee|Hypno|Kabutops|Lapras|Magneton|Moltres|Muk|Raichu|Zapdos|Aerodactyl|Articuno|Ditto|Dragonite|Gengar|Haunter|Hitmonlee|Hypno|Kabutops|Lapras|Magneton|Moltres|Muk|Raichu|Zapdos|Arbok|Cloyster|Gastly|Golbat|Golduck|Golem|Graveler|Kingler|Magmar|Omastar|Sandslash|Seadra|Slowbro|Tentacruel|Weezing|Ekans|Geodude|Grimer|Horsea|Kabuto|Krabby|Omanyte|Psyduck|Shellder|Slowpoke|Tentacool|Zubat|Mr. Fuji|Energy Search|Gambler|Recycle|Mysterious Fossil","15:H;30:R;45:U;57:C;58:U;62:C",57,null],"base4":["Alakazam|Blastoise|Chansey|Charizard|Clefable|Clefairy|Gyarados|Hitmonchan|Magneton|Mewtwo|Nidoking|Nidoqueen|Ninetales|Pidgeot|Poliwrath|Raichu|Scyther|Venusaur|Wigglytuff|Zapdos|Beedrill|Dragonair|Dugtrio|Electabuzz|Electrode|Kangaskhan|Mr. Mime|Pidgeotto|Pinsir|Snorlax|Venomoth|Victreebel|Arcanine|Butterfree|Charmeleon|Dewgong|Dodrio|Dratini|Exeggutor|Farfetch'd|Fearow|Growlithe|Haunter|Ivysaur|Jynx|Kadabra|Kakuna|Lickitung|Machoke|Magikarp|Magmar|Marowak|Nidorina|Nidorino|Parasect|Persian|Poliwhirl|Raticate|Rhydon|Seaking|Seel|Tauros|Wartortle|Weepinbell|Abra|Bellsprout|Bulbasaur|Caterpie|Charmander|Cubone|Diglett|Doduo|Drowzee|Exeggcute|Gastly|Goldeen|Jigglypuff|Machop|Magnemite|Meowth|Metapod|Nidoran ♀|Nidoran ♂|Onix|Paras|Pidgey|Pikachu|Poliwag|Rattata|Rhyhorn|Sandshrew|Spearow|Squirtle|Starmie|Staryu|Tangela|Venonat|Voltorb|Vulpix|Weedle|Computer Search|Imposter Professor Oak|Item Finder|Lass|Pokémon Breeder|Pokémon Trader|Scoop Up|Super Energy Removal|Defender|Energy Retrieval|Full Heal|Maintenance|PlusPower|Pokémon Center|Pokédex|Professor Oak|Super Potion|Bill|Energy Removal|Gust of Wind|Poké Ball|Potion|Switch|Double Colorless Energy|Fighting Energy|Fire Energy|Grass Energy|Lightning Energy|Psychic Energy|Water Energy","20:H;32:R;64:U;100:C;108:R;117:U;123:C;124:U;130:E",100,124],"base5":["Dark Alakazam|Dark Arbok|Dark Blastoise|Dark Charizard|Dark Dragonite|Dark Dugtrio|Dark Golbat|Dark Gyarados|Dark Hypno|Dark Machamp|Dark Magneton|Dark Slowbro|Dark Vileplume|Dark Weezing|Here Comes Team Rocket!|Rocket's Sneak Attack|Rainbow Energy|Dark Alakazam|Dark Arbok|Dark Blastoise|Dark Charizard|Dark Dragonite|Dark Dugtrio|Dark Golbat|Dark Gyarados|Dark Hypno|Dark Machamp|Dark Magneton|Dark Slowbro|Dark Vileplume|Dark Weezing|Dark Charmeleon|Dark Dragonair|Dark Electrode|Dark Flareon|Dark Gloom|Dark Golduck|Dark Jolteon|Dark Kadabra|Dark Machoke|Dark Muk|Dark Persian|Dark Primeape|Dark Rapidash|Dark Vaporeon|Dark Wartortle|Magikarp|Porygon|Abra|Charmander|Dark Raticate|Diglett|Dratini|Drowzee|Eevee|Ekans|Grimer|Koffing|Machop|Magnemite|Mankey|Meowth|Oddish|Ponyta|Psyduck|Rattata|Slowpoke|Squirtle|Voltorb|Zubat|Here Comes Team Rocket!|Rocket's Sneak Attack|The Boss's Way|Challenge!|Digger|Imposter Oak's Revenge|Nightly Garbage Run|Goop Gas Attack|Sleep!|Rainbow Energy|Full Heal Energy|Potion Energy|Dark Raichu","17:H;31:R;48:U;70:C;72:R;77:U;79:C;80:R;82:U;83:H",70,80],"gym1":["Blaine's Moltres|Brock's Rhydon|Erika's Clefable|Erika's Dragonair|Erika's Vileplume|Lt. Surge's Electabuzz|Lt. Surge's Fearow|Lt. Surge's Magneton|Misty's Seadra|Misty's Tentacruel|Rocket's Hitmonchan|Rocket's Moltres|Rocket's Scyther|Sabrina's Gengar|Brock|Erika|Lt. Surge|Misty|The Rocket's Trap|Brock's Golem|Brock's Onix|Brock's Rhyhorn|Brock's Sandslash|Brock's Zubat|Erika's Clefairy|Erika's Victreebel|Lt. Surge's Electabuzz|Lt. Surge's Raichu|Misty's Cloyster|Misty's Goldeen|Misty's Poliwrath|Misty's Tentacool|Rocket's Snorlax|Sabrina's Venomoth|Blaine's Growlithe|Blaine's Kangaskhan|Blaine's Magmar|Brock's Geodude|Brock's Golbat|Brock's Graveler|Brock's Lickitung|Erika's Dratini|Erika's Exeggcute|Erika's Exeggutor|Erika's Gloom|Erika's Gloom|Erika's Oddish|Erika's Weepinbell|Erika's Weepinbell|Lt. Surge's Magnemite|Lt. Surge's Raticate|Lt. Surge's Spearow|Misty's Poliwhirl|Misty's Psyduck|Misty's Seaking|Misty's Starmie|Misty's Tentacool|Sabrina's Haunter|Sabrina's Jynx|Sabrina's Slowbro|Blaine's Charmander|Blaine's Growlithe|Blaine's Ponyta|Blaine's Tauros|Blaine's Vulpix|Brock's Geodude|Brock's Mankey|Brock's Mankey|Brock's Onix|Brock's Rhyhorn|Brock's Sandshrew|Brock's Sandshrew|Brock's Vulpix|Brock's Zubat|Erika's Bellsprout|Erika's Bellsprout|Erika's Exeggcute|Erika's Oddish|Erika's Tangela|Lt. Surge's Magnemite|Lt. Surge's Pikachu|Lt. Surge's Rattata|Lt. Surge's Spearow|Lt. Surge's Voltorb|Misty's Goldeen|Misty's Horsea|Misty's Poliwag|Misty's Seel|Misty's Shellder|Misty's Staryu|Sabrina's Abra|Sabrina's Drowzee|Sabrina's Gastly|Sabrina's Mr. Mime|Sabrina's Slowpoke|Sabrina's Venonat|Blaine's Quiz #1|Brock|Charity|Erika|Lt. Surge|Misty|No Removal Gym|The Rocket's Training Gym|Blaine's Last Resort|Brock's Training Method|Celadon City Gym|Cerulean City Gym|Erika's Maids|Erika's Perfume|Good Manners|Lt. Surge's Treaty|Minion of Team Rocket|Misty's Wrath|Pewter City Gym|Recall|Sabrina's ESP|Secret Mission|Tickling Machine|Vermilion City Gym|Blaine's Gamble|Energy Flow|Misty's Duel|Narrow Gym|Sabrina's Gaze|Trash Exchange|Fighting Energy|Fire Energy|Grass Energy|Lightning Energy|Psychic Energy|Water Energy","19:H;34:R;60:U;96:C;104:R;120:U;126:C;132:E",96,127],"gym2":["Blaine's Arcanine|Blaine's Charizard|Brock's Ninetales|Erika's Venusaur|Giovanni's Gyarados|Giovanni's Machamp|Giovanni's Nidoking|Giovanni's Persian|Koga's Beedrill|Koga's Ditto|Lt. Surge's Raichu|Misty's Golduck|Misty's Gyarados|Rocket's Mewtwo|Rocket's Zapdos|Sabrina's Alakazam|Blaine|Giovanni|Koga|Sabrina|Blaine's Ninetales|Brock's Dugtrio|Giovanni's Nidoqueen|Giovanni's Pinsir|Koga's Arbok|Koga's Muk|Koga's Pidgeotto|Lt. Surge's Jolteon|Sabrina's Gengar|Sabrina's Golduck|Blaine's Charmeleon|Blaine's Dodrio|Blaine's Rapidash|Brock's Graveler|Brock's Primeape|Brock's Sandslash|Brock's Vulpix|Erika's Bellsprout|Erika's Bulbasaur|Erika's Clefairy|Erika's Ivysaur|Giovanni's Machoke|Giovanni's Meowth|Giovanni's Nidorina|Giovanni's Nidorino|Koga's Golbat|Koga's Kakuna|Koga's Koffing|Koga's Pidgey|Koga's Weezing|Lt. Surge's Eevee|Lt. Surge's Electrode|Lt. Surge's Raticate|Misty's Dewgong|Sabrina's Haunter|Sabrina's Hypno|Sabrina's Jynx|Sabrina's Kadabra|Sabrina's Mr. Mime|Blaine's Charmander|Blaine's Doduo|Blaine's Growlithe|Blaine's Mankey|Blaine's Ponyta|Blaine's Rhyhorn|Blaine's Vulpix|Brock's Diglett|Brock's Geodude|Erika's Jigglypuff|Erika's Oddish|Erika's Paras|Giovanni's Machop|Giovanni's Magikarp|Giovanni's Meowth|Giovanni's Nidoran ♀|Giovanni's Nidoran ♂|Koga's Ekans|Koga's Grimer|Koga's Koffing|Koga's Pidgey|Koga's Tangela|Koga's Weedle|Koga's Zubat|Lt. Surge's Pikachu|Lt. Surge's Rattata|Lt. Surge's Voltorb|Misty's Horsea|Misty's Magikarp|Misty's Poliwag|Misty's Psyduck|Misty's Seel|Misty's Staryu|Sabrina's Abra|Sabrina's Abra|Sabrina's Drowzee|Sabrina's Gastly|Sabrina's Gastly|Sabrina's Porygon|Sabrina's Psyduck|Blaine|Brock's Protection|Chaos Gym|Erika's Kindness|Giovanni|Giovanni's Last Resort|Koga|Lt. Surge's Secret Plan|Misty's Wish|Resistance Gym|Sabrina|Blaine's Quiz #2|Blaine's Quiz #3|Cinnabar City Gym|Fuchsia City Gym|Koga's Ninja Trick|Master Ball|Max Revive|Misty's Tears|Rocket's Minefield Gym|Rocket's Secret Experiment|Sabrina's Psychic Control|Saffron City Gym|Viridian City Gym|Fervor|Transparent Walls|Warp Point|Fighting Energy|Fire Energy|Grass Energy|Lightning Energy|Psychic Energy|Water Energy","20:H;30:R;59:U;99:C;110:R;123:U;126:C;132:E",99,127],"neo1":["Ampharos|Azumarill|Bellossom|Feraligatr|Feraligatr|Heracross|Jumpluff|Kingdra|Lugia|Meganium|Meganium|Pichu|Skarmory|Slowking|Steelix|Togetic|Typhlosion|Typhlosion|Metal Energy|Cleffa|Donphan|Elekid|Magby|Murkrow|Sneasel|Aipom|Ariados|Bayleef|Bayleef|Clefairy|Croconaw|Croconaw|Electabuzz|Flaaffy|Furret|Gloom|Granbull|Lanturn|Ledian|Magmar|Miltank|Noctowl|Phanpy|Piloswine|Quagsire|Quilava|Quilava|Seadra|Skiploom|Sunflora|Togepi|Xatu|Chikorita|Chikorita|Chinchou|Cyndaquil|Cyndaquil|Girafarig|Gligar|Hoothoot|Hoppip|Horsea|Ledyba|Mantine|Mareep|Marill|Natu|Oddish|Onix|Pikachu|Sentret|Shuckle|Slowpoke|Snubbull|Spinarak|Stantler|Sudowoodo|Sunkern|Swinub|Totodile|Totodile|Wooper|Arcade Game|Ecogym|Energy Charge|Focus Band|Mary|PokéGear|Super Energy Retrieval|Time Capsule|Bill's Teleporter|Card-Flip Game|Gold Berry|Miracle Berry|New Pokédex|Professor Elm|Sprout Tower|Super Scoop Up|Berry|Double Gust|Moo-Moo Milk|Pokémon March|Super Rod|Darkness Energy|Recycle Energy|Fighting Energy|Fire Energy|Grass Energy|Lightning Energy|Psychic Energy|Water Energy","19:H;25:R;52:U;82:C;90:R;98:U;103:C;105:R;111:E",82,104],"neo2":["Espeon|Forretress|Hitmontop|Houndoom|Houndour|Kabutops|Magnemite|Politoed|Poliwrath|Scizor|Smeargle|Tyranitar|Umbreon|Unown [A]|Ursaring|Wobbuffet|Yanma|Beedrill|Butterfree|Espeon|Forretress|Hitmontop|Houndoom|Houndour|Kabutops|Magnemite|Politoed|Poliwrath|Scizor|Smeargle|Tyranitar|Umbreon|Unown [A]|Ursaring|Wobbuffet|Yanma|Corsola|Eevee|Houndour|Igglybuff|Kakuna|Metapod|Omastar|Poliwhirl|Pupitar|Scyther|Unown [D]|Unown [F]|Unown [M]|Unown [N]|Unown [U]|Xatu|Caterpie|Dunsparce|Hoppip|Kabuto|Larvitar|Mareep|Natu|Omanyte|Pineco|Poliwag|Sentret|Spinarak|Teddiursa|Tyrogue|Unown [E]|Unown [I]|Unown [O]|Weedle|Wooper|Fossil Egg|Hyper Devolution Spray|Ruin Wall|Energy Ark","17:H;36:R;52:U;71:C;74:U;75:C",71,null],"neo3":["Ampharos|Blissey|Celebi|Crobat|Delibird|Entei|Ho-oh|Houndoom|Jumpluff|Magneton|Misdreavus|Porygon2|Raikou|Suicune|Aerodactyl|Celebi|Entei|Ho-oh|Kingdra|Lugia|Raichu|Raikou|Skarmory|Sneasel|Starmie|Sudowoodo|Suicune|Flaaffy|Golbat|Graveler|Jynx|Lanturn|Magcargo|Octillery|Parasect|Piloswine|Seaking|Stantler|Unown [B]|Unown [Y]|Aipom|Chinchou|Farfetch'd|Geodude|Goldeen|Murkrow|Paras|Quagsire|Qwilfish|Remoraid|Shuckle|Skiploom|Slugma|Smoochum|Snubbull|Staryu|Swinub|Unown [K]|Zubat|Balloon Berry|Healing Field|Pokémon Breeder Fields|Rocket's Hideout|Old Rod|Shining Gyarados|Shining Magikarp","14:H;27:R;40:U;59:C;63:U;64:C;66:S",59,null],"neo4":["Dark Ampharos|Dark Crobat|Dark Donphan|Dark Espeon|Dark Feraligatr|Dark Gengar|Dark Houndoom|Dark Porygon2|Dark Scizor|Dark Typhlosion|Dark Tyranitar|Light Arcanine|Light Azumarill|Light Dragonite|Light Togetic|Miracle Energy|Dark Ariados|Dark Magcargo|Dark Omastar|Dark Slowking|Dark Ursaring|Light Dragonair|Light Lanturn|Light Ledian|Light Machamp|Light Piloswine|Unown [G]|Unown [H]|Unown [W]|Unown [X]|Chansey|Dark Croconaw|Dark Exeggutor|Dark Flaaffy|Dark Forretress|Dark Haunter|Dark Omanyte|Dark Pupitar|Dark Quilava|Dark Wigglytuff|Heracross|Hitmonlee|Houndour|Jigglypuff|Light Dewgong|Light Flareon|Light Golduck|Light Jolteon|Light Machoke|Light Ninetales|Light Slowbro|Light Vaporeon|Light Venomoth|Light Wigglytuff|Scyther|Togepi|Unown [C]|Unown [P]|Unown [Q]|Unown [Z]|Cyndaquil|Dark Octillery|Dratini|Exeggcute|Gastly|Girafarig|Gligar|Growlithe|Hitmonchan|Larvitar|Ledyba|Light Sunflora|Machop|Mantine|Mareep|Phanpy|Pineco|Porygon|Psyduck|Remoraid|Seel|Slugma|Sunkern|Swinub|Totodile|Unown [L]|Unown [S]|Unown [T]|Unown [V]|Venonat|Vulpix|Broken Ground Gym|EXP.ALL|Impostor Professor Oak's Invention|Radio Tower|Thought Wave Machine|Counterattack Claws|Energy Amplifier|Energy Stadium|Lucky Stadium|Magnifier|Pokémon Personality Test|Team Rocket's Evil Deeds|Heal Powder|Mail from Bill|Shining Celebi|Shining Charizard|Shining Kabutops|Shining Mewtwo|Shining Noctowl|Shining Raichu|Shining Steelix|Shining Tyranitar","16:H;30:R;60:U;91:C;96:R;103:U;105:C;113:S",91,null],"si1":["Mew|Pidgeot|Onix|Togepi|Ivysaur|Raticate|Ledyba|Jigglypuff|Butterfree|Tentacruel|Marill|Lapras|Exeggutor|Slowking|Wartortle|Lickitung|Vileplume|Primeape","18:C",18,null],"basep":["Pikachu|Electabuzz|Mewtwo|Pikachu|Dragonite|Arcanine|Jigglypuff|Mew|Mew|Meowth|Eevee|Mewtwo|Venusaur|Mewtwo|Cool Porygon|Computer Error|Dark Persian|Team Rocket's Meowth|Sabrina's Abra|Psyduck|Moltres|Articuno|Zapdos|_____'s Pikachu|Flying Pikachu|Pikachu|Pikachu|Surfing Pikachu|Marill|Togepi|Cleffa|Smeargle|Scizor|Entei|Pichu|Igglybuff|Hitmontop|Unown [J]|Misdreavus|Pokémon Center|Lucky Stadium|Pokémon Tower|Machamp|Magmar|Scyther|Electabuzz|Mew|Articuno|Snorlax|Celebi|Rapidash|Ho-oh|Suicune","53:P",53,null],"base6":["Alakazam|Articuno|Charizard|Dark Blastoise|Dark Dragonite|Dark Persian|Dark Raichu|Dark Slowbro|Dark Vaporeon|Flareon|Gengar|Gyarados|Hitmonlee|Jolteon|Machamp|Muk|Ninetales|Venusaur|Zapdos|Beedrill|Butterfree|Electrode|Exeggutor|Golem|Hypno|Jynx|Kabutops|Magneton|Mewtwo|Moltres|Nidoking|Nidoqueen|Pidgeot|Pidgeotto|Rhydon|Arcanine|Charmeleon|Dark Dragonair|Dark Wartortle|Dewgong|Dodrio|Fearow|Golduck|Graveler|Growlithe|Haunter|Ivysaur|Kabuto|Kadabra|Kakuna|Machoke|Magikarp|Meowth|Metapod|Nidorina|Nidorino|Omanyte|Omastar|Primeape|Rapidash|Raticate|Sandslash|Seadra|Snorlax|Tauros|Tentacruel|Abra|Bulbasaur|Caterpie|Charmander|Doduo|Dratini|Drowzee|Eevee|Exeggcute|Gastly|Geodude|Grimer|Machop|Magnemite|Mankey|Nidoran ♀|Nidoran ♂|Onix|Pidgey|Pikachu|Ponyta|Psyduck|Rattata|Rhyhorn|Sandshrew|Seel|Slowpoke|Spearow|Squirtle|Tentacool|Voltorb|Vulpix|Weedle|Full Heal Energy|Potion Energy|Pokémon Breeder|Pokémon Trader|Scoop Up|The Boss's Way|Challenge!|Energy Retrieval|Bill|Mysterious Fossil|Potion","19:H;35:R;66:U;99:C;101:U;104:R;107:U;110:C",99,100]};
+function embeddedCards(){
+ const cards=[]; const rarityNames={H:'Rare Holo',S:'Rare Shining',R:'Rare',U:'Uncommon',C:'Common',E:'',P:'Promo'};
+ for(const set of SETS){
+  const pack=OFFLINE_PACKS[set.id];if(!pack)continue;
+  const names=pack[0].split('|');let i=0;
+  for(const spec of pack[1].split(';')){
+   const [endString,type]=spec.split(':');const end=Number(endString);
+   for(;i<end;i++){
+    const number=i+1;let kind=number<=pack[2]?'Pokémon':pack[3]!==null&&number>=pack[3]?'Energy':'Trainer';
+    if(set.id==='base5'&&[17,80,81,82].includes(number))kind='Energy';
+    if(set.id==='base1'&&number===96)kind='Energy';
+    if(set.id==='neo1'&&[19,104,105].includes(number))kind='Energy';
+    if(set.id==='neo4'&&number===16)kind='Energy';
+    if(set.id==='base6'&&[100,101].includes(number))kind='Energy';
+    if(set.id==='basep'&&[16,40,41,42].includes(number))kind='Trainer';
+    let finish=type==='H'?'holo':type==='S'?'shining':type==='P'?'unknown':'normal';
+    if(set.id==='si1'&&[1,4,7,11,14,17].includes(number))finish='holo';
+    const total=set.id==='basep'?null:set.id==='base5'?82:set.id==='neo3'?64:set.id==='neo4'?105:set.count;
+    cards.push({id:set.id+'-'+number,set:set.id,name:names[i],number:String(number),total,rarity:set.id==='base5'&&number===83?'Rare Secret':rarityNames[type],finish,kind,image:'https://images.pokemontcg.io/'+set.id+'/'+number+'.png',large:'https://images.pokemontcg.io/'+set.id+'/'+number+'_hires.png'});
+   }
+  }
+  if(names.length!==i)throw Error('Incomplete embedded set '+set.id);
+ }
+ cards.push({id:'movie2000-ancient-mew',set:'movie2000',name:'Ancient Mew',number:'ללא מספר',total:null,rarity:'Movie Promo Holo',finish:'holo',kind:'Pokémon',image:'assets/ancient-mew.jpg',large:'assets/ancient-mew.jpg'});
+ return cards;
+}
+
+const $=id=>document.getElementById(id);
+const state={cards:[],owned:{},wish:{},removedWish:{},conditions:{},notes:{},purchasePrices:{},firstEdition:{},ownedAddedAt:{},shipments:[],binderExcluded:{},binderOrder:[],wishOrder:[],binderIncludeWish:true,binderPage:0,view:'catalog',active:'all',extras:false,holoOnly:false,pokemonOnly:false,status:'all',sort:'num',query:'',limit:96,ready:false,failures:[]};
+function normalizeShipment(raw){
+ if(!raw||typeof raw!=='object')return null;
+ const number=String(raw.number||'').trim().toUpperCase();
+ if(!/^[A-Z0-9-]{5,50}$/.test(number))return null;
+ const id=String(raw.id||'').slice(0,70);
+ if(!/^[a-z0-9_-]{8,70}$/i.test(id))return null;
+ return {id,number,title:String(raw.title||'').slice(0,70),carrier:Number(raw.carrier)||0,cardIds:Array.isArray(raw.cardIds)?[...new Set(raw.cardIds.filter(x=>typeof x==='string'&&x.length<50))].slice(0,60):[],seenEventIds:Array.isArray(raw.seenEventIds)?[...new Set(raw.seenEventIds.filter(x=>typeof x==='string'&&x.length<100))].slice(0,200):[],initialized:raw.initialized===true,createdAt:Number(raw.createdAt)||0};
+}
+function getProgress(){normalizeOrders();return {owned:{...state.owned},wish:{...state.wish},removedWish:{...state.removedWish},conditions:{...state.conditions},notes:{...state.notes},purchasePrices:{...state.purchasePrices},firstEdition:{...state.firstEdition},ownedAddedAt:{...state.ownedAddedAt},shipments:state.shipments.map(x=>({...x,cardIds:[...x.cardIds],seenEventIds:[...x.seenEventIds]})),binderExcluded:{...state.binderExcluded},binderIncludeWish:state.binderIncludeWish,binderOrder:[...state.binderOrder],wishOrder:[...state.wishOrder]}}
+function validPart(raw){return raw&&typeof raw==='object'&&!Array.isArray(raw)?raw:{}}
+function adoptProgress(value){for(const k of ['owned','wish','removedWish','conditions','notes','purchasePrices','firstEdition','ownedAddedAt','binderExcluded'])state[k]={...validPart(value?.[k])};for(const id of Object.keys(state.removedWish))delete state.wish[id];state.ownedAddedAt={...validPart(value?.ownedAddedAt)};state.shipments=Array.isArray(value?.shipments)?value.shipments.map(normalizeShipment).filter(Boolean).slice(0,80):[];state.binderIncludeWish=typeof value?.binderIncludeWish==='boolean'?value.binderIncludeWish:true;for(const k of ['binderOrder','wishOrder'])state[k]=Array.isArray(value?.[k])?[...value[k]]:[];normalizeOrders();renderAll();}
+function ensureCloudEdit(){if(window.VintageCloud?.canEdit?.())return true;
+ toast('כדי לשמור שינויים צריך להתחבר ל־Google ולהמתין לטעינת האוסף.');
+ const dialog=$('cloudDialog');if(dialog&&!dialog.open)dialog.showModal();return false;}
+function save(immediately=false){if(!ensureCloudEdit())return;window.VintageCloud.onChange({immediate:immediately});renderCollections();}
+window.VintageBinder={getProgress,adoptProgress,getCardInfo:(id)=>{const c=state.cards.find(x=>x.id===id);return c?{id:c.id,name:c.name,image:c.image,setName:MAP.get(c.set)?.name||""}:null}};
+window.VintageDealBridge={
+ getWishlistCards:()=>{
+  normalizeOrders();
+  const lookup=new Map(state.cards.map(c=>[c.id,c]));
+  return state.wishOrder.filter(id=>state.wish[id]&&!state.owned[id]).map((id,index)=>{
+   const c=lookup.get(id);
+   return c?{id,rank:index+1,name:c.name,number:cardNumber(c),setName:MAP.get(c.set)?.name||'',image:c.image,condition:state.conditions[id]||'',firstEdition:!!state.firstEdition[id],finish:c.finish||null}:null;
+  }).filter(Boolean);
+ },
+ getMarketPrice:(id,grade)=>{
+  const c=state.cards.find(c=>c.id===id);
+  return c&&['NM','LP','MP','HP','DMG'].includes(grade)?window.VintageMarketPrices?.getOwnedPrice?.(c,MAP.get(c.set)?.name||'',grade,!!state.firstEdition[id]):null;
+ }
+};
+const text=String;const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const nf=n=>new Intl.NumberFormat('he-IL').format(n);
+function simplify(raw,set){const n=String(raw.number||'');const kind=raw.supertype||'';let rarity=raw.rarity||'';let finish='normal';if(/Shining/i.test(rarity)||/^Shining\s/i.test(raw.name||'')){finish='shining';}else if(/Holo/i.test(rarity)){finish='holo';}
+ if(set.id==='base5'&&n==='83')finish='holo'; // Dark Raichu, secret holographic rare
+ if(set.id==='si1'&&['1','4','7','11','14','17'].includes(n))finish='reverse';
+ if(set.id==='basep')finish='unknown'; // print/foil variations not carried by generic rarity=Promo
+ const cardid=set.id+'-'+n;
+ return {id:cardid,set:set.id,name:raw.name||'',number:n,total:set.id==='basep'?null:set.id==='base5'?82:set.id==='neo3'?64:set.id==='neo4'?105:set.count,rarity:rarity||'—',finish,kind,image:raw.images?.small||`https://images.pokemontcg.io/${set.id}/${n}.png`,large:raw.images?.large||`https://images.pokemontcg.io/${set.id}/${n}_hires.png`};}
+function cardNumber(c){return c.number+(c.total?'/'+c.total:'')}
+function normalNum(x){const n=parseInt(x.number,10);return Number.isFinite(n)?n:9999;}
+function loadEmbeddedData(){
+ try{
+  state.cards=embeddedCards();
+  if(state.cards.length!==1252)throw Error('Unexpected card count: '+state.cards.length);
+  state.failures=[];state.ready=true;
+  $('fetchStatus').hidden=true;
+  renderAll();
+  document.documentElement.classList.add('js-ready');
+ }catch(error){
+  console.error('Could not initialize offline catalog',error);
+  $('fetchStatus').hidden=false;$('fetchStatus').classList.add('error');
+  $('fetchStatus').textContent='אירעה תקלה בטעינת הרשימה המובנית: '+error.message;
+ }
+}
+function catalog(){return state.cards.filter(c=>state.extras||MAP.get(c.set)?.group!=='Extra')}
+function relevantSetCards(id){return catalog().filter(c=>id==='all'||c.set===id)}
+function showHolo(c){return ['holo','shining','reverse'].includes(c.finish)}
+function searchKey(s){return String(s||'').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/gyardos|gyrados|gyardos/g,'gyarados').trim();}
+function searchText(c){return searchKey(c.name+' '+cardNumber(c)+' '+(MAP.get(c.set)?.name||'')+' '+c.id);}
+function visible(){const q=searchKey(state.query);let arr=(q?state.cards:catalog()).filter(c=>
+ (q||state.active==='all'||c.set===state.active)&&(!state.holoOnly||showHolo(c))&&(!state.pokemonOnly||c.kind==='Pokémon')&&
+ (state.status==='all'||state.status==='owned'&&state.owned[c.id]||state.status==='missing'&&!state.owned[c.id]||state.status==='wish'&&state.wish[c.id])&&
+ (!q||searchText(c).includes(q)));
+ if(state.sort==='name')arr.sort((a,b)=>a.name.localeCompare(b.name)||normalNum(a)-normalNum(b));
+ if(state.sort==='holo')arr.sort((a,b)=>Number(showHolo(b))-Number(showHolo(a))||SETS.findIndex(s=>s.id===a.set)-SETS.findIndex(s=>s.id===b.set)||normalNum(a)-normalNum(b));return arr;}
+function groups(){return [['Base','sideBase'],['Gym','sideGym'],['Neo','sideNeo'],['Extra','sideExtra']];}
+function renderSide(){for(const [g,id]of groups()){$(id).innerHTML=SETS.filter(s=>s.group===g).map(s=>{const own=state.cards.filter(c=>c.set===s.id&&state.owned[c.id]).length;const loaded=state.cards.some(c=>c.set===s.id);return `<button class="set-btn ${state.active===s.id?'active':''}" data-set="${s.id}" ${g==='Extra'&&!state.extras?'title="לחיצה תציג גם אוספים נוספים"':''}><span>${esc(s.name)}</span><small>${own}/${s.count}</small><span class="mini-track"><i style="width:${(own/s.count*100).toFixed(1)}%"></i></span></button>`}).join('')}
+ $('side').querySelector('[data-set="all"]').classList.toggle('active',state.active==='all');$('allMini').textContent=nf(catalog().filter(c=>state.owned[c.id]).length)+'/'+nf(catalog().length);}
+function renderStats(){/* Collection totals are shown only in the relevant tabs. */}
+function rarityHtml(c){const t=c.finish==='holo'?'✨ Holo':c.finish==='shining'?'🌟 Shining':c.finish==='reverse'?'✨ Reverse Holo':c.finish==='unknown'?'? Promo (משתנה)':c.rarity==='Rare'?'◆ Rare':c.rarity==='Uncommon'?'◇ Uncommon':c.rarity==='Common'?'● Common':c.rarity==='Rare Secret'?'◆ Secret Rare':c.rarity||'רגיל';const cls=c.finish==='holo'||c.finish==='reverse'?'holo':c.finish==='shining'?'shining':c.finish==='unknown'?'unknown':'';return `<span class="rarity-tag ${cls}">${esc(t)}</span>`;}
+function cardHTML(c){const set=MAP.get(c.set);const isOwned=!!state.owned[c.id];return `<article class="poke-card ${isOwned?'owned':''}" role="listitem" data-id="${esc(c.id)}">
+ <div class="card-img-wrap" data-preview="${esc(c.id)}" title="תמונה ופרטים"><img class="card-img" loading="lazy" decoding="async" src="${esc(c.image)}" alt="${esc(c.name)}" onerror="this.style.display='none';this.nextElementSibling.hidden=false"><span class="img-placeholder" hidden>✦</span></div>
+ <div class="card-data"><div class="card-name" title="${esc(c.name)}">${esc(c.name)}</div><div class="card-sub">${esc(set.name)} · #${esc(cardNumber(c))}</div><div class="badges">${rarityHtml(c)}</div><div class="card-actions">${!isOwned?`<button class="wish-btn ${state.wish[c.id]?'on':''}" data-wish="${esc(c.id)}" aria-label="Wishlist" title="Wishlist">${state.wish[c.id]?'★':'☆'}</button>`:''}<button class="small-link" data-preview="${esc(c.id)}">פרטים</button><a class="small-link" href="${esc(c.image)}" target="_blank" rel="noopener">תמונה ↗</a>${state.conditions[c.id]?`<span class="info-pill">${esc(state.conditions[c.id])}</span>`:''}</div></div>
+ <button class="own-btn ${isOwned?'on':''}" data-own="${esc(c.id)}" aria-label="${isOwned?'הסר מהאוסף':'יש לי קלף זה'}" title="${isOwned?'יש לי ✓':'סמן שיש לי'}">${isOwned?'✓':'+'}</button></article>`;}
+function renderCards(){const arr=visible();const slice=arr.slice(0,state.limit);$('cards').innerHTML=slice.length?slice.map(cardHTML).join(''):`<div class="empty" style="grid-column:1/-1"><strong>${state.ready?'לא נמצאו קלפים מתאימים':'רשימת הקלפים נטענת...'}</strong>${state.ready?'נסה לשנות את הסינון או החיפוש.':'מעט סבלנות, הרשימה כוללת יותר מאלף קלפים.'}</div>`;
+ $('resultsCount').textContent=state.ready?`מציג ${nf(slice.length)} מתוך ${nf(arr.length)} קלפים`:'ממתין לנתונים';$('loadMore').hidden=arr.length<=state.limit;}
+function renderAll(){renderSide();renderStats();renderCards();renderCollections();$('sectionTitle').textContent=state.active==='all'?'כל הסדרות':MAP.get(state.active)?.name||'כל הסדרות';let arr=relevantSetCards(state.active);const owned=arr.filter(c=>state.owned[c.id]).length;$('sectionSub').textContent=state.ready?`${nf(owned)} מתוך ${nf(arr.length)} קלפים ברשותך`:'רשימות קלפים מקוריות באנגלית';}
+function toast(msg){const e=$('toast');e.textContent=msg;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',2800)}
+function toggleOwned(id){
+ if(!ensureCloudEdit())return;
+ if(state.owned[id]){
+  delete state.owned[id];
+  delete state.ownedAddedAt[id];
+ }else{
+  state.owned[id]=true;
+  const max=Object.values(state.ownedAddedAt).reduce((n,t)=>Math.max(n,Number(t)||0),0);
+  state.ownedAddedAt[id]=Math.max(Date.now(),max+1);
+  // Owned and Wishlist are mutually exclusive. Persist the removal in the same cloud write.
+  if(state.wish[id]||state.wishOrder.includes(id)){
+   delete state.wish[id];
+   state.wishOrder=state.wishOrder.filter(cardId=>cardId!==id);
+   state.removedWish[id]=Date.now();
+  }
+ }
+ normalizeOrders();save(true);renderAll();
+}
+function removeWish(id){
+ if(!ensureCloudEdit())return;
+ if(!state.wish[id]&&!state.wishOrder.includes(id))return;
+ delete state.wish[id];
+ state.removedWish[id]=Date.now(); // Persist a tombstone to prevent stale snapshots resurrecting a deleted wishlist entry.
+ state.wishOrder=state.wishOrder.filter(x=>x!==id);
+ if(!state.owned[id])state.binderOrder=state.binderOrder.filter(x=>x!==id);
+ normalizeOrders();save(true);renderAll();toast('הקלף הוסר מרשימת המשאלות ונשלח למחיקה בענן.');
+}
+function toggleWish(id){
+ if(!ensureCloudEdit())return;
+ if(state.owned[id]){toast('הקלף כבר נמצא באוסף שלך');return;}
+ if(state.wish[id]){removeWish(id);return;}
+ state.wish[id]=true;delete state.removedWish[id];
+ normalizeOrders();save(true);renderAll();
+}
+function updatePurchasePrice(id){
+ if(!ensureCloudEdit()){showModal(id);return;}
+ const amountField=$('modalPurchaseAmount'), currencyField=$('modalPurchaseCurrency');
+ const raw=String(amountField.value||'').trim().replace(',','.');
+ if(raw===''){delete state.purchasePrices[id];save();return;}
+ const amount=Number(raw);
+ if(!Number.isFinite(amount)||amount<0||amount>1000000000){toast('הכנס סכום רכישה תקין');return;}
+ const currency=['ILS','EUR','USD'].includes(currencyField.value)?currencyField.value:'ILS';
+ state.purchasePrices[id]={amount:Math.round(amount*100)/100,currency};
+ save();
+}
+function showModal(id){const c=state.cards.find(c=>c.id===id);if(!c)return;const s=MAP.get(c.set);$('modalContent').innerHTML=`<div class="modal-main"><div><img class="modal-img" src="${esc(c.large)}" alt="${esc(c.name)}"></div><div class="modal-data"><div class="eyebrow" style="color:#697997;letter-spacing:.5px">${esc(s.name)} · ${s.year}</div><h3>${esc(c.name)}</h3><div class="card-sub">#${esc(cardNumber(c))}</div><p class="modal-rarity-only">${rarityHtml(c)}</p><div class="modal-own-row">
+  <button type="button" class="btn ${state.owned[c.id]?'':'primary'}" id="modalOwned">${state.owned[c.id]?'✓ יש לי — הסר':'✓ יש לי'}</button>
+  ${!state.owned[c.id]?`<button type="button" class="btn" id="modalWish">${state.wish[c.id]?'★ Wishlist':'☆ Wishlist'}</button>`:''}
+  ${state.owned[c.id]||state.wish[c.id]?`<button type="button" class="btn" id="modalMove">${state.binderOrder.includes(c.id)?'📍 העבר':'＋ לבינדר'}</button>`:''}
+  <a class="btn" href="${esc(dealAuctionUrl(c,true))}" target="_blank" rel="noopener noreferrer" title="חיפוש מכרזים ב־eBay">🔎 eBay ↗</a> </div><div class="modal-actions compact-details">
+ <div class="condition-box">
+  <label class="condition-label" for="modalCondition">מצב הקלף</label>
+  <div class="condition-controls">
+   <select id="modalCondition" aria-label="מצב הקלף"><option value="">בחר מצב</option>${['NM','LP','MP','HP','DMG'].map(v=>`<option value="${v}" ${state.conditions[c.id]===v?'selected':''}>${v}</option>`).join('')}</select>
+   <label class="first-edition-flag" title="1st Edition" aria-label="1st Edition"><input id="modalFirstEdition" type="checkbox" ${state.firstEdition[c.id]?'checked':''}><span>1st</span></label>
+  </div>
+ </div>
+ <div class="compact-market" id="modalPricePanel" aria-live="polite"></div>
+ <div class="purchase-field" id="modalPurchaseBox" ${state.owned[c.id]?'':'hidden'}>
+  <label class="purchase-heading" for="modalPurchaseAmount">💰 כמה שילמתי?</label>
+  <div class="purchase-controls">
+   <input type="number" id="modalPurchaseAmount" inputmode="decimal" min="0" max="1000000000" step="0.01" placeholder="סכום" value="${state.purchasePrices[c.id]?.amount??''}" aria-label="מחיר הרכישה">
+   <select id="modalPurchaseCurrency" aria-label="מטבע הרכישה">
+    ${[['ILS','₪'],['EUR','€'],['USD','$']].map(([code,label])=>`<option value="${code}" ${(state.purchasePrices[c.id]?.currency||'ILS')===code?'selected':''}>${label}</option>`).join('')}
+   </select>
+  </div>
+ </div>
+</div></div></div>`;
+ $('modalOwned').onclick=()=>{toggleOwned(c.id);showModal(c.id)};
+ const wishAction=$('modalWish');
+ if(wishAction)wishAction.onclick=()=>{toggleWish(c.id);showModal(c.id)};
+ const moveAction=$('modalMove');
+ if(moveAction)moveAction.onclick=()=>{
+  if(!ensureCloudEdit())return;
+  $('modal').close();
+  openMovePicker(c.id);
+ };
+ $('modalCondition').onchange=e=>{
+  const v=e.target.value;
+  if(window.VintageCloud?.canEdit?.()){
+    if(v)state.conditions[c.id]=v;else delete state.conditions[c.id];
+    save();renderCards();
+  }
+  window.VintageMarketPrices?.refresh();
+ };
+ $('modalFirstEdition').onchange=e=>{
+  if(window.VintageCloud?.canEdit?.()){
+    if(e.target.checked)state.firstEdition[c.id]=true;else delete state.firstEdition[c.id];
+    save();
+  }
+  window.VintageMarketPrices?.refresh();
+ };
+ if(state.owned[c.id]){
+  $('modalPurchaseAmount').onchange=()=>updatePurchasePrice(c.id);
+  $('modalPurchaseCurrency').onchange=()=>updatePurchasePrice(c.id);
+ }
+ window.VintageMarketPrices?.show(c,s);
+ if(!$('modal').open)$('modal').showModal();}
+function download(content,type,filename){const blob=new Blob([content],{type});const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download=filename;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),2500)}
+function backup(){const data={app:'pokemon-vintage-binder',version:4,date:new Date().toISOString(),...getProgress()};download(JSON.stringify(data,null,2),'application/json;charset=utf-8','pokemon-vintage-my-collection.json');toast('נוצר גיבוי. שמור את הקובץ במקום בטוח.')}
+async function copyWishlist(){
+ normalizeOrders();
+ if(!state.wishOrder.length){toast('רשימת המשאלות ריקה');return;}
+ const lookup=new Map(state.cards.map(c=>[c.id,c]));
+ const content=state.wishOrder.map(id=>{const card=lookup.get(id);return card?card.name+' — '+(MAP.get(card.set)?.name||'')+' #'+cardNumber(card):null;}).filter(Boolean).join('\n');
+ try{await navigator.clipboard.writeText(content);toast('רשימת המשאלות הועתקה ללוח');}
+ catch(error){const textarea=document.createElement('textarea');textarea.value=content;textarea.style.position='fixed';textarea.style.opacity='0';document.body.appendChild(textarea);textarea.select();const copied=document.execCommand('copy');textarea.remove();toast(copied?'רשימת המשאלות הועתקה ללוח':'לא ניתן להעתיק אוטומטית בדפדפן הזה');}
+}
+function exportCSV(){
+ if(!state.ready){toast('חכה שהרשימה תיטען');return;}
+ const cols=['Set','Number','Name','Type','Finish','Condition','1st Edition','Market Price USD','Purchase Price','Purchase Currency'];
+ const rows=[cols,...sortedOwnedCards().map(c=>{
+  const condition=state.conditions[c.id]||'';
+  const market=condition?window.VintageMarketPrices?.getOwnedPrice?.(c,MAP.get(c.set)?.name||'',condition,!!state.firstEdition[c.id]):null;
+  return [MAP.get(c.set)?.name||'',cardNumber(c),c.name,c.kind,c.finish,condition,state.firstEdition[c.id]?'Yes':'No',typeof market==='number'?market:'',state.purchasePrices[c.id]?.amount??'',state.purchasePrices[c.id]?.currency||''];
+ })];
+ const csv='\ufeff'+rows.map(r=>r.map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(',')).join('\r\n');
+ download(csv,'text/csv;charset=utf-8','pokemon-vintage-my-cards.csv');toast('קובץ הקלפים שלי נוצר.');
+}
+async function importBackup(file){if(!file||!ensureCloudEdit())return;try{const data=JSON.parse(await file.text());if(data.app!=='pokemon-vintage-binder'||typeof data.owned!=='object'||!data.owned||Array.isArray(data.owned))throw Error('invalid file');if(!confirm('הייבוא יחליף את סימוני הקלפים שיש לך כרגע. להמשיך?'))return;for(const k of ['owned','wish','removedWish','conditions','notes','purchasePrices','firstEdition','ownedAddedAt','binderExcluded'])state[k]=(data[k]&&typeof data[k]==='object'&&!Array.isArray(data[k]))?data[k]:{};for(const k of ['binderOrder','wishOrder'])state[k]=Array.isArray(data[k])?[...data[k]]:[];if(typeof data.binderIncludeWish==='boolean')state.binderIncludeWish=data.binderIncludeWish;normalizeOrders();save();renderAll();toast('הגיבוי יובא בהצלחה!')}catch(e){toast('לא ניתן לייבא: הקובץ אינו גיבוי תקין של האוסף.')}}
+
+// Collection organization: separate binder positions and wishlist priorities.
+function normalizeOrders(){
+ // Historic collections lack timestamps. Key order is the best available approximation.
+ const legacyIds=Object.keys(state.owned).filter(id=>state.owned[id]);
+ legacyIds.forEach((id,i)=>{if(!Number.isFinite(Number(state.ownedAddedAt[id]))||Number(state.ownedAddedAt[id])<=0)state.ownedAddedAt[id]=i+1;});
+ for(const id of Object.keys(state.ownedAddedAt))if(!state.owned[id])delete state.ownedAddedAt[id];
+ for(const id of Object.keys(state.removedWish||{}))delete state.wish[id];
+ // Normalize older cloud backups that previously allowed both states.
+ for(const id of Object.keys(state.owned))if(state.owned[id])delete state.wish[id];
+ const keys = new Set(state.cards.map(c=>c.id));
+ const valid = (arr,predicate) => [...new Set((Array.isArray(arr)?arr:[]).filter(id=>keys.has(id)&&predicate(id)))];
+ const bySet=state.cards.map(c=>c.id);
+ const wish = id=>!!state.wish[id];const binder=id=>!!(state.owned[id]||state.wish[id])&&!state.binderExcluded[id];
+ state.wishOrder=valid(state.wishOrder,wish);
+ const wp=new Set(state.wishOrder);for(const id of bySet)if(wish(id)&&!wp.has(id)){state.wishOrder.push(id);wp.add(id);}
+ state.binderOrder=valid(state.binderOrder,binder);
+ const bp=new Set(state.binderOrder);for(const id of bySet)if(binder(id)&&!bp.has(id)){state.binderOrder.push(id);bp.add(id);}
+}
+function binderVisible(){normalizeOrders();return state.binderOrder.slice();}
+let binderSelectedId=null;
+function binderPageCount(){return Math.max(1,Math.ceil(binderVisible().length/9));}
+function refreshPlacementTargets(){
+ const pageEl=$('binderTargetPage'),slotEl=$('binderTargetSlot');
+ const pageCurrent=Number(pageEl.value)||1, slotCurrent=Number(slotEl.value)||1;
+ const pages=binderPageCount();
+ pageEl.innerHTML=Array.from({length:pages},(_,i)=>`<option value="${i+1}">עמוד ${i+1}</option>`).join('');
+ slotEl.innerHTML=Array.from({length:9},(_,i)=>`<option value="${i+1}">כיס ${i+1}</option>`).join('');
+ pageEl.value=String(Math.max(1,Math.min(pages,pageCurrent)));slotEl.value=String(Math.max(1,Math.min(9,slotCurrent)));
+}
+function searchBinder(){
+ const box=$('binderMatches');const query=$('binderFind').value.trim().toLowerCase();
+ if(!query){box.innerHTML='';return;}
+ const matching=state.binderOrder.map(id=>state.cards.find(c=>c.id===id)).filter(Boolean).filter(c=>
+  (c.name+' '+c.id+' '+cardNumber(c)+' '+(MAP.get(c.set)?.name||'')).toLowerCase().includes(query));
+ box.innerHTML=matching.length?matching.slice(0,12).map(c=>`<button type="button" class="binder-match ${c.id===binderSelectedId?'selected':''}" data-pick-binder="${esc(c.id)}" role="option" aria-selected="${c.id===binderSelectedId}"><img src="${esc(c.image)}" alt="" loading="lazy"><span class="binder-match-label"><b>${esc(c.name)}</b><small>${esc(MAP.get(c.set)?.name||'')} · #${esc(cardNumber(c))}${state.owned[c.id]?' · ✓ שלי':' · ☆ משאלה'}</small></span><span aria-hidden="true">בחר ←</span></button>`).join(''):`<span class="binder-place-hint">לא נמצא קלף באוסף או במשאלות. הוסף אותו קודם בקטלוג.</span>`;
+}
+function selectBinder(id){const c=state.cards.find(x=>x.id===id);if(!c||!state.binderOrder.includes(id))return;
+ binderSelectedId=id;$('binderSelected').textContent='נבחר: '+c.name+' · '+(MAP.get(c.set)?.name||'');$('binderPlaceSelected').disabled=false;searchBinder();
+}
+function placeBinder(id,page,slot){
+ if(!ensureCloudEdit())return;
+ normalizeOrders();if(!state.binderOrder.includes(id))return;
+ const list=binderVisible();const from=list.indexOf(id);if(from<0)return;
+ const requested=Math.max(0,(page-1)*9+slot-1);const dest=Math.min(requested,list.length-1);
+ reorder('binder',from,dest);
+ state.binderPage=Math.floor(dest/9);renderCollections();
+ toast('הקלף הועבר לעמוד '+(state.binderPage+1)+', כיס '+((dest%9)+1));
+}
+
+/* Shipping events are fetched live from 17TRACK; Firestore stores only parcel
+   metadata, linked card IDs and which remote event IDs were already read. */
+const shipmentLive=new Map();
+let shipmentEditingId=null,shipmentSelectedIds=new Set(),shipmentExpandedId=null,shipmentRefreshing=false,shipmentLastFetch=0,shipmentServiceError='';
+const SHIPMENT_API='https://pokemon-vintage-ebay-deals.xfayne.workers.dev';
+const SHIPMENT_STATUS={
+ InfoReceived:'פרטי משלוח התקבלו',InTransit:'בדרך',AvailableForPickup:'ממתין לאיסוף',
+ OutForDelivery:'יוצא למסירה',Delivered:'נמסר',DeliveryFailure:'בעיה במסירה',
+ Exception:'חריגה במשלוח',Expired:'מעקב הסתיים',NotFound:'ממתין למידע',Unknown:'ממתין לעדכון'
+};
+function shipmentStatus(status){return SHIPMENT_STATUS[status]||status||'ממתין לעדכון';}
+function shipmentEventTime(raw){
+ if(!raw)return '';
+ const d=new Date(raw);
+ return Number.isFinite(d.getTime())?d.toLocaleString('he-IL',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):String(raw).slice(0,35);
+}
+function shipmentNewEvents(item){
+ const live=shipmentLive.get(item.id);
+ return item.initialized&&Array.isArray(live?.events)?live.events.filter(e=>!item.seenEventIds.includes(e.id)):[];
+}
+function shipmentCount(){
+ return state.shipments.reduce((n,item)=>n+shipmentNewEvents(item).length,0);
+}
+function renderShipments(){
+ const badge=$('shipmentUnreadTab');
+ const count=shipmentCount();
+ badge.hidden=!count;badge.textContent=count>99?'99+':String(count);
+ const notice=$('shipmentNotice');
+ notice.textContent=shipmentServiceError||'סטטוסים נמשכים מ־17TRACK; מספרי מעקב, שיוך קלפים וסימוני נקרא נשמרים בחשבון הפרטי.';
+ if(state.view!=='shipments')return;
+ $('shipmentRefresh').disabled=shipmentRefreshing;
+ $('shipmentRefresh').textContent=shipmentRefreshing?'מעדכן…':'↻ עדכון';
+ const lookup=new Map(state.cards.map(c=>[c.id,c]));
+ $('shipmentList').innerHTML=state.shipments.length?state.shipments.map(item=>{
+  const live=shipmentLive.get(item.id),unread=shipmentNewEvents(item).length,expanded=shipmentExpandedId===item.id;
+  const cards=item.cardIds.map(id=>lookup.get(id)).filter(Boolean);
+  const latestEvent=Array.isArray(live?.events)?live.events[0]:null;
+  const status=live?.error?'אין עדכון':shipmentStatus(live?.status);
+  const latestContent=latestEvent?.description?`<div class="shipment-latest"><span class="shipment-latest-icon" aria-hidden="true">🚚</span><div class="shipment-latest-body"><div class="shipment-latest-description">${esc(latestEvent.description)}</div>${latestEvent.time?`<time class="shipment-latest-date">${esc(shipmentEventTime(latestEvent.time))}</time>`:''}</div></div>`:'';
+  const images=cards.slice(0,6).map(c=>`<img src="${esc(c.image)}" alt="${esc(c.name)}" loading="lazy" title="${esc(c.name)}">`).join('');
+  const events=live?.events||[];
+  const timeline=expanded?`<div class="shipment-timeline">${live?.error?`<p class="shipment-label">${esc(live.error.message||'אין עדיין נתוני מעקב')}</p>`:events.length?events.map(event=>`<div class="shipment-event"><span class="shipment-dot" aria-hidden="true"></span><div class="shipment-event-main"><strong>${esc(event.description||shipmentStatus(event.stage))}</strong><small>${esc([shipmentEventTime(event.time),event.location].filter(Boolean).join(' · '))}</small></div></div>`).join(''):'<p class="shipment-label">עדיין אין אירועי מעקב זמינים. נסה לרענן בהמשך.</p>'}</div>`:'';
+  return `<article class="shipment-entry ${unread?'is-new':''}">
+   <div class="shipment-entry-top"><div><h3 class="shipment-entry-title">${esc(item.title||'משלוח')}</h3><div class="shipment-tracking-number" dir="ltr">${esc(item.number)}</div><div class="shipment-label">${cards.length} קלפים משויכים</div></div><span class="shipment-status">${esc(status)}</span></div>
+   ${latestContent}
+   <div class="shipment-actions-row">
+    ${cards.length?`<div class="shipment-card-images">${images}${cards.length>6?`<span class="shipment-label">+${cards.length-6}</span>`:''}</div>`:'<span></span>'}
+    <div class="shipment-actions"><button class="btn sm" type="button" data-ship-open="${esc(item.id)}" aria-expanded="${expanded}">${expanded?'⌃ סגור':'⌄ עדכונים'} ${unread?`<span class="shipment-new">${unread} חדשים</span>`:''}</button>
+    <details class="shipment-menu"><summary aria-label="אפשרויות משלוח">⋯</summary><div class="shipment-menu-options">
+     <button type="button" data-ship-edit="${esc(item.id)}">עריכה</button>
+     ${live?.error?.code===-18019902?`<button type="button" data-ship-register="${esc(item.id)}">רישום מעקב</button>`:''}
+     <button type="button" class="shipment-remove" data-ship-delete="${esc(item.id)}">מחיקה</button>
+    </div></details></div>
+   </div>
+   ${timeline}
+  </article>`;
+ }).join(''):'<div class="shipment-empty">אין משלוחים עדיין. לחץ על ״+ משלוח״ כדי להוסיף מספר מעקב ולשייך אליו קלפים.</div>';
+}
+function openShipmentEditor(id=null){
+ if(!ensureCloudEdit())return;
+ shipmentEditingId=id;
+ const shipment=state.shipments.find(x=>x.id===id);
+ shipmentSelectedIds=new Set(shipment?.cardIds||[]);
+ $('shipmentDialogTitle').textContent=shipment?'עריכת משלוח':'משלוח חדש';
+ $('shipmentName').value=shipment?.title||'';
+ $('shipmentNumber').value=shipment?.number||'';
+ $('shipmentCardSearch').value='';
+ renderShipmentPicker();
+ $('shipmentDialog').showModal();
+}
+function renderShipmentPicker(){
+ const picked=$('shipmentSelected'),query=$('shipmentCardSearch').value.toLowerCase().trim();
+ const byId=new Map(state.cards.map(c=>[c.id,c]));
+ picked.innerHTML=[...shipmentSelectedIds].map(id=>byId.get(id)).filter(Boolean).map(c=>`<button type="button" data-ship-unpick="${esc(c.id)}">${esc(c.name)} ×</button>`).join('');
+ const matches=state.cards.filter(c=>{
+  if(!query)return !!(state.wish[c.id]||state.owned[c.id]);
+  return (c.name+' '+c.id+' '+cardNumber(c)+' '+(MAP.get(c.set)?.name||'')).toLowerCase().includes(query);
+ }).sort((a,b)=>(Number(!!state.wish[b.id])-Number(!!state.wish[a.id]))||(Number(!!state.owned[b.id])-Number(!!state.owned[a.id]))).slice(0,18);
+ $('shipmentCardResults').innerHTML=matches.length?matches.map(c=>`<button type="button" class="shipment-card-choice ${shipmentSelectedIds.has(c.id)?'selected':''}" data-ship-pick="${esc(c.id)}"><img src="${esc(c.image)}" alt="" loading="lazy"><span>${esc(c.name)}<small>${esc(MAP.get(c.set)?.name||'')} · #${esc(cardNumber(c))}</small></span><strong>${shipmentSelectedIds.has(c.id)?'✓':'+'}</strong></button>`).join(''):'<p class="shipment-label">חפש קלף בקטלוג כדי לשייך אותו.</p>';
+}
+function markShipmentRead(id){
+ const item=state.shipments.find(x=>x.id===id),events=shipmentLive.get(id)?.events;
+ if(!item||!Array.isArray(events)||!events.length||!ensureCloudEdit())return;
+ const ids=[...new Set(events.map(e=>e.id))].slice(0,200);
+ if(ids.every(k=>item.seenEventIds.includes(k))&&item.initialized)return;
+ item.seenEventIds=ids;item.initialized=true;
+ save();
+}
+function shipmentApiMessage(code){
+ if(code==='TRACKING_NOT_CONFIGURED')return 'המעקב עוד לא פעיל: צריך להגדיר ב־Cloudflare את TRACK17_API_KEY ו־TRACK17_OWNER_EMAIL.';
+ if(code==='TRACKING_AUTH_REQUIRED')return 'אין הרשאה לשירות המעקב. בדוק שמייל החשבון תואם ל־TRACK17_OWNER_EMAIL.';
+ return 'לא ניתן למשוך עדכונים כרגע ('+String(code||'שגיאת חיבור')+').';
+}
+async function shipmentRequest(route,body){
+ const token=await window.VintageCloud?.getIdToken?.();
+ if(!token)throw Error('התחבר לחשבון Google כדי לעדכן משלוחים.');
+ const response=await fetch(SHIPMENT_API+'/api/shipments/'+route,{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+token},body:JSON.stringify(body),cache:'no-store'});
+ const data=await response.json().catch(()=>({error:'INVALID_RESPONSE'}));
+ if(!response.ok)throw Error(shipmentApiMessage(data.error||response.status));
+ return data;
+}
+async function registerShipment(item){
+ if(!window.VintageCloud?.canEdit?.())return;
+ try{
+  const response=await shipmentRequest('register',{number:item.number,carrier:item.carrier||undefined});
+  const result=response.shipments?.find(x=>x.number===item.number);
+  if(result?.registered){
+   const actual=state.shipments.find(x=>x.id===item.id&&x.number===item.number);
+   if(actual&&result.carrier&&actual.carrier!==result.carrier){actual.carrier=result.carrier;save();}
+   shipmentServiceError='';
+   await refreshShipments(true);
+  }else shipmentServiceError='לא ניתן לרשום את מספר המעקב: '+(result?.error?.message||'שגיאה בשירות');
+ }catch(err){shipmentServiceError=err.message;}
+ renderShipments();
+}
+async function refreshShipments(force=false){
+ if(shipmentRefreshing||!window.VintageCloud?.canEdit?.()||!state.shipments.length){renderShipments();return;}
+ if(!force&&Date.now()-shipmentLastFetch<120000){renderShipments();return;}
+ shipmentRefreshing=true;shipmentServiceError='';renderShipments();
+ const tracked=state.shipments.map(x=>({id:x.id,number:x.number,carrier:x.carrier||undefined}));
+ let shouldSave=false,anySuccess=false;
+ try{
+  for(let offset=0;offset<tracked.length;offset+=12){
+   const group=tracked.slice(offset,offset+12);
+   const data=await shipmentRequest('track',{shipments:group.map(x=>({number:x.number,carrier:x.carrier}))});
+   for(const result of (data.shipments||[])){
+    const item=state.shipments.find(x=>x.number===result.number);
+    if(!item||!group.some(x=>x.id===item.id))continue;
+    if(result.error){shipmentLive.set(item.id,{error:result.error,status:'',events:[]});continue;}
+    anySuccess=true;
+    shipmentLive.set(item.id,result);
+    if(result.carrier&&item.carrier!==result.carrier){item.carrier=result.carrier;shouldSave=true;}
+    // Existing parcel history is a baseline, not a set of unread notifications.
+    if(!item.initialized&&result.events?.length){
+     item.seenEventIds=[...new Set(result.events.map(e=>e.id))].slice(0,200);
+     item.initialized=true;shouldSave=true;
+    }
+   }
+  }
+  if(anySuccess)shipmentLastFetch=Date.now();
+  if(shouldSave&&window.VintageCloud?.canEdit?.())save();
+ }catch(error){shipmentServiceError=error.message;}
+ finally{shipmentRefreshing=false;renderShipments();}
+}
+window.VintageBinder.refreshShipments=()=>refreshShipments();
+$('shipmentAdd').addEventListener('click',()=>openShipmentEditor());
+$('shipmentRefresh').addEventListener('click',()=>{shipmentLastFetch=0;refreshShipments(true);});
+$('shipmentCancel').addEventListener('click',()=>$('shipmentDialog').close());
+$('shipmentCancelTop').addEventListener('click',()=>$('shipmentDialog').close());
+$('shipmentCardSearch').addEventListener('input',renderShipmentPicker);
+$('shipmentCardResults').addEventListener('click',e=>{
+ const target=e.target.closest('[data-ship-pick]');if(!target)return;
+ const id=target.dataset.shipPick;
+ if(shipmentSelectedIds.has(id))shipmentSelectedIds.delete(id);else shipmentSelectedIds.add(id);
+ renderShipmentPicker();
+});
+$('shipmentSelected').addEventListener('click',e=>{
+ const target=e.target.closest('[data-ship-unpick]');if(!target)return;
+ shipmentSelectedIds.delete(target.dataset.shipUnpick);renderShipmentPicker();
+});
+$('shipmentForm').addEventListener('submit',e=>{
+ e.preventDefault();if(!ensureCloudEdit())return;
+ const number=$('shipmentNumber').value.trim().toUpperCase(),title=$('shipmentName').value.trim().slice(0,70);
+ if(!/^[A-Z0-9-]{5,50}$/.test(number)){toast('מספר המעקב אינו תקין');return;}
+ if(state.shipments.some(x=>x.number===number&&x.id!==shipmentEditingId)){toast('המשלוח כבר קיים');return;}
+ let item=state.shipments.find(x=>x.id===shipmentEditingId),fresh=!item;
+ if(fresh){
+  item={id:crypto.randomUUID().replace(/-/g,''),number,title,cardIds:[],seenEventIds:[],initialized:false,carrier:0,createdAt:Date.now()};
+  state.shipments.unshift(item);
+ }else if(item.number!==number){
+  item.number=number;item.carrier=0;item.seenEventIds=[];item.initialized=false;shipmentLive.delete(item.id);
+ }
+ const changedNumber=fresh||item.number!==number;
+ item.title=title;item.cardIds=[...shipmentSelectedIds].slice(0,60);
+ $('shipmentDialog').close();save(true);
+ // Register the number only when first added (or explicitly changed).
+ if(fresh||!item.initialized&&!shipmentLive.has(item.id))registerShipment(item);
+});
+$('shipmentList').addEventListener('click',e=>{
+ const control=e.target.closest('[data-ship-open],[data-ship-edit],[data-ship-delete],[data-ship-register]');
+ if(!control)return;const {shipOpen,shipEdit,shipDelete,shipRegister}=control.dataset;
+ if(shipEdit){openShipmentEditor(shipEdit);return;}
+ if(shipRegister){const item=state.shipments.find(x=>x.id===shipRegister);if(item)registerShipment(item);return;}
+ if(shipDelete){
+  const item=state.shipments.find(x=>x.id===shipDelete);
+  if(!item||!ensureCloudEdit()||!confirm('למחוק את המשלוח "'+(item.title||item.number)+'"?'))return;
+  state.shipments=state.shipments.filter(x=>x.id!==shipDelete);shipmentLive.delete(shipDelete);
+  if(shipmentExpandedId===shipDelete)shipmentExpandedId=null;save(true);return;
+ }
+ if(shipOpen){shipmentExpandedId=shipmentExpandedId===shipOpen?null:shipOpen;if(shipmentExpandedId)markShipmentRead(shipOpen);renderShipments();}
+});
+
+function showView(view,doScroll=true){if(!['catalog','owned','binder','wishlist','shipments','deals'].includes(view))return;state.view=view;
+ $('catalogShell').hidden=view!=='catalog';$('ownedPage').hidden=view!=='owned';$('binderPage').hidden=view!=='binder';$('wishPage').hidden=view!=='wishlist';$('dealsPage').hidden=view!=='deals';$('shipmentsPage').hidden=view!=='shipments';
+ document.querySelectorAll('[data-view-btn]').forEach(b=>{const a=b.dataset.viewBtn===view;b.classList.toggle('active',a);b.setAttribute('aria-pressed',String(a));});
+ if(view!=='catalog')renderCollections();if(view==='deals')window.VintageEbayLive?.open?.();if(view==='shipments')refreshShipments();if(doScroll)window.scrollTo({top:0,behavior:'smooth'});
+}
+function sortedOwnedCards(){
+ const own=state.cards.filter(c=>state.owned[c.id]), mode=$('ownedSort').value;
+ const setIndex=c=>SETS.findIndex(s=>s.id===c.set);
+ const added=(a,b)=>(Number(state.ownedAddedAt[b.id])||0)-(Number(state.ownedAddedAt[a.id])||0);
+ const price=c=>{
+  const condition=state.conditions[c.id];if(!condition)return -1;
+  const value=window.VintageMarketPrices?.getOwnedPrice?.(c,MAP.get(c.set)?.name||'',condition,!!state.firstEdition[c.id]);
+  return typeof value==='number'?value:-1;
+ };
+ if(mode==='holo')own.sort((a,b)=>Number(showHolo(b))-Number(showHolo(a))||added(a,b));
+ else if(mode==='set')own.sort((a,b)=>setIndex(a)-setIndex(b)||normalNum(a)-normalNum(b));
+ else if(mode==='price')own.sort((a,b)=>price(b)-price(a)||added(a,b));
+ else own.sort(added);
+ return own;
+}
+let ownedRenderTimer=null;
+function refreshOwned(){
+ // Market data is shared by My Cards and Wishlist; either list must update when prices arrive.
+ if(!['owned','wishlist','deals'].includes(state.view)||ownedRenderTimer)return;
+ ownedRenderTimer=setTimeout(()=>{
+  ownedRenderTimer=null;
+  if(state.view==='owned')renderOwnedList();
+  else if(state.view==='wishlist'||state.view==='deals')renderCollections();
+ },120);
+}
+window.VintageBinder.refreshOwned=refreshOwned;
+function renderOwnedTotalValue(cards){
+ const label=$('ownedTotalValue');
+ let total=0,priced=0,pending=0;
+ for(const card of cards){
+  const condition=state.conditions[card.id];
+  if(!condition)continue;
+  const price=window.VintageMarketPrices?.getOwnedPrice?.(card,MAP.get(card.set)?.name||'',condition,!!state.firstEdition[card.id]);
+  if(typeof price==='number'&&Number.isFinite(price)){total+=price;priced++;}
+  else if(price===undefined)pending++;
+ }
+ const all=cards.length;
+ const usd=new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(total);
+ label.textContent=all===0?usd:priced===0&&pending?'טוען מחירים…':priced===0?'—':usd;
+ label.title='שווי שוק משוער של '+priced+' מתוך '+all+' קלפים לפי מצב והדפסה'+(pending?' · '+pending+' מחירים בטעינה':'')+'.';
+}
+function renderOwnedList(){
+ const own=sortedOwnedCards();
+ renderOwnedTotalValue(own);
+ $('ownedCountTab').textContent=own.length;
+ $('ownedCount').textContent=own.length+' קלפים · '+own.filter(showHolo).length+' Holo / Shining';
+ const q=searchKey($('ownedFind').value);
+ const matched=own.filter(c=>!q||searchText(c).includes(q));
+ $('ownedItems').innerHTML=matched.length?matched.map(c=>{
+  const inBinder=state.binderOrder.includes(c.id),condition=state.conditions[c.id]||'';
+  const market=condition?window.VintageMarketPrices?.getOwnedPrice?.(c,MAP.get(c.set)?.name||'',condition,!!state.firstEdition[c.id]):null;
+  const amount=typeof market==='number'?new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(market):'';
+  return `<article class="owned-item" role="listitem" tabindex="0" data-open-owned="${esc(c.id)}" aria-label="פרטים על ${esc(c.name)}">
+   <img loading="lazy" decoding="async" src="${esc(c.image)}" alt="${esc(c.name)}">
+   <div class="owned-copy"><strong>${esc(c.name)}</strong><small>${esc(MAP.get(c.set)?.name||'')} · #${esc(cardNumber(c))}</small><div class="badges">${rarityHtml(c)}</div></div>
+   ${condition?`<div class="owned-meta" aria-label="מצב הקלף ומחיר השוק">
+      ${amount?`<span class="owned-price">${esc(amount)}</span>`:market===undefined?'<span class="owned-price pending">טוען מחיר…</span>':''}
+      <span class="owned-condition">${esc(condition)}${state.firstEdition[c.id]?' · 1st':''}</span>
+    </div>`:''}
+  </article>`}).join(''):`<div class="no-cards">${own.length?'לא נמצאו קלפים מתאימים לחיפוש.':'עוד אין קלפים ברשימה. אפשר לסמן ״יש לי״ בקטלוג.'}</div>`;
+}
+
+function dealAuctionUrl(c,precise){
+ const setName=MAP.get(c.set)?.name||'';
+ const edition=state.firstEdition[c.id]?'1st edition':'';
+ const query=[c.name,setName,precise?cardNumber(c):'',edition,'pokemon'].filter(Boolean).join(' ');
+ return 'https://www.ebay.com/sch/i.html?'+new URLSearchParams({_nkw:query,LH_Auction:'1'});
+}
+function renderDeals(){ window.VintageDealsDashboard?.render?.(); window.VintageEbayLive?.refreshCards?.(); }
+function renderCollections(){if(!state.ready)return;normalizeOrders();renderShipments();
+ $('binderCountTab').textContent=state.binderOrder.length+' קלפים';$('wishCountTab').textContent=state.wishOrder.length;
+ $('binderCount').textContent=state.binderOrder.filter(id=>state.owned[id]).length+' באוסף · '+state.binderOrder.filter(id=>!state.owned[id]&&state.wish[id]).length+' משאלות';
+ $('wishCount').textContent=state.wishOrder.length+' משאלות';
+ $('binderIncludeWish').checked=state.binderIncludeWish;
+ if($('binderTargetPage').options.length!==binderPageCount()||!$('binderTargetSlot').options.length)refreshPlacementTargets();
+ const list=binderVisible();const pageCount=Math.max(1,Math.ceil(list.length/9));state.binderPage=Math.min(Math.max(0,state.binderPage),pageCount-1);
+ const cardLookup=new Map(state.cards.map(c=>[c.id,c]));
+ $('binderGrid').innerHTML=Array.from({length:9},(_,slot)=>{const idx=state.binderPage*9+slot,id=list[idx];if(!id)return `<div class="binder-pocket empty" aria-label="כיס ריק"></div>`;
+ const c=cardLookup.get(id);if(!c)return '<div class="binder-pocket empty"></div>';
+ const owned=!!state.owned[id],muted=!owned&&!state.binderIncludeWish;
+ return `<article class="binder-pocket ${owned?'':'wish'} ${muted?'wish-muted':''}" role="listitem" data-order-kind="binder" data-order-index="${idx}" data-card-id="${esc(id)}">
+ <span class="pocket-badge ${owned?'owned':''}">${owned?'✓ שלי':muted?'☆ משאלה מוסתרת':'☆ משאלה'}</span>
+ <img loading="lazy" decoding="async" src="${esc(c.image)}" alt="${esc(c.name)}" data-preview="${esc(id)}" onerror="this.style.opacity='.3'">
+ <div class="pocket-title">${esc(c.name)}</div><div class="pocket-sub">${esc(MAP.get(c.set)?.name||'')} #${esc(cardNumber(c))}</div>
+ <div class="pocket-actions"><button type="button" data-binder-move="${esc(id)}" aria-label="בחר מיקום חדש עבור ${esc(c.name)}">↗ העבר</button><button type="button" class="binder-remove" data-binder-remove="${esc(id)}" aria-label="הסר את ${esc(c.name)} מהבינדר בלבד">✕ הסר</button></div>
+ <div class="reorder-row"><button type="button" aria-label="מקום קודם" data-move-kind="binder" data-move-index="${idx}" data-move-delta="-1" ${idx===0?'disabled':''}>↑</button><button type="button" class="drag-handle" data-drag-kind="binder" data-drag-index="${idx}" aria-label="גרור לשינוי הסדר">⋮⋮</button><button type="button" aria-label="מקום הבא" data-move-kind="binder" data-move-index="${idx}" data-move-delta="1" ${idx===list.length-1?'disabled':''}>↓</button></div></article>`}).join('');
+ $('binderBook').hidden=list.length===0;$('binderPager').hidden=list.length===0;$('binderEmpty').hidden=list.length!==0;
+ $('binderPageLabel').textContent='עמוד '+(state.binderPage+1)+' מתוך '+pageCount;
+ $('binderPrev').disabled=state.binderPage===0;$('binderNext').disabled=state.binderPage>=pageCount-1;
+ $('wishlistItems').innerHTML=state.wishOrder.length?state.wishOrder.map((id,i)=>{
+  const c=cardLookup.get(id);if(!c)return '';
+  const condition=state.conditions[id]||'';
+  const market=condition?window.VintageMarketPrices?.getOwnedPrice?.(c,MAP.get(c.set)?.name||'',condition,!!state.firstEdition[id]):null;
+  const amount=typeof market==='number'?new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(market):'';
+  return `<article class="wish-item" role="listitem" data-order-kind="wishlist" data-order-index="${i}" data-drag-kind="wishlist" data-drag-index="${i}" data-open-wish="${esc(id)}" tabindex="0" aria-label="פרטים על ${esc(c.name)}">
+   <span class="wish-rank" data-drag-kind="wishlist" data-drag-index="${i}" title="גרור כדי לשנות את הסדר" aria-label="גרור כדי לשנות את הסדר">${i+1}</span>
+   <img loading="lazy" decoding="async" src="${esc(c.image)}" alt="${esc(c.name)}" data-drag-kind="wishlist" data-drag-index="${i}" title="גרור לשינוי הסדר · הקש לפתיחת פרטים" draggable="false">
+   <div class="wish-copy"><strong>${esc(c.name)}</strong><small>${esc(MAP.get(c.set)?.name||'')} · #${esc(cardNumber(c))}</small></div>
+   <div class="wish-side">
+    ${condition?`<div class="wish-market">
+     ${amount?`<span class="owned-price">${esc(amount)}</span>`:market===undefined?'<span class="owned-price pending">טוען…</span>':''}
+     <span class="owned-condition">${esc(condition)}${state.firstEdition[id]?' · 1st':''}</span>
+    </div>`:''}
+    <button type="button" class="btn sm wish-move-action" data-wish-move="${esc(id)}" aria-label="שנה מיקום של ${esc(c.name)} ב־Wishlist">↗ העבר</button>
+   </div>
+  </article>`;
+ }).join(''):
+ `<div class="no-cards">Wishlist עדיין ריקה. סמן ☆ ליד קלף בקטלוג כדי להוסיף אותו. <button type="button" class="btn sm primary" data-view-btn="catalog">לקטלוג</button></div>`;
+ renderOwnedList();
+ if(state.view==='deals')renderDeals();
+}
+function reorder(kind,from,to){if(!ensureCloudEdit())return;normalizeOrders();const arr=kind==='wishlist'?[...state.wishOrder]:binderVisible();if(from<0||to<0||from>=arr.length||to>=arr.length||from===to)return;
+ const [moved]=arr.splice(from,1);arr.splice(to,0,moved);
+ if(kind==='wishlist')state.wishOrder=arr;
+ else{const movingSet=new Set(arr);let n=0;state.binderOrder=state.binderOrder.map(id=>movingSet.has(id)?arr[n++]:id);state.binderPage=Math.floor(to/9);}
+ save();
+}
+function removeFromBinder(id){
+ if(!ensureCloudEdit())return;
+ if(!state.binderOrder.includes(id))return;
+ state.binderExcluded[id]=true;state.binderOrder=state.binderOrder.filter(x=>x!==id);
+ if(binderSelectedId===id){binderSelectedId=null;$('binderSelected').textContent='בחר קלף מהרשימה';$('binderPlaceSelected').disabled=true;}
+ normalizeOrders();save();toast('הקלף הוסר רק מהבינדר. הוא עדיין נשאר באוסף / במשאלות.');
+}
+function addToBinder(id){
+ if(!ensureCloudEdit())return;
+ if(!state.owned[id]&&!state.wish[id])return;
+ delete state.binderExcluded[id];
+ normalizeOrders();save();toast('הקלף נוסף לבינדר');
+}
+function openMovePicker(id){
+ if(!ensureCloudEdit())return;
+ if(!state.owned[id]&&!state.wish[id])return;
+ if(!state.binderOrder.includes(id))addToBinder(id);
+ showView('binder',false);
+ selectBinder(id);
+ const c=state.cards.find(x=>x.id===id);
+ $('binderFind').value=c?.name||'';searchBinder();
+ refreshPlacementTargets();
+ $('binderTargetPage').value='1';$('binderTargetSlot').value='1';
+ const panel=document.querySelector('.binder-place');panel.classList.add('binder-place-attention');
+ setTimeout(()=>panel.classList.remove('binder-place-attention'),1800);
+ panel.scrollIntoView({behavior:'smooth',block:'start'});
+ toast('בחר עמוד וכיס ואז לחץ ״העבר למיקום שבחרתי״');
+}
+let wishMoveSelectedId=null;
+function openWishMove(id){
+ if(!ensureCloudEdit())return;
+ normalizeOrders();
+ const current=state.wishOrder.indexOf(id);
+ if(current<0)return;
+ const card=state.cards.find(c=>c.id===id);
+ wishMoveSelectedId=id;
+ $('wishMoveCurrent').textContent=(card?.name||'קלף')+' · מקום '+(current+1)+' מתוך '+state.wishOrder.length;
+ const input=$('wishMovePosition');
+ input.min='1';input.max=String(state.wishOrder.length);input.value=String(current+1);
+ $('wishMoveTop').disabled=current===0;
+ $('wishMoveDialog').showModal();
+}
+function applyWishMove(target){
+ const id=wishMoveSelectedId;
+ if(!id)return;
+ const current=state.wishOrder.indexOf(id);
+ if(current<0)return;
+ const total=state.wishOrder.length;
+ const position=Number(target);
+ if(!Number.isInteger(position)||position<1||position>total){
+  $('wishMovePosition').focus();
+  $('wishMovePosition').reportValidity();
+  return;
+ }
+ if(current!==position-1)reorder('wishlist',current,position-1);
+ $('wishMoveDialog').close();
+ wishMoveSelectedId=null;
+ if(current!==position-1)toast('הקלף הועבר למקום '+position+' ברשימת המשאלות');
+}
+function attachCollections(){
+ document.addEventListener('click',e=>{
+  const view=e.target.closest('[data-view-btn]');if(view){showView(view.dataset.viewBtn);return;}
+  const openCard=e.target.closest('[data-open-owned],[data-open-wish]');
+  if(openCard&&!e.target.closest('button,a,input,select')){
+   showModal(openCard.dataset.openOwned||openCard.dataset.openWish);
+   return;
+  }
+  const pick=e.target.closest('[data-pick-binder]');if(pick){selectBinder(pick.dataset.pickBinder);return;}
+  const moveBinder=e.target.closest('[data-binder-move]');if(moveBinder){openMovePicker(moveBinder.dataset.binderMove);return;}
+  const removeBinder=e.target.closest('[data-binder-remove]');if(removeBinder){removeFromBinder(removeBinder.dataset.binderRemove);return;}
+  const addBinder=e.target.closest('[data-owned-binder]');if(addBinder){openMovePicker(addBinder.dataset.ownedBinder);return;}
+  const wishMove=e.target.closest('[data-wish-move]');if(wishMove){openWishMove(wishMove.dataset.wishMove);return;}
+  const move=e.target.closest('[data-move-kind]');if(move){reorder(move.dataset.moveKind,Number(move.dataset.moveIndex),Number(move.dataset.moveIndex)+Number(move.dataset.moveDelta));return;}
+ });
+ $('wishMoveTop').onclick=()=>applyWishMove(1);
+ $('wishMoveConfirm').onclick=()=>applyWishMove($('wishMovePosition').value);
+ $('wishMoveCancel').onclick=()=>$('wishMoveDialog').close();
+ $('wishMoveDialog').addEventListener('close',()=>{wishMoveSelectedId=null;});
+ $('wishMovePosition').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();applyWishMove(e.target.value);}});
+ document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-open-owned],[data-open-wish]')){e.preventDefault();showModal(e.target.dataset.openOwned||e.target.dataset.openWish);}});
+  $('binderFind').addEventListener('input',searchBinder);$('ownedFind').addEventListener('input',renderOwnedList);
+  $('ownedSort').addEventListener('change',renderOwnedList);
+  $('copyWishlist').addEventListener('click',copyWishlist);
+ $('binderPlaceSelected').onclick=()=>{if(!binderSelectedId)return;placeBinder(binderSelectedId,Number($('binderTargetPage').value)||1,Number($('binderTargetSlot').value)||1);};
+ $('binderIncludeWish').onchange=e=>{if(!ensureCloudEdit()){e.target.checked=state.binderIncludeWish;return;}state.binderIncludeWish=e.target.checked;save();};
+ $('binderPrev').onclick=()=>{state.binderPage=Math.max(0,state.binderPage-1);renderCollections();};
+ $('binderNext').onclick=()=>{state.binderPage++;renderCollections();};
+ $('binderResetOrder').onclick=()=>{if(!ensureCloudEdit())return;if(!confirm('לסדר מחדש את הבינדר לפי סדרות ומספרי קלפים? סדר המשאלות יישמר.'))return;
+ state.binderOrder=state.cards.filter(c=>(state.owned[c.id]||state.wish[c.id])&&!state.binderExcluded[c.id]).map(c=>c.id);state.binderPage=0;save();toast('הבינדר סודר לפי סדרות');};
+ // Mouse/pen: drag from anywhere on a Wishlist card; existing binder handles still work.
+ // Touch: long-press anywhere on a Wishlist card to drag; normal swipes scroll the page.
+ let gesture=null,scrollFrame=0,preventNextClick=false;
+ function clearDragVisual(){
+  document.querySelectorAll('.drop-target,.drag-origin').forEach(x=>x.classList.remove('drop-target','drag-origin'));
+  document.querySelector('.drag-ghost')?.remove();document.body.classList.remove('dragging-card');
+  cancelAnimationFrame(scrollFrame);scrollFrame=0;
+ }
+ function findDrop(g){
+  const target=document.elementFromPoint(g.x,g.y)?.closest(`[data-order-kind="${g.kind}"][data-order-index]`);
+  document.querySelectorAll('.drop-target').forEach(x=>x.classList.remove('drop-target'));
+  if(target){g.to=Number(target.dataset.orderIndex);target.classList.add('drop-target');}
+  else g.to=null;
+ }
+ function beginDrag(g){
+  g.active=true;preventNextClick=true;
+  document.body.classList.add('dragging-card');
+  g.original.classList.add('drag-origin');
+  const img=g.original.querySelector('img'),label=g.original.querySelector('.pocket-title,.wish-copy strong');
+  const ghost=document.createElement('div');ghost.className='drag-ghost';
+  const photo=document.createElement('img');photo.src=img?.src||'';photo.alt='';
+  const word=document.createElement('span');word.textContent=label?.textContent||'קלף';
+  const hint=document.createElement('small');hint.textContent='שחרר מעל קלף אחר';
+  ghost.append(photo,word,hint);document.body.appendChild(ghost);
+  ghost.style.left=g.x+'px';ghost.style.top=g.y+'px';
+  scrollFrame=requestAnimationFrame(tickAutoScroll);
+ }
+ function tickAutoScroll(){
+  const g=gesture?.active?gesture:touchGesture?.active?touchGesture:null;
+  if(!g)return;
+  const margin=94;
+  let velocity=0;
+  if(g.y<margin)velocity=-Math.max(5,(margin-g.y)*.22);
+  else if(g.y>innerHeight-margin)velocity=Math.max(5,(g.y-(innerHeight-margin))*.22);
+  if(velocity){window.scrollBy(0,velocity);findDrop(g);}
+  scrollFrame=requestAnimationFrame(tickAutoScroll);
+ }
+ document.addEventListener('pointerdown',e=>{
+  const wishRow=e.target.closest('[data-order-kind="wishlist"]');
+  const directTouchHandle=e.target.closest('.wish-item>img[data-drag-kind],.wish-item>.wish-rank[data-drag-kind]');
+  if(wishRow&&(e.target.closest('button,a,input,select')||(e.pointerType==='touch'&&!directTouchHandle)))return;
+  const h=e.target.closest('[data-drag-kind]');if(!h||e.button!==0)return;
+  if(gesture)clearDragVisual();
+  const kind=h.dataset.dragKind,from=Number(h.dataset.dragIndex);
+  const row=h.closest(`[data-order-kind="${kind}"][data-order-index]`);
+  if(!row)return;
+  gesture={pointer:e.pointerId,kind,from,to:null,x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY,active:false,original:row};
+  try{h.setPointerCapture(e.pointerId);}catch(_){}
+ },true);
+ document.addEventListener('pointermove',e=>{
+  if(!gesture||e.pointerId!==gesture.pointer)return;
+  const g=gesture;g.x=e.clientX;g.y=e.clientY;
+  if(!g.active){
+   if(Math.hypot(e.clientX-g.startX,e.clientY-g.startY)<7)return;
+   beginDrag(g);
+  }
+  if(e.cancelable)e.preventDefault();
+  const ghost=document.querySelector('.drag-ghost');if(ghost){ghost.style.left=g.x+'px';ghost.style.top=g.y+'px';}
+  findDrop(g);
+ },{passive:false});
+ const finish=e=>{
+  if(!gesture||e.pointerId!==gesture.pointer)return;
+  const g=gesture;gesture=null;clearDragVisual();
+  if(g.active&&g.to!==null){reorder(g.kind,g.from,g.to);toast('הסדר עודכן ונשמר');}
+  if(g.active){setTimeout(()=>{preventNextClick=false},150);}
+ };
+ document.addEventListener('pointerup',finish);document.addEventListener('pointercancel',e=>{if(gesture&&e.pointerId===gesture.pointer){gesture=null;clearDragVisual();}});
+ // For touch, wait for a brief long-press before taking over: short swipes still scroll,
+ // and short taps still open details. This avoids disabling vertical scrolling on long lists.
+ let touchGesture=null;
+ function cancelTouch(){
+  if(!touchGesture)return;
+  clearTimeout(touchGesture.timer);
+  if(touchGesture.active)clearDragVisual();
+  touchGesture=null;
+ }
+ function touchPoint(e,id){return Array.from(e.changedTouches).find(t=>t.identifier===id);}
+ document.addEventListener('touchstart',e=>{
+  const row=e.target.closest('[data-order-kind="wishlist"][data-order-index]');
+  if(!row||e.target.closest('button,a,input,select')||e.target.closest('.wish-item>img[data-drag-kind],.wish-item>.wish-rank[data-drag-kind]')||e.touches.length!==1)return;
+  cancelTouch();
+  const touch=e.changedTouches[0];
+  const pending={
+   id:touch.identifier,kind:'wishlist',from:Number(row.dataset.orderIndex),
+   to:null,x:touch.clientX,y:touch.clientY,startX:touch.clientX,startY:touch.clientY,
+   original:row,active:false,timer:null
+  };
+  touchGesture=pending;
+  pending.timer=setTimeout(()=>{
+   if(touchGesture!==pending||!pending.original.isConnected)return;
+   beginDrag(pending);
+  },320);
+ },{passive:true});
+ document.addEventListener('touchmove',e=>{
+  const g=touchGesture;if(!g)return;
+  const touch=touchPoint(e,g.id);if(!touch)return;
+  const distance=Math.hypot(touch.clientX-g.startX,touch.clientY-g.startY);
+  if(!g.active){
+   if(distance>9)cancelTouch(); // Native swipe: let the browser scroll freely.
+   return;
+  }
+  if(e.cancelable)e.preventDefault();
+  g.x=touch.clientX;g.y=touch.clientY;
+  const ghost=document.querySelector('.drag-ghost');
+  if(ghost){ghost.style.left=g.x+'px';ghost.style.top=g.y+'px';}
+  findDrop(g);
+ },{passive:false});
+ document.addEventListener('touchend',e=>{
+  const g=touchGesture;if(!g||!touchPoint(e,g.id))return;
+  clearTimeout(g.timer);touchGesture=null;
+  if(!g.active)return;
+  if(e.cancelable)e.preventDefault();
+  clearDragVisual();
+  if(g.to!==null&&g.to!==g.from){reorder('wishlist',g.from,g.to);toast('הסדר עודכן ונשמר');}
+  setTimeout(()=>{preventNextClick=false;},300);
+ },{passive:false});
+ document.addEventListener('touchcancel',e=>{
+  if(touchGesture&&touchPoint(e,touchGesture.id))cancelTouch();
+ });
+ document.addEventListener('click',e=>{if(preventNextClick&&e.target.closest('[data-order-kind]')){e.preventDefault();e.stopImmediatePropagation();preventNextClick=false;}},true);
+}
+
+function attach(){document.addEventListener('click',e=>{const own=e.target.closest('[data-own]');if(own)return toggleOwned(own.dataset.own);const removeWishBtn=e.target.closest('[data-remove-wish]');if(removeWishBtn){removeWish(removeWishBtn.dataset.removeWish);return;}const wish=e.target.closest('[data-wish]');if(wish)return toggleWish(wish.dataset.wish);const preview=e.target.closest('[data-preview]');if(preview)return showModal(preview.dataset.preview);const set=e.target.closest('[data-set]');if(set){state.active=set.dataset.set;if(MAP.get(state.active)?.group==='Extra'){state.extras=true;$('extrasEnabled').checked=true;}state.limit=96;renderAll();const sticky=document.querySelector('.sticky-sitebar');const shell=document.querySelector('.shell');window.scrollTo({top:Math.max(0,shell.getBoundingClientRect().top+window.scrollY-(sticky?.offsetHeight||0)-12),behavior:'smooth'});}});
+ $('search').addEventListener('input',e=>{state.query=e.target.value.trim();state.limit=96;if(state.query){state.active='all';state.status='all';state.holoOnly=false;state.pokemonOnly=false;$('statusSelect').value='all';$('holoOnly').checked=false;$('pokemonOnly').checked=false;}renderAll()});$('statusSelect').onchange=e=>{state.status=e.target.value;state.limit=96;renderCards()};$('sortSelect').onchange=e=>{state.sort=e.target.value;state.limit=96;renderCards()};$('holoOnly').onchange=e=>{state.holoOnly=e.target.checked;state.limit=96;renderCards()};$('pokemonOnly').onchange=e=>{state.pokemonOnly=e.target.checked;state.limit=96;renderCards()};$('extrasEnabled').onchange=e=>{state.extras=e.target.checked;if(!state.extras&&MAP.get(state.active)?.group==='Extra')state.active='all';state.limit=96;renderAll()};$('loadMore').onclick=()=>{state.limit+=96;renderCards()};$('showOwned').onclick=()=>{state.status='owned';$('statusSelect').value='owned';state.limit=96;renderCards()};$('showHolo').onclick=()=>{state.holoOnly=true;$('holoOnly').checked=true;state.limit=96;renderCards()};$('resetFilters').onclick=()=>{state.query='';state.status='all';state.sort='num';state.holoOnly=false;state.pokemonOnly=false;state.limit=96;$('search').value='';$('statusSelect').value='all';$('sortSelect').value='num';$('holoOnly').checked=false;$('pokemonOnly').checked=false;renderCards()};$('exportJSON').onclick=backup;$('exportCSV').onclick=exportCSV;$('importJSON').onclick=()=>$('fileInput').click();$('fileInput').onchange=e=>{importBackup(e.target.files[0]);e.target.value=''};$('closeModal').onclick=()=>$('modal').close();$('modal').addEventListener('click',e=>{if(e.target===$('modal'))$('modal').close()});attachCollections();}
+
+attach();loadEmbeddedData();
+// Keep the desktop set sidebar below the sticky title/tabs, including when the header changes height.
+const stickySitebar=document.querySelector('.sticky-sitebar');
+if(stickySitebar){
+ const syncStickyOffset=()=>document.documentElement.style.setProperty('--sticky-sitebar-height',Math.ceil(stickySitebar.getBoundingClientRect().height)+'px');
+ syncStickyOffset();
+ if(typeof ResizeObserver!=='undefined')new ResizeObserver(syncStickyOffset).observe(stickySitebar);
+ else window.addEventListener('resize',syncStickyOffset);
+}
+})();
