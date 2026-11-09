@@ -29,11 +29,12 @@ try {
     await changedPage.goto(pageUrl, {waitUntil:'load'});
 
     const status = await changedPage.evaluate(() => ({
-      rules: [...document.styleSheets].filter(sheet => (sheet.href || '').includes('css/app.css'))
-        .map(sheet => sheet.cssRules.length),
+      stylesheetLoaded: [...document.styleSheets].some(sheet => (sheet.href || '').includes('css/app.css')),
+      background: getComputedStyle(document.body).backgroundColor,
       cards: document.querySelectorAll('.static-card').length,
     }));
-    assert.ok(status.rules[0] > 0, 'Stylesheet failed to load');
+    assert.ok(status.stylesheetLoaded, 'Stylesheet failed to load');
+    assert.equal(status.background, 'rgb(245, 247, 251)', 'App CSS was not applied');
     assert.ok(status.cards > 200, 'JS-free catalog fallback missing');
 
     for (const scrollY of [0, 1100, 4700]) {
@@ -43,7 +44,7 @@ try {
       const b = await changedPage.screenshot({animations:'disabled'});
       assert.ok(a.equals(b), 'Visual regression: viewport '+viewport.width+' scroll '+scrollY);
     }
-    console.log('PASS viewport', viewport.width, 'CSS rules', status.rules[0], 'cards', status.cards);
+    console.log('PASS viewport', viewport.width, 'body background', status.background, 'cards', status.cards);
     await context.close();
   }
 } finally {
