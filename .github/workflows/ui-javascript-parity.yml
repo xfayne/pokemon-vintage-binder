@@ -1,0 +1,32 @@
+name: Main UI JavaScript Parity
+on:
+  pull_request:
+    paths:
+      - "index.html"
+      - "js/**"
+      - "tests/js-extraction-parity.mjs"
+      - ".github/workflows/ui-javascript-parity.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  javascript-parity:
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.57.0-noble
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - run: npm install --no-save --no-package-lock playwright@1.57.0
+      - run: |
+          node --check js/binder.js
+          node --check js/market-prices.js
+          node --check js/public-reader.js
+          node --check js/firebase-cloud.js
+      - run: node tests/js-extraction-parity.mjs

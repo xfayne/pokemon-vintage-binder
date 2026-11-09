@@ -15,8 +15,14 @@ assert.equal((current.match(/css\/app\.css/g) || []).length, 1);
 assert.ok(css.includes('.static-catalog'), 'CSS fallback rules must be preserved');
 const offlineStyles = current.match(/<noscript><style id="offline-fallback-styles">[\s\S]*?<\/style><\/noscript>\n/);
 assert.ok(offlineStyles, 'Standalone no-JS fallback styles must be present');
-assert.equal(current.replace(offlineStyles[0], '').replace(link, '<style>' + css + '</style>'), baseline,
-  'Extracting styles and preserving offline fallback should be the ONLY source changes from main');
+const baselineStyles = baseline.match(/<noscript><style id="offline-fallback-styles">[\s\S]*?<\/style><\/noscript>\n/);
+assert.ok(baselineStyles, 'Main-branch standalone fallback is missing');
+assert.equal(offlineStyles[0], baselineStyles[0], 'Standalone fallback styles changed');
+assert.equal(css, execFileSync('git', ['show', 'origin/main:css/app.css'], { encoding: 'utf8' }),
+  'Stylesheet changed unexpectedly');
+const normalizeScripts = html => html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '<script data-omitted></script>');
+assert.equal(normalizeScripts(current), normalizeScripts(baseline),
+  'Non-script HTML layout changed');
 
 const tempFile = '.baseline-style-compare.html';
 writeFileSync(tempFile, baseline);
