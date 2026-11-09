@@ -66,8 +66,16 @@ if (updated.includes('js/shipments.js')) {
   const i = source.indexOf(start), j = source.indexOf(end,i);
   assert.ok(i >= 0 && j > i, 'Shipment factory boundaries missing');
   const extracted = source.slice(i+start.length,j);
-  assert.equal(newBinder.replace(call, () => extracted), oldBinder,
-    'Shipment extraction changed any other binder behavior');
+  if (oldBinder.includes(call)) {
+    // Already extracted in main: compare standalone module against the baseline.
+    assert.equal(newBinder, oldBinder, 'Binder controller unexpectedly changed');
+    assert.equal(source, execFileSync('git',['show','origin/main:js/shipments.js'], {encoding:'utf8'}),
+      'Shipment controller unexpectedly changed');
+  } else {
+    // The original shipment extraction PR must reconstruct the old inlined code.
+    assert.equal(newBinder.replace(call, () => extracted), oldBinder,
+      'Shipment extraction changed any other binder behavior');
+  }
   const shipmentsTag = '<script src="js/shipments.js?v=20261109-ship1"></script>';
   const binderTag = '<script src="js/binder.js?v=20261109-js1"></script>';
   assert.ok(updated.indexOf(shipmentsTag) > 0 && updated.indexOf(shipmentsTag) < updated.indexOf(binderTag),
@@ -156,6 +164,54 @@ async function exercise(version, viewport) {
     cards: document.querySelectorAll('#cards .poke-card').length,
     search: document.querySelector('#search').value
   }));
+  // Collection interaction regression: wishlist move-to-top, independent binder
+  // order, and visibility of wishlist-only pockets. No Firestore writes.
+  const collectionState = await page.evaluate(() => {
+    window.VintageBinder.adoptProgress({
+      owned:{'base1-1':true,'base1-2':true},
+      wish:{'base2-3':true,'base2-4':true},
+      wishOrder:['base2-3','base2-4'],
+      binderOrder:['base1-1','base2-3','base1-2','base2-4'],
+      binderIncludeWish:true
+    });
+    window.VintageCloud = {canEdit:()=>true,onChange:()=>{}};
+    document.querySelector('[data-view-btn="wishlist"]').click();
+    const beforeWishlist = [...document.querySelectorAll('.wish-item')].map(row => ({
+      id:row.dataset.openWish,order:Number(row.dataset.orderIndex),
+      draggable:row.dataset.dragKind
+    }));
+    document.querySelector('[data-wish-move="base2-4"]').click();
+    const moveDialogOpened = document.querySelector('#wishMoveDialog').open;
+    document.querySelector('#wishMoveTop').click();
+    const afterWishlist = [...document.querySelectorAll('.wish-item')].map(row=>row.dataset.openWish);
+    const afterWishOrder = window.VintageBinder.getProgress().wishOrder;
+    document.querySelector('[data-view-btn="binder"]').click();
+    const beforeBinder = [...document.querySelectorAll('.binder-pocket[data-card-id]')]
+      .map(row=>({id:row.dataset.cardId,wishOnly:row.classList.contains('wish')}));
+    document.querySelector('[data-move-kind="binder"][data-move-index="0"][data-move-delta="1"]').click();
+    const afterBinderOrder = window.VintageBinder.getProgress().binderOrder;
+    const afterBinder = [...document.querySelectorAll('.binder-pocket[data-card-id]')]
+      .map(row=>row.dataset.cardId);
+    const checkbox = document.querySelector('#binderIncludeWish');
+    checkbox.click();
+    const overlayHidden = {
+      setting:window.VintageBinder.getProgress().binderIncludeWish,
+      mutedCards:document.querySelectorAll('.binder-pocket.wish-muted').length
+    };
+    // Reset auth to read-only so shipment tab navigation cannot start network calls.
+    window.VintageCloud = {canEdit:()=>false,onChange:()=>{}};
+    return {
+      beforeWishlist,moveDialogOpened,afterWishlist,afterWishOrder,
+      beforeBinder,afterBinderOrder,afterBinder,overlayHidden
+    };
+  });
+  assert.equal(collectionState.beforeWishlist.length, 2, 'Wishlist fixtures missing');
+  assert.equal(collectionState.moveDialogOpened, true, 'Wishlist move dialog did not open');
+  assert.deepEqual(collectionState.afterWishOrder, ['base2-4','base2-3'], 'Move-to-top failed');
+  assert.deepEqual(collectionState.afterBinderOrder,
+    ['base2-3','base1-1','base1-2','base2-4'], 'Binder reorder failed');
+  assert.equal(collectionState.overlayHidden.setting, false, 'Wishlist overlay toggle failed');
+  assert.equal(collectionState.overlayHidden.mutedCards, 2, 'Wishlist-only pockets not muted');
   // Shipment controller: ownership rendering and edit form must remain identical.
   const shipmentState = await page.evaluate(() => {
     window.VintageBinder.adoptProgress({shipments: [
@@ -209,7 +265,7 @@ async function exercise(version, viewport) {
     }
   }
   await context.close();
-  return {initial,states,filtered,shipmentState,errors};
+  return {initial,states,filtered,collectionState,shipmentState,errors};
 }
 try {
   for (const viewport of [{width:390,height:844},{width:1440,height:900}]) {
@@ -218,6 +274,7 @@ try {
     assert.deepEqual(b.initial, a.initial, 'Bootstrap output changed at '+viewport.width);
     assert.deepEqual(b.states, a.states, 'Navigation changed at '+viewport.width);
     assert.deepEqual(b.filtered, a.filtered, 'Catalog search changed at '+viewport.width);
+    assert.deepEqual(b.collectionState, a.collectionState, 'Binder/Wishlist interaction changed at '+viewport.width);
     assert.deepEqual(b.shipmentState, a.shipmentState, 'Shipment UI/editor state changed at '+viewport.width);
     assert.equal(b.shipmentState.editor.open, true, 'Shipment edit dialog did not open');
     assert.equal(b.shipmentState.afterName, 'שם מעודכן', 'Shipment edit did not persist');
