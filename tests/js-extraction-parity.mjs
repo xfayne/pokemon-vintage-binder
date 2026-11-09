@@ -160,21 +160,30 @@ if (updated.includes('js/collection-ordering.js')) {
   const before=execFileSync('git',['show','origin/main:js/binder.js'],{encoding:'utf8'});
   const after=readFileSync('js/binder.js','utf8');
   const ordering=readFileSync('js/collection-ordering.js','utf8');
-  const i1=before.indexOf('// Collection organization:');
-  const j1=before.indexOf('let binderSelectedId=null;',i1);
-  const i2=before.indexOf('function binderPageCount(){');
-  const j2=before.indexOf('\nfunction refreshPlacementTargets(',i2);
-  const i3=before.indexOf('function reorder(kind,from,to){');
-  const j3=before.indexOf('\nfunction removeFromBinder(',i3);
-  assert.ok([i1,j1,i2,j2,i3,j3].every(x=>x>=0),'Ordering source anchors missing');
-  const first=before.slice(i1,j1),pageCount=before.slice(i2,j2),reorder=before.slice(i3,j3);
   const call='const {normalizeOrders,binderVisible,binderPageCount,reorder}=window.VintageCollectionOrdering.create({state,ensureCloudEdit,save});\n';
-  const expected=before.replace(first,()=>call).replace(pageCount,'').replace(reorder,'');
-  assert.equal(after,expected,'Collection ordering extraction changed other binder code');
-  const module="(()=>{'use strict';\nwindow.VintageCollectionOrdering={create({state,ensureCloudEdit,save}){\n"+
-    first+pageCount+'\n'+reorder+
-    '\nreturn {normalizeOrders,binderVisible,binderPageCount,reorder};\n}};\n})();\n';
-  assert.equal(ordering,module,'Collection order implementation was changed during extraction');
+  assert.ok(after.includes(call),'Collection ordering factory was removed from binder');
+  if (before.includes(call)) {
+    // The migration is already on main. Compare the standalone module itself,
+    // while allowing unrelated binder refactors in subsequent PRs.
+    assert.equal(ordering,execFileSync('git',['show','origin/main:js/collection-ordering.js'],
+      {encoding:'utf8'}),'Previously extracted collection ordering controller changed');
+  } else {
+    // Only the migration PR should validate the precise source relocation.
+    const i1=before.indexOf('// Collection organization:');
+    const j1=before.indexOf('let binderSelectedId=null;',i1);
+    const i2=before.indexOf('function binderPageCount(){');
+    const j2=before.indexOf('\nfunction refreshPlacementTargets(',i2);
+    const i3=before.indexOf('function reorder(kind,from,to){');
+    const j3=before.indexOf('\nfunction removeFromBinder(',i3);
+    assert.ok([i1,j1,i2,j2,i3,j3].every(x=>x>=0),'Ordering source anchors missing');
+    const first=before.slice(i1,j1),pageCount=before.slice(i2,j2),reorder=before.slice(i3,j3);
+    const expected=before.replace(first,()=>call).replace(pageCount,'').replace(reorder,'');
+    assert.equal(after,expected,'Collection ordering extraction changed other binder code');
+    const module="(()=>{'use strict';\nwindow.VintageCollectionOrdering={create({state,ensureCloudEdit,save}){\n"+
+      first+pageCount+'\n'+reorder+
+      '\nreturn {normalizeOrders,binderVisible,binderPageCount,reorder};\n}};\n})();\n';
+    assert.equal(ordering,module,'Collection order implementation was changed during extraction');
+  }
   const tag='<script src="js/collection-ordering.js?v=20261109-order1"></script>';
   const binderTag='<script src="js/binder.js?v=20261109-js1"></script>';
   assert.ok(updated.indexOf(tag)>0&&updated.indexOf(tag)<updated.indexOf(binderTag),
