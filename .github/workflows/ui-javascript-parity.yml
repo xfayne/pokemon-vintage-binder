@@ -27,6 +27,7 @@ jobs:
       - run: |
           node --check js/shipments.js
           node --check js/collection-views.js
+          node --check js/owned-cards.js
           node --check js/binder.js
           node --check js/market-prices.js
           node --check js/public-reader.js
