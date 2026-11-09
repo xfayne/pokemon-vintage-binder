@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
-import { readFileSync, writeFileSync, unlinkSync } from 'node:fs';
+import { readFileSync, writeFileSync, unlinkSync, mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { chromium } from 'playwright';
 
@@ -10,11 +13,15 @@ const link = '<link rel="stylesheet" href="css/app.css?v=20261109-refactor-1">';
 
 assert.equal((current.match(/css\/app\.css/g) || []).length, 1);
 assert.ok(css.includes('.static-catalog'), 'CSS fallback rules must be preserved');
-assert.equal(current.replace(link, '<style>' + css + '</style>'), baseline,
-  'Extracting styles should be the ONLY source difference from main');
+const offlineStyles = current.match(/<noscript><style id="offline-fallback-styles">[\s\S]*?<\/style><\/noscript>\n/);
+assert.ok(offlineStyles, 'Standalone no-JS fallback styles must be present');
+assert.equal(current.replace(offlineStyles[0], '').replace(link, '<style>' + css + '</style>'), baseline,
+  'Extracting styles and preserving offline fallback should be the ONLY source changes from main');
 
 const tempFile = '.baseline-style-compare.html';
 writeFileSync(tempFile, baseline);
+const isolated = mkdtempSync(join(tmpdir(), 'pokemon-static-preview-'));
+writeFileSync(join(isolated, 'index.html'), current);
 const browser = await chromium.launch({ headless: true });
 try {
   for (const viewport of [{width: 390, height: 844}, {width: 1440, height: 900}]) {
@@ -44,10 +51,25 @@ try {
       const b = await changedPage.screenshot({animations:'disabled'});
       assert.ok(a.equals(b), 'Visual regression: viewport '+viewport.width+' scroll '+scrollY);
     }
-    console.log('PASS viewport', viewport.width, 'body background', status.background, 'cards', status.cards);
+    // A standalone HTML file without the sibling css/ directory must still
+    // present a usable, styled no-JavaScript catalog (iOS Files/Quick Look).
+    const offlinePage = await context.newPage();
+    await offlinePage.goto(pathToFileURL(join(isolated, 'index.html')).href, {waitUntil:'load'});
+    const offline = await offlinePage.evaluate(() => ({
+      cards: document.querySelectorAll('.static-card').length,
+      background: getComputedStyle(document.body).backgroundColor,
+      cardDisplay: getComputedStyle(document.querySelector('.static-card')).display,
+      staticVisible: getComputedStyle(document.querySelector('.static-catalog')).display,
+    }));
+    assert.ok(offline.cards > 200, 'Standalone catalog entries absent');
+    assert.equal(offline.background, 'rgb(245, 247, 251)');
+    assert.equal(offline.cardDisplay, 'flex', 'Standalone catalog lost basic styling');
+    assert.equal(offline.staticVisible, 'block', 'Standalone catalog is hidden');
+    console.log('PASS viewport', viewport.width, 'cards', status.cards, 'standalone no-JS preview');
     await context.close();
   }
 } finally {
   await browser.close();
   unlinkSync(tempFile);
+  rmSync(isolated, { recursive: true, force: true });
 }
