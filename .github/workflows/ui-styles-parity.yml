@@ -1,0 +1,27 @@
+name: Main UI Styles Parity
+on:
+  pull_request:
+    paths:
+      - "index.html"
+      - "css/**"
+      - "tests/style-parity.mjs"
+      - ".github/workflows/ui-styles-parity.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  style-parity:
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.57.0-noble
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - run: npm install --no-save --no-package-lock playwright@1.57.0
+      - run: node tests/style-parity.mjs
