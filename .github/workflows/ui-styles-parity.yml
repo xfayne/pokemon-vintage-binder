@@ -22,5 +22,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - run: npm install --no-save --no-package-lock playwright@1.57.0
       - run: node tests/style-parity.mjs
