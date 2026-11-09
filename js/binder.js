@@ -286,7 +286,7 @@ function showView(view,doScroll=true){if(!['catalog','owned','binder','wishlist'
  document.querySelectorAll('[data-view-btn]').forEach(b=>{const a=b.dataset.viewBtn===view;b.classList.toggle('active',a);b.setAttribute('aria-pressed',String(a));});
  if(view!=='catalog')renderCollections();if(view==='deals')window.VintageEbayLive?.open?.();if(view==='shipments')refreshShipments();if(doScroll)window.scrollTo({top:0,behavior:'smooth'});
 }
-const {sortedOwnedCards,refreshOwned,renderOwnedList}=window.VintageOwnedCards.create({state,MAP,$,SETS,showHolo,normalNum,searchKey,searchText,rarityHtml,esc,renderCollections:()=>renderCollections()});
+const {sortedOwnedCards,refreshOwned,renderOwnedList}=window.VintageOwnedCards.create({state,MAP,$,SETS,showHolo,normalNum,searchKey,searchText,rarityHtml,esc,cardNumber,renderCollections:()=>renderCollections()});
 function dealAuctionUrl(c,precise){
  const setName=MAP.get(c.set)?.name||'';
  const edition=state.firstEdition[c.id]?'1st edition':'';
