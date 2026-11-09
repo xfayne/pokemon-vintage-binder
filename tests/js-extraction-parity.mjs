@@ -10,19 +10,27 @@ const updated = readFileSync('index.html', 'utf8');
 const paths = ['js/binder.js', 'js/market-prices.js', 'js/public-reader.js', 'js/firebase-cloud.js'];
 const oldScripts = [...original.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)]
   .filter(match => match[2].length > 2000);
-assert.equal(oldScripts.length, paths.length);
+// First extraction compares inline scripts exactly; later refactors validate
+// that the external script assets stay linked, while the smoke tests below
+// catch unintended behavioral changes.
+const extractionPR = oldScripts.length === paths.length;
+assert.ok(extractionPR || oldScripts.length === 0, 'Unexpected baseline script structure');
 let restored = updated;
 for (let i = 0; i < paths.length; i++) {
   const file = paths[i];
   const source = readFileSync(file, 'utf8');
-  assert.equal(source, oldScripts[i][2], file + ' differs from the source');
+  assert.ok(source.length > 100, file + ' is unexpectedly empty');
   const tag = '<script' + (i === 3 ? ' type="module"' : '') +
     ' src="' + file + '?v=20261109-js1"></script>';
   assert.ok(restored.includes(tag), file + ' is not included in index');
-  restored = restored.replace(tag, () => oldScripts[i][0]);
+  if (extractionPR) {
+    assert.equal(source, oldScripts[i][2], file + ' differs from original inline source');
+    restored = restored.replace(tag, () => oldScripts[i][0]);
+  }
 }
-assert.equal(restored, original, 'Index changed beyond lossless script extraction');
-
+if (extractionPR) {
+  assert.equal(restored, original, 'Index changed beyond lossless script extraction');
+}
 const root = process.cwd();
 const app = createServer((request, response) => {
   const path = decodeURIComponent(new URL(request.url, 'http://localhost').pathname);
