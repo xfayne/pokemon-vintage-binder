@@ -11,7 +11,7 @@ Collector preference: English vintage Unlimited, ungraded/raw cards; prioritize 
 - GitHub Pages: https://xfayne.github.io/pokemon-vintage-binder/
 - Main page: `index.html` (large single-page HTML markup and static no-JS catalog fallback).
 - Styles: `css/app.css` (extracted 2026-11-09); `index.html` retains small inline no-JS fallback rules for standalone iOS Files/Quick Look previews.
-- JavaScript: `js/binder.js` (large shared collection and UI controller), `js/market-prices.js` (TCGTracking), `js/public-reader.js` (shared binder view), and `js/firebase-cloud.js` (ES module for Firebase authentication and Firestore). Extracted byte-for-byte from the original inline scripts, 2026-11-09.
+- JavaScript: `js/catalog-data.js` (vintage SETS and OFFLINE_PACKS), `js/binder.js` (shared collection/UI controller), `js/market-prices.js` (TCGTracking), `js/public-reader.js` (shared binder view), and `js/firebase-cloud.js` (Firebase Authentication/Firestore ES module). Inline scripts were extracted verbatim on 2026-11-09; catalog data was further extracted unchanged from binder into a prior-load script.
 - CI: `tests/style-parity.mjs` and `tests/js-extraction-parity.mjs` run Chromium mobile/desktop smoke/parity tests via `.github/workflows/`. Worker-specific tests exist separately. Current browser tests compare unauthenticated behavior and do **not** execute authenticated Firestore writes.
 - `deal-finder/`: separate deal-discovery UI, styles, scoring and documentation. `scoring.js` and `dashboard-template.js` are documented as historical/not currently loaded.
 - `ebay-worker/`: Cloudflare Worker backend, Wrangler config, tests, documentation.
@@ -52,7 +52,7 @@ Collector preference: English vintage Unlimited, ungraded/raw cards; prioritize 
 - Deal discovery should aggressively reject junk listings (including keyring/keychain) without falsely treating uncertain matches as confirmed deals.
 
 ## Open questions / backlog
-- The large `js/binder.js` IIFE still needs careful decomposition into feature modules, with explicit shared state/interfaces and tests first; moving the four scripts out of HTML is only phase 2A.
+- The remaining `js/binder.js` IIFE (~63KB) still needs careful decomposition into feature modules, with explicit shared state/interfaces and tests first; moving the four scripts out of HTML is only phase 2A.
 
 - Confirm deployed UI and actual live API/Worker behavior against main branch, especially whether eBay Production credentials are enabled.
 - Confirm shipment unread-update indicator is implemented and persisted; prior discussion requested it.
