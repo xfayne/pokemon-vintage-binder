@@ -66,8 +66,16 @@ if (updated.includes('js/shipments.js')) {
   const i = source.indexOf(start), j = source.indexOf(end,i);
   assert.ok(i >= 0 && j > i, 'Shipment factory boundaries missing');
   const extracted = source.slice(i+start.length,j);
-  assert.equal(newBinder.replace(call, () => extracted), oldBinder,
-    'Shipment extraction changed any other binder behavior');
+  if (oldBinder.includes(call)) {
+    // Already extracted in main: compare standalone module against the baseline.
+    assert.equal(newBinder, oldBinder, 'Binder controller unexpectedly changed');
+    assert.equal(source, execFileSync('git',['show','origin/main:js/shipments.js'], {encoding:'utf8'}),
+      'Shipment controller unexpectedly changed');
+  } else {
+    // The original shipment extraction PR must reconstruct the old inlined code.
+    assert.equal(newBinder.replace(call, () => extracted), oldBinder,
+      'Shipment extraction changed any other binder behavior');
+  }
   const shipmentsTag = '<script src="js/shipments.js?v=20261109-ship1"></script>';
   const binderTag = '<script src="js/binder.js?v=20261109-js1"></script>';
   assert.ok(updated.indexOf(shipmentsTag) > 0 && updated.indexOf(shipmentsTag) < updated.indexOf(binderTag),
