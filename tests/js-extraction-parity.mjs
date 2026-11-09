@@ -40,14 +40,38 @@ if (updated.includes('js/catalog-data.js')) {
   const setsEnd = oldBinder.indexOf('];', setsStart) + 2;
   const packsStart = oldBinder.indexOf('const OFFLINE_PACKS=');
   const packsEnd = oldBinder.indexOf(';\nfunction embeddedCards', packsStart) + 1;
-  assert.ok(setsStart >= 0 && packsStart >= 0 && packsEnd > packsStart, 'Catalog source anchors missing');
-  const sets = oldBinder.slice(setsStart, setsEnd);
-  const packs = oldBinder.slice(packsStart, packsEnd);
   const data = readFileSync('js/catalog-data.js', 'utf8');
-  assert.ok(data.includes(sets) && data.includes(packs), 'Catalog data was modified');
-  const rebuilt = newBinder.replace('const {SETS,OFFLINE_PACKS}=window.VintageCatalogData;', () => sets)
-    .replace('\nfunction embeddedCards(){', () => '\n' + packs + '\nfunction embeddedCards(){');
-  assert.equal(rebuilt, oldBinder, 'Catalog extraction changed binder code beyond the dependency');
+  if (setsStart >= 0 && packsStart >= 0 && packsEnd > packsStart) {
+    // First catalog extraction compared the previously inline data.
+    const sets = oldBinder.slice(setsStart, setsEnd);
+    const packs = oldBinder.slice(packsStart, packsEnd);
+    assert.ok(data.includes(sets) && data.includes(packs), 'Catalog data was modified');
+    const rebuilt = newBinder.replace('const {SETS,OFFLINE_PACKS}=window.VintageCatalogData;', () => sets)
+      .replace('\nfunction embeddedCards(){', () => '\n' + packs + '\nfunction embeddedCards(){');
+    assert.equal(rebuilt, oldBinder, 'Catalog extraction changed binder code beyond the dependency');
+  } else {
+    // Later refactors compare against the already-extracted main-branch data.
+    assert.equal(data, execFileSync('git', ['show','origin/main:js/catalog-data.js'], {encoding:'utf8'}),
+      'Previously extracted catalog metadata unexpectedly changed');
+  }
+}
+// Verify the shipment controller was moved unchanged, and loaded before binder.
+if (updated.includes('js/shipments.js')) {
+  const oldBinder = execFileSync('git', ['show','origin/main:js/binder.js'], {encoding:'utf8'});
+  const newBinder = readFileSync('js/binder.js','utf8');
+  const source = readFileSync('js/shipments.js','utf8');
+  const call = 'const {renderShipments,refreshShipments}=window.VintageShipments.create({state,MAP,cardNumber,esc,$,ensureCloudEdit,save,toast});';
+  const start = "window.VintageShipments={create({state,MAP,cardNumber,esc,$,ensureCloudEdit,save,toast}){\n";
+  const end = "\nreturn {renderShipments,refreshShipments};\n}};";
+  const i = source.indexOf(start), j = source.indexOf(end,i);
+  assert.ok(i >= 0 && j > i, 'Shipment factory boundaries missing');
+  const extracted = source.slice(i+start.length,j);
+  assert.equal(newBinder.replace(call, () => extracted), oldBinder,
+    'Shipment extraction changed any other binder behavior');
+  const shipmentsTag = '<script src="js/shipments.js?v=20261109-ship1"></script>';
+  const binderTag = '<script src="js/binder.js?v=20261109-js1"></script>';
+  assert.ok(updated.indexOf(shipmentsTag) > 0 && updated.indexOf(shipmentsTag) < updated.indexOf(binderTag),
+    'Shipment controller must be loaded before binder.js');
 }
 const root = process.cwd();
 const mainAssets = new Map();
@@ -132,6 +156,43 @@ async function exercise(version, viewport) {
     cards: document.querySelectorAll('#cards .poke-card').length,
     search: document.querySelector('#search').value
   }));
+  // Shipment controller: ownership rendering and edit form must remain identical.
+  const shipmentState = await page.evaluate(() => {
+    window.VintageBinder.adoptProgress({shipments: [
+      {id:'shipment_demo_01', number:'RR123456789IL', title:'בדיקת משלוח',
+       cardIds:['base1-1','base2-3'], seenEventIds:[], initialized:true, carrier:0},
+      {id:'shipment_demo_02', number:'LX998877665US', title:'משלוח נוסף',
+       cardIds:[], seenEventIds:[], initialized:true, carrier:0}
+    ]});
+    document.querySelector('[data-view-btn="shipments"]').click();
+    const before = {
+      shipments: document.querySelectorAll('.shipment-entry').length,
+      list: document.querySelector('#shipmentList').innerHTML,
+      unread: document.querySelector('#shipmentUnreadTab').textContent,
+      badgeHidden: document.querySelector('#shipmentUnreadTab').hidden,
+      items: window.VintageBinder.getProgress().shipments.map(x=>({id:x.id,number:x.number,cardIds:x.cardIds}))
+    };
+    // Stub ONLY the edit authorization; no real account or network calls.
+    window.VintageCloud = {canEdit:()=>true, onChange:()=>{}};
+    document.querySelector('[data-ship-edit="shipment_demo_01"]').click();
+    const editor = {
+      open: document.querySelector('#shipmentDialog').open,
+      number: document.querySelector('#shipmentNumber').value,
+      name: document.querySelector('#shipmentName').value,
+      selected: document.querySelector('#shipmentSelected').textContent.trim()
+    };
+    document.querySelector('#shipmentName').value = 'שם מעודכן';
+    document.querySelector('#shipmentForm').requestSubmit();
+    return {
+      before, editor,
+      afterName: window.VintageBinder.getProgress().shipments.find(x=>x.id==='shipment_demo_01')?.title,
+      afterEntries: document.querySelectorAll('.shipment-entry').length
+    };
+  });
+  if (version === 'updated' && updated.includes('js/shipments.js')) {
+    assert.ok(fetched.some(item => item.file === 'shipments.js' && item.status === 200),
+      'Shipment controller did not load');
+  }
   // A separately loaded catalog metadata file must initialize before binder.js.
   if (version === 'updated' && updated.includes('js/catalog-data.js')) {
     assert.ok(fetched.some(item => item.file === 'catalog-data.js' && item.status === 200),
@@ -148,7 +209,7 @@ async function exercise(version, viewport) {
     }
   }
   await context.close();
-  return {initial,states,filtered,errors};
+  return {initial,states,filtered,shipmentState,errors};
 }
 try {
   for (const viewport of [{width:390,height:844},{width:1440,height:900}]) {
@@ -157,6 +218,9 @@ try {
     assert.deepEqual(b.initial, a.initial, 'Bootstrap output changed at '+viewport.width);
     assert.deepEqual(b.states, a.states, 'Navigation changed at '+viewport.width);
     assert.deepEqual(b.filtered, a.filtered, 'Catalog search changed at '+viewport.width);
+    assert.deepEqual(b.shipmentState, a.shipmentState, 'Shipment UI/editor state changed at '+viewport.width);
+    assert.equal(b.shipmentState.editor.open, true, 'Shipment edit dialog did not open');
+    assert.equal(b.shipmentState.afterName, 'שם מעודכן', 'Shipment edit did not persist');
     assert.deepEqual(b.errors, a.errors, 'Unexpected browser error difference at '+viewport.width);
     console.log('PASS JS browser parity:', viewport.width, 'px, cards', b.initial.cards);
   }
