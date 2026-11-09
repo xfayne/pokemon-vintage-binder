@@ -119,12 +119,36 @@ if (updated.includes('js/owned-cards.js')) {
   const end='\nreturn {sortedOwnedCards,refreshOwned,renderOwnedList};\n}};';
   const i=module.indexOf(begin),j=module.indexOf(end,i);
   assert.ok(i>=0&&j>i,'Owned-cards factory has unexpected boundaries');
-  assert.equal(after.replace(call,()=>module.slice(i+begin.length,j)),before,
-    'Owned-cards extraction changed binder logic beyond this exact block');
+  if (before.includes(call)) {
+    // In later refactors the owned controller already exists in main.
+    assert.equal(module, execFileSync('git',['show','origin/main:js/owned-cards.js'],{encoding:'utf8'}),
+      'Previously extracted owned-cards controller changed');
+  } else {
+    assert.equal(after.replace(call,()=>module.slice(i+begin.length,j)),before,
+      'Owned-cards extraction changed binder logic beyond this exact block');
+  }
   const ownedTag='<script src="js/owned-cards.js?v=20261109-owned1"></script>';
   const binderTag='<script src="js/binder.js?v=20261109-js1"></script>';
   assert.ok(updated.indexOf(ownedTag)>0&&updated.indexOf(ownedTag)<updated.indexOf(binderTag),
     'Owned cards controller must load before binder');
+}
+// Exact, lossless extraction of pointer and long-press touch reordering.
+if (updated.includes('js/collection-drag.js')) {
+  const mainBinder=execFileSync('git',['show','origin/main:js/binder.js'],{encoding:'utf8'});
+  const branchBinder=readFileSync('js/binder.js','utf8');
+  const dragModule=readFileSync('js/collection-drag.js','utf8');
+  const call=' window.VintageCollectionDrag.attach({reorder,toast});';
+  const open='window.VintageCollectionDrag={attach({reorder,toast}){\n';
+  const close='\n}};';
+  const i=dragModule.indexOf(open), j=dragModule.indexOf(close,i);
+  assert.ok(i>=0&&j>i,'Collection drag module source boundaries missing');
+  const extracted=dragModule.slice(i+open.length,j);
+  assert.equal(branchBinder.replace(call,()=>extracted),mainBinder,
+    'Drag extraction modified unrelated collection logic or listeners');
+  const dragTag='<script src="js/collection-drag.js?v=20261109-drag1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261109-js1"></script>';
+  assert.ok(updated.indexOf(dragTag)>0&&updated.indexOf(dragTag)<updated.indexOf(binderTag),
+    'Drag module must be available before the binder controller');
 }
 const root = process.cwd();
 const mainAssets = new Map();
@@ -303,6 +327,74 @@ async function exercise(version, viewport) {
     ['base2-3','base1-1','base1-2','base2-4'], 'Binder reorder failed');
   assert.equal(collectionState.overlayHidden.setting, false, 'Wishlist overlay toggle failed');
   assert.equal(collectionState.overlayHidden.mutedCards, 2, 'Wishlist-only pockets not muted');
+  // Exercise the real pointer event listeners, not the reorder buttons.
+  // document.elementFromPoint is overridden only to make the drop target
+  // deterministic under both 390px and 1440px viewports.
+  const dragState = await page.evaluate(async () => {
+    function seed() {
+      window.VintageBinder.adoptProgress({
+        owned:{'base1-1':true},
+        wish:{'base2-3':true,'base2-4':true},
+        wishOrder:['base2-3','base2-4'],
+        binderOrder:['base1-1','base2-3','base2-4']
+      });
+      window.VintageCloud={canEdit:()=>true,onChange:()=>{}};
+      document.querySelector('[data-view-btn="wishlist"]').click();
+    }
+    const orders=()=>window.VintageBinder.getProgress().wishOrder;
+    seed();
+    const dragFrom=document.querySelector('.wish-item[data-order-index="0"]');
+    const dropTo=document.querySelector('.wish-item[data-order-index="1"]');
+    const original=document.elementFromPoint.bind(document);
+    document.elementFromPoint=()=>dropTo;
+    try {
+      dragFrom.dispatchEvent(new PointerEvent('pointerdown',{
+        bubbles:true,pointerId:301,pointerType:'mouse',button:0,clientX:40,clientY:120
+      }));
+      document.dispatchEvent(new PointerEvent('pointermove',{
+        bubbles:true,pointerId:301,pointerType:'mouse',button:0,clientX:90,clientY:190
+      }));
+      document.dispatchEvent(new PointerEvent('pointerup',{
+        bubbles:true,pointerId:301,pointerType:'mouse',button:0,clientX:90,clientY:190
+      }));
+    } finally {
+      document.elementFromPoint=original;
+    }
+    const afterPointer=orders();
+    const noGhostAfterPointer=!document.querySelector('.drag-ghost,.drag-origin');
+    seed();
+    const touchFrom=document.querySelector('.wish-item[data-order-index="0"]');
+    const touchTo=document.querySelector('.wish-item[data-order-index="1"]');
+    const originalTouch=document.elementFromPoint.bind(document);
+    document.elementFromPoint=()=>touchTo;
+    const touch=(target,x,y)=>new Touch({
+      identifier:402,target,clientX:x,clientY:y,pageX:x,pageY:y,screenX:x,screenY:y
+    });
+    const begin=touch(touchFrom,40,160),move=touch(touchFrom,90,210);
+    try {
+      touchFrom.dispatchEvent(new TouchEvent('touchstart',{bubbles:true,cancelable:true,
+        touches:[begin],targetTouches:[begin],changedTouches:[begin]}));
+      await new Promise(resolve=>setTimeout(resolve,380));
+      document.dispatchEvent(new TouchEvent('touchmove',{bubbles:true,cancelable:true,
+        touches:[move],targetTouches:[move],changedTouches:[move]}));
+      document.dispatchEvent(new TouchEvent('touchend',{bubbles:true,cancelable:true,
+        touches:[],targetTouches:[],changedTouches:[move]}));
+    } finally {
+      document.elementFromPoint=originalTouch;
+    }
+    const afterTouch=orders();
+    const noGhostAfterTouch=!document.querySelector('.drag-ghost,.drag-origin');
+    window.VintageCloud={canEdit:()=>false,onChange:()=>{}};
+    return {afterPointer,noGhostAfterPointer,afterTouch,noGhostAfterTouch};
+  });
+  assert.deepEqual(dragState.afterPointer,['base2-4','base2-3'],'Pointer reorder failed');
+  assert.deepEqual(dragState.afterTouch,['base2-4','base2-3'],'Touch long-press reorder failed');
+  assert.equal(dragState.noGhostAfterPointer,true,'Pointer drag ghost left in DOM');
+  assert.equal(dragState.noGhostAfterTouch,true,'Touch drag ghost left in DOM');
+  if(version==='updated'&&updated.includes('js/collection-drag.js')){
+    assert.ok(fetched.some(e=>e.file==='collection-drag.js'&&e.status===200),
+      'Collection drag script did not load with HTTP 200');
+  }
   // Shipment controller: ownership rendering and edit form must remain identical.
   const shipmentState = await page.evaluate(() => {
     window.VintageBinder.adoptProgress({shipments: [
@@ -360,7 +452,7 @@ async function exercise(version, viewport) {
     }
   }
   await context.close();
-  return {initial,states,filtered,ownedState,collectionState,shipmentState,errors};
+  return {initial,states,filtered,ownedState,collectionState,dragState,shipmentState,errors};
 }
 try {
   for (const viewport of [{width:390,height:844},{width:1440,height:900}]) {
@@ -371,6 +463,7 @@ try {
     assert.deepEqual(b.filtered, a.filtered, 'Catalog search changed at '+viewport.width);
     assert.deepEqual(b.ownedState, a.ownedState, 'Owned cards sort/filter/value changed at '+viewport.width);
     assert.deepEqual(b.collectionState, a.collectionState, 'Binder/Wishlist interaction changed at '+viewport.width);
+    assert.deepEqual(b.dragState, a.dragState, 'Pointer/touch drag behavior differs at '+viewport.width);
     assert.deepEqual(b.shipmentState, a.shipmentState, 'Shipment UI/editor state changed at '+viewport.width);
     assert.equal(b.shipmentState.editor.open, true, 'Shipment edit dialog did not open');
     assert.equal(b.shipmentState.afterName, 'שם מעודכן', 'Shipment edit did not persist');
