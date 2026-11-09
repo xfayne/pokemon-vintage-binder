@@ -1,0 +1,63 @@
+# Pokémon Vintage Binder — Project Context
+
+_Last reviewed: 2026-11-09. This document distinguishes repository-verified facts from conversation history and planned work._
+
+## Purpose and collection preferences
+Personal web app for collecting vintage Pokémon TCG cards (Base, Jungle, Fossil through Neo): catalog, owned cards, wishlist, visual binder, market values, deal discovery, and shipment tracking.
+Collector preference: English vintage Unlimited, ungraded/raw cards; prioritize good value, reasonable shipping, authenticity, and enjoyable binder completion. 1st Edition remains an optional per-card setting.
+
+## Repository and deployment
+- Repository: https://github.com/xfayne/pokemon-vintage-binder
+- GitHub Pages: https://xfayne.github.io/pokemon-vintage-binder/
+- Main page: `index.html` (large single-page application).
+- `deal-finder/`: separate deal-discovery UI, styles, scoring and documentation. `scoring.js` and `dashboard-template.js` are documented as historical/not currently loaded.
+- `ebay-worker/`: Cloudflare Worker backend, Wrangler config, tests, documentation.
+- `assets/`: static assets including Ancient Mew image.
+- Worker URL: https://pokemon-vintage-ebay-deals.xfayne.workers.dev
+- Google sign-in via Firebase Authentication; Firestore is the intended single source of truth for user collection data (from project conversations). Confirm exact collection/schema in code before modifying.
+- Never put API credentials in client code, documentation, GitHub, or chat. eBay secrets belong in Cloudflare Worker secrets.
+
+## Product areas (from project history)
+1. Catalog: vintage card coverage through Neo, external card art.
+2. My Cards: owned collection, condition, paid price, market value, count/holo totals, sorting and Excel export.
+3. My Binder: 3x3 pages, rearrangement, wishlist overlay, read-only share view, landscape two-page layout except cover.
+4. Wishlist: reorder by dragging the whole row/card, move to top, add/remove, condition-specific price where known.
+5. Card details: condition and market price, Unlimited default, compact 1st Edition toggle, paid amount, mutually exclusive owned/wishlist actions, remove/move actions.
+6. Deals: eBay search with condition-aware comparisons and ranked opportunities.
+7. Shipments: 17TRACK-backed shipment status and recent update/date, up to six associated cards per shipment, Cloudflare Worker/KV integration discussed in prior work.
+8. User menu: Google sign-in, backup/import.
+
+## Verified eBay deal-finder design (from deal-finder/README.md, 2026-11-09)
+- Live eBay discovery against the signed-in user's Wishlist; sequential batches of four, progress, pause/resume, manual restart.
+- Results reused for 30 minutes in the same open page; no scheduled background scanning.
+- Auctions and Buy It Now; marketplace coverage and shipping data are subject to actual eBay API responses.
+- Default recommended sort avoids promoting far-off auctions solely for low starting bids. Advanced filters include listing type, ending horizon, shipping, all-in price, discount and condition; 40 results rendered at a time.
+- Condition comparison NM/LP/MP/HP/DMG; grades from eBay when available, otherwise labeled inference/fallback, with manual override.
+- Three-layer identity checks: obvious junk rejected; strong matches vs needs-review; additional item-detail lookup for limited top candidates. Review-needed items are not shown as reliable discounts.
+- Seller-provided listing text/aspects are untrusted. No image-based authentication or condition grading; no auto bidding/purchasing.
+- Unknown shipping is not free. No fake sample auctions.
+- Worker `GET /health` and `POST /api/search`; secrets `EBAY_CLIENT_ID`, `EBAY_CLIENT_SECRET`.
+- Tests: `node --test ebay-worker/worker.test.mjs`.
+
+## UI decisions from prior conversations
+- Clean, compact, mobile-friendly UI; avoid repetitive explanatory copy.
+- Fixed main navigation; tabs wide enough to scroll horizontally instead of shrinking.
+- Compact owned/wishlist rows, prices only for selected condition; preserve full-row wishlist drag-and-drop.
+- Card details actions grouped consistently; don't offer 'add to wishlist' when already owned (and vice versa).
+- Wishlist overlay on binder uses subdued appearance; share mode is read-only.
+- Remove unused Value tab; show collection totals in My Cards.
+- Deal discovery should aggressively reject junk listings (including keyring/keychain) without falsely treating uncertain matches as confirmed deals.
+
+## Open questions / backlog
+- Confirm deployed UI and actual live API/Worker behavior against main branch, especially whether eBay Production credentials are enabled.
+- Confirm shipment unread-update indicator is implemented and persisted; prior discussion requested it.
+- Historical price chart without storing long-term time-series in Firestore: design/data source not finalized.
+- Review documentation drift: `ebay-worker/README.md` describes some older manual connection and auction-only flows, while `deal-finder/README.md` describes automatic Wishlist scanning and Buy It Now. Prefer current implementation over either document if they disagree.
+- Validate Firestore data schema, security rules, sharing privacy, and 17TRACK Worker deployment before architectural changes.
+- Keep a changelog or update this document after major changes.
+
+## Development guidelines
+- Read relevant current source before editing; avoid regressing drag-and-drop, binder ordering, Firestore sync, login, and mobile layout.
+- Prefer small focused changes and tests, especially around eBay parsing/filtering.
+- Distinguish listing price from all-in price, and tentative match from verified card identity.
+- Never claim a feature is deployed solely because it was requested in chat.
