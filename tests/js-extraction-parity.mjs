@@ -68,7 +68,9 @@ if (updated.includes('js/shipments.js')) {
   const extracted = source.slice(i+start.length,j);
   if (oldBinder.includes(call)) {
     // Already extracted in main: compare standalone module against the baseline.
-    assert.equal(newBinder, oldBinder, 'Binder controller unexpectedly changed');
+    if (!updated.includes('js/collection-views.js')) {
+      assert.equal(newBinder, oldBinder, 'Binder controller unexpectedly changed');
+    }
     assert.equal(source, execFileSync('git',['show','origin/main:js/shipments.js'], {encoding:'utf8'}),
       'Shipment controller unexpectedly changed');
   } else {
@@ -80,6 +82,30 @@ if (updated.includes('js/shipments.js')) {
   const binderTag = '<script src="js/binder.js?v=20261109-js1"></script>';
   assert.ok(updated.indexOf(shipmentsTag) > 0 && updated.indexOf(shipmentsTag) < updated.indexOf(binderTag),
     'Shipment controller must be loaded before binder.js');
+}
+// Protect the binder + Wishlist view rendering extraction at the source level.
+if (updated.includes('js/collection-views.js')) {
+  const oldBinder = execFileSync('git', ['show','origin/main:js/binder.js'], {encoding:'utf8'});
+  const newBinder = readFileSync('js/binder.js','utf8');
+  const views = readFileSync('js/collection-views.js','utf8');
+  const call = 'const {renderCollections}=window.VintageCollectionViews.create({state,MAP,$,esc,cardNumber,normalizeOrders,renderShipments,binderPageCount,refreshPlacementTargets,binderVisible,renderOwnedList,renderDeals});';
+  const start = 'window.VintageCollectionViews={create({state,MAP,$,esc,cardNumber,normalizeOrders,renderShipments,binderPageCount,refreshPlacementTargets,binderVisible,renderOwnedList,renderDeals}){\n';
+  const end = '\nreturn {renderCollections};\n}};';
+  const i=views.indexOf(start), j=views.indexOf(end,i);
+  assert.ok(i >= 0 && j > i,'Collection renderer factory has unexpected boundaries');
+  const extracted=views.slice(i+start.length,j);
+  if (oldBinder.includes(call)) {
+    assert.equal(newBinder,oldBinder,'Binder code changed outside collection views');
+    assert.equal(views,execFileSync('git',['show','origin/main:js/collection-views.js'],{encoding:'utf8'}),
+      'Collection renderer changed unexpectedly');
+  } else {
+    assert.equal(newBinder.replace(call,()=>extracted),oldBinder,
+      'The extracted collection renderer differs from old binder code');
+  }
+  const viewScript='<script src="js/collection-views.js?v=20261109-views1"></script>';
+  const binderScript='<script src="js/binder.js?v=20261109-js1"></script>';
+  assert.ok(updated.indexOf(viewScript)>0 && updated.indexOf(viewScript)<updated.indexOf(binderScript),
+    'View renderer script must load before binder');
 }
 const root = process.cwd();
 const mainAssets = new Map();
@@ -256,6 +282,10 @@ async function exercise(version, viewport) {
     const dataReady = await page.evaluate(() => window.VintageCatalogData?.SETS?.length >= 14
       && Object.keys(window.VintageCatalogData.OFFLINE_PACKS || {}).length >= 14);
     assert.ok(dataReady, 'Catalog metadata missing at runtime');
+  }
+  if (version === 'updated' && updated.includes('js/collection-views.js')) {
+    assert.ok(fetched.some(item=>item.file==='collection-views.js' && item.status===200),
+      'Collection views renderer did not load');
   }
   // Explicitly verify the refactored browser can fetch and parse all four extracted scripts.
   if (version === 'updated') {
