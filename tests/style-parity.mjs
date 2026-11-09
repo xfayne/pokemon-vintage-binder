@@ -38,8 +38,8 @@ try {
     assert.ok(status.cards > 200, 'JS-free catalog fallback missing');
 
     for (const scrollY of [0, 1100, 4700]) {
-      await baselinePage.evaluate(y => window.scrollTo(0, y), scrollY);
-      await changedPage.evaluate(y => window.scrollTo(0, y), scrollY);
+      await baselinePage.evaluate(y => window.scrollTo({ top: y, behavior: 'instant' }), scrollY);
+      await changedPage.evaluate(y => window.scrollTo({ top: y, behavior: 'instant' }), scrollY);
       const a = await baselinePage.screenshot({animations:'disabled'});
       const b = await changedPage.screenshot({animations:'disabled'});
       assert.ok(a.equals(b), 'Visual regression: viewport '+viewport.width+' scroll '+scrollY);
