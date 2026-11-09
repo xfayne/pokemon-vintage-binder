@@ -1,5 +1,5 @@
 (()=>{'use strict';
-window.VintageOwnedCards={create({state,MAP,$,SETS,showHolo,normalNum,searchKey,searchText,rarityHtml,esc,renderCollections}){
+window.VintageOwnedCards={create({state,MAP,$,SETS,showHolo,normalNum,searchKey,searchText,rarityHtml,esc,cardNumber,renderCollections}){
 function sortedOwnedCards(){
  const own=state.cards.filter(c=>state.owned[c.id]), mode=$('ownedSort').value;
  const setIndex=c=>SETS.findIndex(s=>s.id===c.set);
