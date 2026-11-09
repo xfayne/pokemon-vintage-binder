@@ -190,6 +190,8 @@ async function exercise(version, viewport) {
       setting:window.VintageBinder.getProgress().binderIncludeWish,
       mutedCards:document.querySelectorAll('.binder-pocket.wish-muted').length
     };
+    // Reset auth to read-only so shipment tab navigation cannot start network calls.
+    window.VintageCloud = {canEdit:()=>false,onChange:()=>{}};
     return {
       beforeWishlist,moveDialogOpened,afterWishlist,afterWishOrder,
       beforeBinder,afterBinderOrder,afterBinder,overlayHidden
