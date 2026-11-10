@@ -421,6 +421,10 @@ async function exercise(version, viewport) {
     assert.ok(fetched.some(e=>e.file==='collection-drag.js'&&e.status===200),
       'Collection drag script did not load with HTTP 200');
   }
+  // Intentional click suppression lasts 300ms after touch drag so users do
+  // not accidentally open/move a card when releasing it. Let it expire
+  // before testing ordinary wishlist clicks and card details in this page.
+  await page.waitForTimeout(400);
   // Catalog behavior: set selection, ownership/Wishlist status, finish/type
   // filters, name/holo ordering and normalized text search.
   const catalogState=await page.evaluate(()=>{
