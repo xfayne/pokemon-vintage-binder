@@ -280,19 +280,27 @@ if(updated.includes('js/catalog-loader.js')){
   const before=execFileSync('git',['show','origin/main:js/binder.js'],{encoding:'utf8'});
   const after=readFileSync('js/binder.js','utf8');
   const loader=readFileSync('js/catalog-loader.js','utf8');
-  const a=before.indexOf('function embeddedCards(){');
-  const b=before.indexOf('const $=id',a);
-  const d=before.indexOf('function loadEmbeddedData(){');
-  const e=before.indexOf('const {catalog',d);
-  assert.ok(a>=0&&b>a&&d>b&&e>d,'Offline catalog loader boundaries missing');
-  const embedded=before.slice(a,b),load=before.slice(d,e);
   const call='const {loadEmbeddedData}=window.VintageCatalogLoader.create({SETS,OFFLINE_PACKS,state,$,renderAll:()=>renderAll()});\n';
-  const expected=before.slice(0,a)+before.slice(b,d)+call+before.slice(e);
-  assert.equal(after,expected,'Loader extraction changed unrelated binder code');
-  const expectedModule="(()=>{'use strict';\n"+
-    'window.VintageCatalogLoader={create({SETS,OFFLINE_PACKS,state,$,renderAll}){\n'+
-    embedded+load+'\nreturn {loadEmbeddedData};\n}};\n})();\n';
-  assert.equal(loader,expectedModule,'Offline dataset decoder or bootstrap logic changed');
+  assert.ok(after.includes(call),'Catalog loader is no longer initialized by binder');
+  if(before.includes(call)){
+    // Already in main: compare the module itself so later binder refactors
+    // need not reconstruct functions that were previously extracted.
+    assert.equal(loader,execFileSync('git',['show','origin/main:js/catalog-loader.js'],
+      {encoding:'utf8'}),'Previously extracted catalog loader changed unexpectedly');
+  }else{
+    const a=before.indexOf('function embeddedCards(){');
+    const b=before.indexOf('const $=id',a);
+    const d=before.indexOf('function loadEmbeddedData(){');
+    const e=before.indexOf('const {catalog',d);
+    assert.ok(a>=0&&b>a&&d>b&&e>d,'Offline catalog loader boundaries missing');
+    const embedded=before.slice(a,b),load=before.slice(d,e);
+    const expected=before.slice(0,a)+before.slice(b,d)+call+before.slice(e);
+    assert.equal(after,expected,'Loader extraction changed unrelated binder code');
+    const expectedModule="(()=>{'use strict';\n"+
+      'window.VintageCatalogLoader={create({SETS,OFFLINE_PACKS,state,$,renderAll}){\n'+
+      embedded+load+'\nreturn {loadEmbeddedData};\n}};\n})();\n';
+    assert.equal(loader,expectedModule,'Offline dataset decoder or bootstrap logic changed');
+  }
   const loaderTag='<script src="js/catalog-loader.js?v=20261110-loader1"></script>';
   const binderTag='<script src="js/binder.js?v=20261110-refactor3"></script>';
   assert.ok(updated.indexOf(loaderTag)>0&&updated.indexOf(loaderTag)<updated.indexOf(binderTag),
