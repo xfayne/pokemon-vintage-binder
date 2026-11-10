@@ -196,6 +196,8 @@ try {
       window.VintageCloud.onChange({immediate:true});
     });
     await page.waitForFunction(()=>window.__cloudTest.writes.length===1);
+    await page.waitForFunction(()=>document.querySelector('#cloudStatus')
+      .textContent.includes('נשמר בענן'));
     const saved=await page.evaluate(path=>window.__cloudTest.docs[path],savedDoc());
     assert.equal(saved.progress.owned['base1-16'],true);
     assert.equal(!!saved.progress.wish['base1-16'],false);
