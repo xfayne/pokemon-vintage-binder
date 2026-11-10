@@ -39,3 +39,5 @@ jobs:
       - run: node --check tests/cloud-data-regression.mjs
       - run: node tests/js-extraction-parity.mjs
       - run: node tests/cloud-data-regression.mjs
+      - run: node --check ebay-worker/index.js && node --check deal-finder/live.js
+      - run: node --test ebay-worker/worker.test.mjs
