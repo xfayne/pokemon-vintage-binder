@@ -110,51 +110,7 @@ function renderCards(){const arr=visible();const slice=arr.slice(0,state.limit);
  $('resultsCount').textContent=state.ready?`מציג ${nf(slice.length)} מתוך ${nf(arr.length)} קלפים`:'ממתין לנתונים';$('loadMore').hidden=arr.length<=state.limit;}
 function renderAll(){renderSide();renderStats();renderCards();renderCollections();$('sectionTitle').textContent=state.active==='all'?'כל הסדרות':MAP.get(state.active)?.name||'כל הסדרות';let arr=relevantSetCards(state.active);const owned=arr.filter(c=>state.owned[c.id]).length;$('sectionSub').textContent=state.ready?`${nf(owned)} מתוך ${nf(arr.length)} קלפים ברשותך`:'רשימות קלפים מקוריות באנגלית';}
 function toast(msg){const e=$('toast');e.textContent=msg;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',2800)}
-function toggleOwned(id){
- if(!ensureCloudEdit())return;
- if(state.owned[id]){
-  delete state.owned[id];
-  delete state.ownedAddedAt[id];
- }else{
-  state.owned[id]=true;
-  const max=Object.values(state.ownedAddedAt).reduce((n,t)=>Math.max(n,Number(t)||0),0);
-  state.ownedAddedAt[id]=Math.max(Date.now(),max+1);
-  // Owned and Wishlist are mutually exclusive. Persist the removal in the same cloud write.
-  if(state.wish[id]||state.wishOrder.includes(id)){
-   delete state.wish[id];
-   state.wishOrder=state.wishOrder.filter(cardId=>cardId!==id);
-   state.removedWish[id]=Date.now();
-  }
- }
- normalizeOrders();save(true);renderAll();
-}
-function removeWish(id){
- if(!ensureCloudEdit())return;
- if(!state.wish[id]&&!state.wishOrder.includes(id))return;
- delete state.wish[id];
- state.removedWish[id]=Date.now(); // Persist a tombstone to prevent stale snapshots resurrecting a deleted wishlist entry.
- state.wishOrder=state.wishOrder.filter(x=>x!==id);
- if(!state.owned[id])state.binderOrder=state.binderOrder.filter(x=>x!==id);
- normalizeOrders();save(true);renderAll();toast('הקלף הוסר מרשימת המשאלות ונשלח למחיקה בענן.');
-}
-function toggleWish(id){
- if(!ensureCloudEdit())return;
- if(state.owned[id]){toast('הקלף כבר נמצא באוסף שלך');return;}
- if(state.wish[id]){removeWish(id);return;}
- state.wish[id]=true;delete state.removedWish[id];
- normalizeOrders();save(true);renderAll();
-}
-function updatePurchasePrice(id){
- if(!ensureCloudEdit()){showModal(id);return;}
- const amountField=$('modalPurchaseAmount'), currencyField=$('modalPurchaseCurrency');
- const raw=String(amountField.value||'').trim().replace(',','.');
- if(raw===''){delete state.purchasePrices[id];save();return;}
- const amount=Number(raw);
- if(!Number.isFinite(amount)||amount<0||amount>1000000000){toast('הכנס סכום רכישה תקין');return;}
- const currency=['ILS','EUR','USD'].includes(currencyField.value)?currencyField.value:'ILS';
- state.purchasePrices[id]={amount:Math.round(amount*100)/100,currency};
- save();
-}
+const {toggleOwned,removeWish,toggleWish,updatePurchasePrice}=window.VintageCardActions.create({state,$,ensureCloudEdit,normalizeOrders,save,renderAll,toast,showModal:id=>showModal(id)});
 function showModal(id){const c=state.cards.find(c=>c.id===id);if(!c)return;const s=MAP.get(c.set);$('modalContent').innerHTML=`<div class="modal-main"><div><img class="modal-img" src="${esc(c.large)}" alt="${esc(c.name)}"></div><div class="modal-data"><div class="eyebrow" style="color:#697997;letter-spacing:.5px">${esc(s.name)} · ${s.year}</div><h3>${esc(c.name)}</h3><div class="card-sub">#${esc(cardNumber(c))}</div><p class="modal-rarity-only">${rarityHtml(c)}</p><div class="modal-own-row">
   <button type="button" class="btn ${state.owned[c.id]?'':'primary'}" id="modalOwned">${state.owned[c.id]?'✓ יש לי — הסר':'✓ יש לי'}</button>
   ${!state.owned[c.id]?`<button type="button" class="btn" id="modalWish">${state.wish[c.id]?'★ Wishlist':'☆ Wishlist'}</button>`:''}
