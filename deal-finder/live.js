@@ -8,7 +8,7 @@
  const $=id=>document.getElementById(id);
  const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const money=v=>{if(!v || !Number.isFinite(Number(v.value)) || !/^[A-Z]{3}$/.test(String(v.currency)))return '—';try{return new Intl.NumberFormat('en-US',{style:'currency',currency:v.currency,maximumFractionDigits:2}).format(Number(v.value));}catch(_){return String(v.value)+' '+String(v.currency)}};
- const state={endpoint:DEFAULT_WORKER_URL,status:'setup',error:'',items:[],searched:0,done:false,paused:false,loading:false,seen:new Set(),fetchedAt:null,errors:[],visibleCount:40,scanTotal:0,lastScanAt:0,gradeOverrides:new Map(),conditionDetails:new Map(),conditionLoading:new Set()};
+ const state={endpoint:DEFAULT_WORKER_URL,status:'setup',error:'',items:[],searched:0,done:false,paused:false,loading:false,seen:new Set(),fetchedAt:null,errors:[],visibleCount:40,scanTotal:0,lastScanAt:0,gradeOverrides:new Map(),conditionDetails:new Map(),conditionLoading:new Set(),lastRenderedOrder:[],preserveGradeOrder:false};
  const BATCH_SIZE=4;
  const BATCH_DELAY_MS=500;
  const SCAN_TTL_MS=30*60*1000;
@@ -41,6 +41,7 @@
  }catch(_){}
  const GRADES=['NM','LP','MP','HP','DMG'];
  const gradeRank={NM:0,LP:1,MP:2,HP:3,DMG:4};
+ const isArtCase=title=>/\bart[\s_-]*cases?\b/i.test(String(title||''));
  const japaneseTitle=title=>/[\u3040-\u30ff\u3400-\u9fff]/u.test(String(title||''))||/\b(?:japanese|japanisch\w*|jpn|jap|japonais\w*|japon[eé]s\w*|japan\s+(?:edition|version|print|language|import|card))\b/i.test(String(title||''));
  const usdMoney=value=>typeof value==='number'&&Number.isFinite(value)?new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:2}).format(value):'—';
  page.querySelector('.collection-heading').after(ui);
@@ -132,7 +133,7 @@
   $('liveFilterCount').textContent=activeFilters?'('+activeFilters+' פעילים)':'';
   let enriched=state.items.map(item=>({item,card:lookup.get(item.cardId),score:evaluation(item,lookup.get(item.cardId))}))
    .filter(({item,score})=>{
-    if(japaneseTitle(item.title))return false;
+    if(japaneseTitle(item.title)||isArtCase(item.title))return false;
     if(score.verification.status==='rejected')return false;
     if(!showReview&&score.verification.status!=='strong')return false;
     if(type!=='all'&&type!==(item.format||'AUCTION'))return false;
@@ -167,6 +168,13 @@
    if(y===null)return -1;
    return (sort==='shipping'?x-y:y-x)||b.item.matchConfidence-a.item.matchConfidence;
   });
+  // Changing the comparison grade is not a request to reorder the results.
+  // Retain the listing's position even if the new discount would put it past page 1.
+  if(state.preserveGradeOrder){
+   const positions=new Map(state.lastRenderedOrder.map((key,index)=>[key,index]));
+   enriched.sort((a,b)=>(positions.get(keyFor(a.item))??Infinity)-(positions.get(keyFor(b.item))??Infinity)||0);
+  }
+  state.lastRenderedOrder=enriched.map(({item})=>keyFor(item));
   const strongCount=enriched.filter(x=>x.score.verification.status==='strong').length;
   const reviewCount=enriched.length-strongCount;
   $('liveCount').textContent='מציג '+Math.min(state.visibleCount,enriched.length)+' מתוך '+enriched.length+' מודעות · '+strongCount+' התאמות חזקות · '+reviewCount+' דורשות אימות'+(activeFilters?' · סינון פעיל':'');
@@ -281,6 +289,8 @@
    state.fetchedAt=null;
    state.lastScanAt=0;
    // Keep manual grade selections and fetched seller data across refreshes of the same listings.
+   state.preserveGradeOrder=false;
+   state.lastRenderedOrder=[];
    state.visibleCount=PAGE_SIZE;
   }
   if(!scanCards.length){
@@ -356,8 +366,8 @@
  $('liveReload').addEventListener('click',()=>scanAll(true));
  $('liveMore').addEventListener('click',()=>state.loading?pauseScan():scanAll(false));
  $('liveShowMore').addEventListener('click',()=>{state.visibleCount+=PAGE_SIZE;render()});
- $('liveSort').addEventListener('change',()=>{state.visibleCount=PAGE_SIZE;render()});
- $('liveOnlyShipping').addEventListener('change',()=>{state.visibleCount=PAGE_SIZE;render()});
+ $('liveSort').addEventListener('change',()=>{state.preserveGradeOrder=false;state.visibleCount=PAGE_SIZE;render()});
+ $('liveOnlyShipping').addEventListener('change',()=>{state.preserveGradeOrder=false;state.visibleCount=PAGE_SIZE;render()});
  $('livePostal').addEventListener('change',()=>{
   const value=$('livePostal').value.trim();
   if(value&&!/^[0-9]{7}$/.test(value)){state.error='נא להזין מיקוד ישראלי בן 7 ספרות';state.paused=true;render();return}
@@ -366,6 +376,7 @@
   if(state.status==='ready')scanAll(true);
  });
  function filtersChanged(){
+  state.preserveGradeOrder=false;
   state.visibleCount=PAGE_SIZE;
   render();
  }
@@ -377,6 +388,7 @@
   $('liveIncludeUnknown').checked=true;
   $('liveShowReview').checked=true;
   $('liveOnlyShipping').checked=false;
+  state.preserveGradeOrder=false;
   state.visibleCount=PAGE_SIZE;
   render();
  });
@@ -385,6 +397,7 @@
   if(!select)return;
   const key=select.dataset.itemKey;
   if(!GRADES.includes(select.value))return;
+  state.preserveGradeOrder=true;
   state.gradeOverrides.set(key,select.value);
   render();
  });
