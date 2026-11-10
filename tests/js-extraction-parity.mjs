@@ -198,7 +198,7 @@ if(updated.includes('js/card-actions.js')){
   const last=baseline.indexOf('function showModal(id){',first);
   assert.ok(first>=0&&last>first,'Card actions source anchors missing');
   const moved=baseline.slice(first,last);
-  const call='const {toggleOwned,removeWish,toggleWish,updatePurchasePrice}=window.VintageCardActions.create({state,$,ensureCloudEdit,normalizeOrders,save,renderAll,toast,showModal:id=>showModal(id)});\n';
+  const call='const {toggleOwned,removeWish,toggleWish,updatePurchasePrice}=window.VintageCardActions.create({state,$,ensureCloudEdit,normalizeOrders:()=>normalizeOrders(),save,renderAll,toast,showModal:id=>showModal(id)});\n';
   assert.equal(current,baseline.slice(0,first)+call+baseline.slice(last),
     'Card actions extraction modified unrelated binder code');
   assert.equal(actions,"(()=>{'use strict';\n"+
