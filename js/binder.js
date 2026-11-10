@@ -3,33 +3,6 @@
 const ROOT='https://raw.githubusercontent.com/PokemonTCG/pokemon-tcg-data/master/cards/en/';
 const {SETS,OFFLINE_PACKS}=window.VintageCatalogData;
 const MAP=new Map(SETS.map(s=>[s.id,s]));const BASE_COUNT=SETS.filter(s=>s.group!=='Extra').reduce((n,s)=>n+s.count,0);
-function embeddedCards(){
- const cards=[]; const rarityNames={H:'Rare Holo',S:'Rare Shining',R:'Rare',U:'Uncommon',C:'Common',E:'',P:'Promo'};
- for(const set of SETS){
-  const pack=OFFLINE_PACKS[set.id];if(!pack)continue;
-  const names=pack[0].split('|');let i=0;
-  for(const spec of pack[1].split(';')){
-   const [endString,type]=spec.split(':');const end=Number(endString);
-   for(;i<end;i++){
-    const number=i+1;let kind=number<=pack[2]?'Pokémon':pack[3]!==null&&number>=pack[3]?'Energy':'Trainer';
-    if(set.id==='base5'&&[17,80,81,82].includes(number))kind='Energy';
-    if(set.id==='base1'&&number===96)kind='Energy';
-    if(set.id==='neo1'&&[19,104,105].includes(number))kind='Energy';
-    if(set.id==='neo4'&&number===16)kind='Energy';
-    if(set.id==='base6'&&[100,101].includes(number))kind='Energy';
-    if(set.id==='basep'&&[16,40,41,42].includes(number))kind='Trainer';
-    let finish=type==='H'?'holo':type==='S'?'shining':type==='P'?'unknown':'normal';
-    if(set.id==='si1'&&[1,4,7,11,14,17].includes(number))finish='holo';
-    const total=set.id==='basep'?null:set.id==='base5'?82:set.id==='neo3'?64:set.id==='neo4'?105:set.count;
-    cards.push({id:set.id+'-'+number,set:set.id,name:names[i],number:String(number),total,rarity:set.id==='base5'&&number===83?'Rare Secret':rarityNames[type],finish,kind,image:'https://images.pokemontcg.io/'+set.id+'/'+number+'.png',large:'https://images.pokemontcg.io/'+set.id+'/'+number+'_hires.png'});
-   }
-  }
-  if(names.length!==i)throw Error('Incomplete embedded set '+set.id);
- }
- cards.push({id:'movie2000-ancient-mew',set:'movie2000',name:'Ancient Mew',number:'ללא מספר',total:null,rarity:'Movie Promo Holo',finish:'holo',kind:'Pokémon',image:'assets/ancient-mew.jpg',large:'assets/ancient-mew.jpg'});
- return cards;
-}
-
 const $=id=>document.getElementById(id);
 const state={cards:[],owned:{},wish:{},removedWish:{},conditions:{},notes:{},purchasePrices:{},firstEdition:{},ownedAddedAt:{},shipments:[],binderExcluded:{},binderOrder:[],wishOrder:[],binderIncludeWish:true,binderPage:0,view:'catalog',active:'all',extras:false,holoOnly:false,pokemonOnly:false,status:'all',sort:'num',query:'',limit:96,ready:false,failures:[]};
 function normalizeShipment(raw){
@@ -72,20 +45,7 @@ function simplify(raw,set){const n=String(raw.number||'');const kind=raw.superty
  return {id:cardid,set:set.id,name:raw.name||'',number:n,total:set.id==='basep'?null:set.id==='base5'?82:set.id==='neo3'?64:set.id==='neo4'?105:set.count,rarity:rarity||'—',finish,kind,image:raw.images?.small||`https://images.pokemontcg.io/${set.id}/${n}.png`,large:raw.images?.large||`https://images.pokemontcg.io/${set.id}/${n}_hires.png`};}
 function cardNumber(c){return c.number+(c.total?'/'+c.total:'')}
 function normalNum(x){const n=parseInt(x.number,10);return Number.isFinite(n)?n:9999;}
-function loadEmbeddedData(){
- try{
-  state.cards=embeddedCards();
-  if(state.cards.length!==1252)throw Error('Unexpected card count: '+state.cards.length);
-  state.failures=[];state.ready=true;
-  $('fetchStatus').hidden=true;
-  renderAll();
-  document.documentElement.classList.add('js-ready');
- }catch(error){
-  console.error('Could not initialize offline catalog',error);
-  $('fetchStatus').hidden=false;$('fetchStatus').classList.add('error');
-  $('fetchStatus').textContent='אירעה תקלה בטעינת הרשימה המובנית: '+error.message;
- }
-}
+const {loadEmbeddedData}=window.VintageCatalogLoader.create({SETS,OFFLINE_PACKS,state,$,renderAll:()=>renderAll()});
 const {catalog,relevantSetCards,showHolo,searchKey,searchText,visible,groups,renderSide,renderStats,rarityHtml,cardHTML,renderCards,renderAll}=window.VintageCatalogUI.create({state,MAP,SETS,$,esc,nf,cardNumber,normalNum,renderCollections:()=>renderCollections()});
 function toast(msg){const e=$('toast');e.textContent=msg;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',2800)}
 const {toggleOwned,removeWish,toggleWish,updatePurchasePrice}=window.VintageCardActions.create({state,$,ensureCloudEdit,normalizeOrders:()=>normalizeOrders(),save,renderAll,toast,showModal:id=>showModal(id)});
