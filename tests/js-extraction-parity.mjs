@@ -20,9 +20,14 @@ for (let i = 0; i < paths.length; i++) {
   const file = paths[i];
   const source = readFileSync(file, 'utf8');
   assert.ok(source.length > 100, file + ' is unexpectedly empty');
-  const tag = '<script' + (i === 3 ? ' type="module"' : '') +
-    ' src="' + file + '?v=20261109-js1"></script>';
-  assert.ok(restored.includes(tag), file + ' is not included in index');
+  // Read the deployed query version from HTML so cache-busting a script
+  // does not invalidate behavioral regression tests.
+  const prefix = '<script' + (i === 3 ? ' type="module"' : '') +
+    ' src="' + file + '?v=';
+  const start = restored.indexOf(prefix);
+  const end = restored.indexOf('</script>', start);
+  assert.ok(start >= 0 && end > start, file + ' is not included in index');
+  const tag = restored.slice(start, end + '</script>'.length);
   if (extractionPR) {
     assert.equal(source, oldScripts[i][2], file + ' differs from original inline source');
     restored = restored.replace(tag, () => oldScripts[i][0]);
@@ -79,7 +84,7 @@ if (updated.includes('js/shipments.js')) {
       'Shipment extraction changed any other binder behavior');
   }
   const shipmentsTag = '<script src="js/shipments.js?v=20261109-ship1"></script>';
-  const binderTag = '<script src="js/binder.js?v=20261109-js1"></script>';
+  const binderTag = '<script src="js/binder.js?v=20261110-refactor3"></script>';
   assert.ok(updated.indexOf(shipmentsTag) > 0 && updated.indexOf(shipmentsTag) < updated.indexOf(binderTag),
     'Shipment controller must be loaded before binder.js');
 }
@@ -105,7 +110,7 @@ if (updated.includes('js/collection-views.js')) {
       'The extracted collection renderer differs from old binder code');
   }
   const viewScript='<script src="js/collection-views.js?v=20261109-views1"></script>';
-  const binderScript='<script src="js/binder.js?v=20261109-js1"></script>';
+  const binderScript='<script src="js/binder.js?v=20261110-refactor3"></script>';
   assert.ok(updated.indexOf(viewScript)>0 && updated.indexOf(viewScript)<updated.indexOf(binderScript),
     'View renderer script must load before binder');
 }
@@ -128,7 +133,7 @@ if (updated.includes('js/owned-cards.js')) {
       'Owned-cards extraction changed binder logic beyond this exact block');
   }
   const ownedTag='<script src="js/owned-cards.js?v=20261109-owned1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261109-js1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261110-refactor3"></script>';
   assert.ok(updated.indexOf(ownedTag)>0&&updated.indexOf(ownedTag)<updated.indexOf(binderTag),
     'Owned cards controller must load before binder');
 }
@@ -151,7 +156,7 @@ if (updated.includes('js/collection-drag.js')) {
       'Drag extraction modified unrelated collection logic or listeners');
   }
   const dragTag='<script src="js/collection-drag.js?v=20261109-drag1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261109-js1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261110-refactor3"></script>';
   assert.ok(updated.indexOf(dragTag)>0&&updated.indexOf(dragTag)<updated.indexOf(binderTag),
     'Drag module must be available before the binder controller');
 }
@@ -185,7 +190,7 @@ if (updated.includes('js/collection-ordering.js')) {
     assert.equal(ordering,module,'Collection order implementation was changed during extraction');
   }
   const tag='<script src="js/collection-ordering.js?v=20261109-order1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261109-js1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261110-refactor3"></script>';
   assert.ok(updated.indexOf(tag)>0&&updated.indexOf(tag)<updated.indexOf(binderTag),
     'Collection order module must load before binder');
 }
@@ -213,7 +218,7 @@ if(updated.includes('js/card-actions.js')){
       'Extracted card action function bodies changed unexpectedly');
   }
   const actionTag='<script src="js/card-actions.js?v=20261110-actions1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261109-js1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261110-refactor3"></script>';
   assert.ok(updated.indexOf(actionTag)>0&&updated.indexOf(actionTag)<updated.indexOf(binderTag),
     'Card actions script must load before binder');
 }
@@ -239,7 +244,7 @@ if(updated.includes('js/card-details.js')){
     assert.equal(modal,expected,'Card details dialog markup or handlers changed');
   }
   const modalTag='<script src="js/card-details.js?v=20261110-details1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261109-js1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261110-refactor3"></script>';
   assert.ok(updated.indexOf(modalTag)>0&&updated.indexOf(modalTag)<updated.indexOf(binderTag),
     'Details module must load before binder');
 }
@@ -266,7 +271,7 @@ if(updated.includes('js/catalog-ui.js')){
     assert.equal(movedModule,expected,'Catalog UI function bodies changed');
   }
   const uiTag='<script src="js/catalog-ui.js?v=20261110-catui1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261109-js1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261110-refactor3"></script>';
   assert.ok(updated.indexOf(uiTag)>0&&updated.indexOf(uiTag)<updated.indexOf(binderTag),
     'Catalog UI must load before binder app');
 }
@@ -275,21 +280,29 @@ if(updated.includes('js/catalog-loader.js')){
   const before=execFileSync('git',['show','origin/main:js/binder.js'],{encoding:'utf8'});
   const after=readFileSync('js/binder.js','utf8');
   const loader=readFileSync('js/catalog-loader.js','utf8');
-  const a=before.indexOf('function embeddedCards(){');
-  const b=before.indexOf('const $=id',a);
-  const d=before.indexOf('function loadEmbeddedData(){');
-  const e=before.indexOf('const {catalog',d);
-  assert.ok(a>=0&&b>a&&d>b&&e>d,'Offline catalog loader boundaries missing');
-  const embedded=before.slice(a,b),load=before.slice(d,e);
   const call='const {loadEmbeddedData}=window.VintageCatalogLoader.create({SETS,OFFLINE_PACKS,state,$,renderAll:()=>renderAll()});\n';
-  const expected=before.slice(0,a)+before.slice(b,d)+call+before.slice(e);
-  assert.equal(after,expected,'Loader extraction changed unrelated binder code');
-  const expectedModule="(()=>{'use strict';\n"+
-    'window.VintageCatalogLoader={create({SETS,OFFLINE_PACKS,state,$,renderAll}){\n'+
-    embedded+load+'\nreturn {loadEmbeddedData};\n}};\n})();\n';
-  assert.equal(loader,expectedModule,'Offline dataset decoder or bootstrap logic changed');
+  assert.ok(after.includes(call),'Catalog loader is no longer initialized by binder');
+  if(before.includes(call)){
+    // Already in main: compare the module itself so later binder refactors
+    // need not reconstruct functions that were previously extracted.
+    assert.equal(loader,execFileSync('git',['show','origin/main:js/catalog-loader.js'],
+      {encoding:'utf8'}),'Previously extracted catalog loader changed unexpectedly');
+  }else{
+    const a=before.indexOf('function embeddedCards(){');
+    const b=before.indexOf('const $=id',a);
+    const d=before.indexOf('function loadEmbeddedData(){');
+    const e=before.indexOf('const {catalog',d);
+    assert.ok(a>=0&&b>a&&d>b&&e>d,'Offline catalog loader boundaries missing');
+    const embedded=before.slice(a,b),load=before.slice(d,e);
+    const expected=before.slice(0,a)+before.slice(b,d)+call+before.slice(e);
+    assert.equal(after,expected,'Loader extraction changed unrelated binder code');
+    const expectedModule="(()=>{'use strict';\n"+
+      'window.VintageCatalogLoader={create({SETS,OFFLINE_PACKS,state,$,renderAll}){\n'+
+      embedded+load+'\nreturn {loadEmbeddedData};\n}};\n})();\n';
+    assert.equal(loader,expectedModule,'Offline dataset decoder or bootstrap logic changed');
+  }
   const loaderTag='<script src="js/catalog-loader.js?v=20261110-loader1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261109-js1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261110-refactor3"></script>';
   assert.ok(updated.indexOf(loaderTag)>0&&updated.indexOf(loaderTag)<updated.indexOf(binderTag),
     'Catalog loader must load before binder entrypoint');
 }
