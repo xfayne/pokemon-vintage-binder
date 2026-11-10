@@ -185,6 +185,17 @@ try {
     assert.equal(boot.writes,0,'Loading from cloud must not rewrite user data');
     assert.equal(boot.cache,null,'Old browser cache was not purged');
 
+    // Wishlist clipboard uses the same prioritized card order as the UI.
+    await page.evaluate(()=>{
+      Object.defineProperty(navigator,'clipboard',{configurable:true,value:{
+        writeText:async text=>{window.__copiedWishlist=text;}
+      }});
+      document.querySelector('#copyWishlist').click();
+    });
+    await page.waitForFunction(()=>typeof window.__copiedWishlist==='string');
+    assert.match(await page.evaluate(()=>window.__copiedWishlist),/Flareon/);
+
+
     // Exercise the real cloud save pipeline with mutual-exclusion and ordering.
     await page.evaluate(()=>{
       const p=window.VintageBinder.getProgress();
@@ -260,6 +271,20 @@ try {
       assert.deepEqual(restored[key],beforeImport[key],'Backup roundtrip lost '+key);
     }
     await page.waitForFunction(()=>window.__cloudTest.writes.length===3);
+
+    // Cancelling import must not overwrite the collection or trigger a cloud save.
+    const beforeCancelled=await getState(page);
+    const writesBeforeCancelled=await page.evaluate(()=>window.__cloudTest.writes.length);
+    await page.evaluate(()=>{
+      window.__originalConfirm=window.confirm;
+      window.confirm=()=>{window.__cancelledImport=true;return false;};
+    });
+    await upload(page,'declined.json',{app:'pokemon-vintage-binder',owned:{'base2-4':true}});
+    await page.waitForFunction(()=>window.__cancelledImport===true);
+    assert.deepEqual(await getState(page),beforeCancelled,'Declined import modified collection');
+    assert.equal(await page.evaluate(()=>window.__cloudTest.writes.length),
+      writesBeforeCancelled,'Declined import triggered a cloud write');
+    await page.evaluate(()=>{window.confirm=window.__originalConfirm;});
 
     // Excel-compatible UTF-8 CSV includes the exact existing columns.
     const csv=await clickDownload(page,'exportCSV');

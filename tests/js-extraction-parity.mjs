@@ -84,7 +84,7 @@ if (updated.includes('js/shipments.js')) {
       'Shipment extraction changed any other binder behavior');
   }
   const shipmentsTag = '<script src="js/shipments.js?v=20261109-ship1"></script>';
-  const binderTag = '<script src="js/binder.js?v=20261110-state1"></script>';
+  const binderTag = '<script src="js/binder.js?v=20261110-backup1"></script>';
   assert.ok(updated.indexOf(shipmentsTag) > 0 && updated.indexOf(shipmentsTag) < updated.indexOf(binderTag),
     'Shipment controller must be loaded before binder.js');
 }
@@ -110,7 +110,7 @@ if (updated.includes('js/collection-views.js')) {
       'The extracted collection renderer differs from old binder code');
   }
   const viewScript='<script src="js/collection-views.js?v=20261109-views1"></script>';
-  const binderScript='<script src="js/binder.js?v=20261110-state1"></script>';
+  const binderScript='<script src="js/binder.js?v=20261110-backup1"></script>';
   assert.ok(updated.indexOf(viewScript)>0 && updated.indexOf(viewScript)<updated.indexOf(binderScript),
     'View renderer script must load before binder');
 }
@@ -133,7 +133,7 @@ if (updated.includes('js/owned-cards.js')) {
       'Owned-cards extraction changed binder logic beyond this exact block');
   }
   const ownedTag='<script src="js/owned-cards.js?v=20261109-owned1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261110-state1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261110-backup1"></script>';
   assert.ok(updated.indexOf(ownedTag)>0&&updated.indexOf(ownedTag)<updated.indexOf(binderTag),
     'Owned cards controller must load before binder');
 }
@@ -156,7 +156,7 @@ if (updated.includes('js/collection-drag.js')) {
       'Drag extraction modified unrelated collection logic or listeners');
   }
   const dragTag='<script src="js/collection-drag.js?v=20261109-drag1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261110-state1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261110-backup1"></script>';
   assert.ok(updated.indexOf(dragTag)>0&&updated.indexOf(dragTag)<updated.indexOf(binderTag),
     'Drag module must be available before the binder controller');
 }
@@ -190,7 +190,7 @@ if (updated.includes('js/collection-ordering.js')) {
     assert.equal(ordering,module,'Collection order implementation was changed during extraction');
   }
   const tag='<script src="js/collection-ordering.js?v=20261109-order1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261110-state1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261110-backup1"></script>';
   assert.ok(updated.indexOf(tag)>0&&updated.indexOf(tag)<updated.indexOf(binderTag),
     'Collection order module must load before binder');
 }
@@ -218,7 +218,7 @@ if(updated.includes('js/card-actions.js')){
       'Extracted card action function bodies changed unexpectedly');
   }
   const actionTag='<script src="js/card-actions.js?v=20261110-actions1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261110-state1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261110-backup1"></script>';
   assert.ok(updated.indexOf(actionTag)>0&&updated.indexOf(actionTag)<updated.indexOf(binderTag),
     'Card actions script must load before binder');
 }
@@ -244,7 +244,7 @@ if(updated.includes('js/card-details.js')){
     assert.equal(modal,expected,'Card details dialog markup or handlers changed');
   }
   const modalTag='<script src="js/card-details.js?v=20261110-details1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261110-state1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261110-backup1"></script>';
   assert.ok(updated.indexOf(modalTag)>0&&updated.indexOf(modalTag)<updated.indexOf(binderTag),
     'Details module must load before binder');
 }
@@ -271,7 +271,7 @@ if(updated.includes('js/catalog-ui.js')){
     assert.equal(movedModule,expected,'Catalog UI function bodies changed');
   }
   const uiTag='<script src="js/catalog-ui.js?v=20261110-catui1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261110-state1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261110-backup1"></script>';
   assert.ok(updated.indexOf(uiTag)>0&&updated.indexOf(uiTag)<updated.indexOf(binderTag),
     'Catalog UI must load before binder app');
 }
@@ -302,7 +302,7 @@ if(updated.includes('js/catalog-loader.js')){
     assert.equal(loader,expectedModule,'Offline dataset decoder or bootstrap logic changed');
   }
   const loaderTag='<script src="js/catalog-loader.js?v=20261110-loader1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261110-state1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261110-backup1"></script>';
   assert.ok(updated.indexOf(loaderTag)>0&&updated.indexOf(loaderTag)<updated.indexOf(binderTag),
     'Catalog loader must load before binder entrypoint');
 }
@@ -311,7 +311,7 @@ if(updated.includes('js/collection-state.js')){
   const module=readFileSync('js/collection-state.js','utf8');
   assert.ok(module.includes('window.VintageCollectionState={create('),'Missing collection-state factory');
   const stateTag='<script src="js/collection-state.js?v=20261110-state1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261110-state1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261110-backup1"></script>';
   assert.ok(updated.indexOf(stateTag)>0 && updated.indexOf(stateTag)<updated.indexOf(binderTag),
     'Collection state must load before binder');
   assert.ok(readFileSync('js/binder.js','utf8').includes('window.VintageCollectionState.create('),
@@ -336,6 +336,35 @@ if(updated.includes('js/collection-state.js')){
     // On subsequent refactors, the state module already exists in main.
     assert.equal(module,execFileSync('git',['show','origin/main:js/collection-state.js'],
       {encoding:'utf8'}),'Extracted collection state unexpectedly changed');
+  }
+}
+// Preserve the exact backup/CSV/import behavior when moving it into a module.
+if(updated.includes('js/collection-backup.js')){
+  const module=readFileSync('js/collection-backup.js','utf8');
+  const before=execFileSync('git',['show','origin/main:js/binder.js'],{encoding:'utf8'});
+  const after=readFileSync('js/binder.js','utf8');
+  const factory='const {backup,copyWishlist,exportCSV,importBackup}=window.VintageCollectionBackup.create({state,MAP,cardNumber,toast,getProgress,normalizeOrders:()=>normalizeOrders(),sortedOwnedCards:()=>sortedOwnedCards(),ensureCloudEdit,save,renderAll,normalizeShipment});\n';
+  const start=before.indexOf('function download(content,type,filename){');
+  const backupTag='<script src="js/collection-backup.js?v=20261110-backup1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261110-backup1"></script>';
+  assert.ok(updated.indexOf(backupTag)>0&&updated.indexOf(backupTag)<updated.indexOf(binderTag),
+    'Backup controller must be loaded before binder');
+  assert.ok(after.includes(factory),'Binder backup factory is not wired');
+  if(start>=0){
+    const end=before.indexOf('const {normalizeOrders,binderVisible,binderPageCount,reorder}',start);
+    assert.ok(end>start,'Backup extraction boundary missing');
+    const block=before.slice(start,end);
+    const expected="(()=>{'use strict';\n"+
+      '// JSON backup/restore, owned-card CSV and Wishlist clipboard export.\n'+
+      '// This module does not read/write Firestore directly: changes go through save().\n'+
+      'window.VintageCollectionBackup={create({state,MAP,cardNumber,toast,getProgress,normalizeOrders,sortedOwnedCards,ensureCloudEdit,save,renderAll,normalizeShipment}){\n'+
+      block+'return {backup,copyWishlist,exportCSV,importBackup};\n}};\n})();\n';
+    assert.equal(module,expected,'Backup functions changed during extraction');
+    assert.equal(after,before.slice(0,start)+factory+before.slice(end),
+      'Backup extraction altered unrelated binder logic');
+  } else {
+    assert.equal(module,execFileSync('git',['show','origin/main:js/collection-backup.js'],
+      {encoding:'utf8'}),'Previously extracted backup controller unexpectedly changed');
   }
 }
 const root = process.cwd();
