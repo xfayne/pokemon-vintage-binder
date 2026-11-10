@@ -506,7 +506,7 @@ async function exercise(version, viewport) {
     click('[data-wish="base1-1"]');
     const afterWishRemove=window.VintageBinder.getProgress();
     click('[data-own="base1-1"]');
-    click('[data-preview="base1-1"]');
+    click('#cards [data-preview="base1-1"]');
     const modalOpen=document.querySelector('#modal').open;
     document.querySelector('#modalPurchaseAmount').value='12.50';
     document.querySelector('#modalPurchaseCurrency').value='EUR';
@@ -559,7 +559,7 @@ async function exercise(version, viewport) {
     document.querySelector('[data-view-btn="catalog"]').click();
     document.querySelector('#search').value='';
     document.querySelector('#search').dispatchEvent(new Event('input',{bubbles:true}));
-    const card=document.querySelector('[data-preview="base1-1"]');
+    const card=document.querySelector('#cards [data-preview="base1-1"]');
     if(!card)throw Error('Card details preview entry not found');
     card.click();
     const modal=document.querySelector('#modal');
