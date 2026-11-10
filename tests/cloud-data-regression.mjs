@@ -311,6 +311,49 @@ try {
     assert.equal(await failure.page.evaluate(()=>window.__cloudTest.writes.length),0);
     console.log('PASS cloud failure keeps editing locked and user data untouched');
   } finally { await failure.context.close(); }
+
+  // The public ?share= reader must read only the shared sanitized document,
+  // render ordered pockets, and allow paging without signing in.
+  const shareId='12345678-1234-4234-8234-123456789abc';
+  const publicCards=Array.from({length:11},(_,i)=>({
+    id:'base1-'+(i+1),kind:i===0?'wish':'owned'
+  }));
+  const publicContext=await browser.newContext({
+    viewport:{width:390,height:844},serviceWorkers:'block'
+  });
+  await publicContext.addInitScript(installFakeFirebase,{
+    docs:{['sharedBinders/'+shareId]:{cards:publicCards,includeWish:true,updatedAt:42}},
+    user:null
+  });
+  await publicContext.route('**/*',route=>route.request().url().startsWith(origin)
+    ? route.continue() : route.abort());
+  try {
+    const reader=await publicContext.newPage();
+    const readerErrors=[];
+    reader.on('pageerror',error=>readerErrors.push(error.message));
+    await reader.goto(origin+'/?share='+shareId,{waitUntil:'load'});
+    await reader.waitForFunction(()=>document.querySelectorAll('#readerSpread img').length===9);
+    const first=await reader.evaluate(()=>({
+      enabled:document.body.classList.contains('reader-open'),
+      count:document.querySelectorAll('#readerSpread .reader-pocket').length,
+      wish:document.querySelectorAll('#readerSpread .reader-pocket.wish').length,
+      footer:document.querySelector('#readerFooter').textContent,
+      nextDisabled:document.querySelector('#readerNext').disabled
+    }));
+    assert.equal(first.enabled,true);
+    assert.equal(first.count,9);
+    assert.equal(first.wish,1);
+    assert.equal(first.nextDisabled,false);
+    await reader.locator('#readerNext').click();
+    assert.match(await reader.locator('#readerFooter').textContent(),/2\s*\/\s*2/);
+    assert.equal(await reader.locator('#readerSpread img').count(),2);
+    assert.deepEqual(readerErrors,[]);
+
+    await reader.goto(origin+'/?share=invalid',{waitUntil:'load'});
+    await reader.waitForFunction(()=>!!document.querySelector('#readerSpread .reader-error'));
+    assert.match(await reader.locator('#readerSpread .reader-error').textContent(),/אינו תקין/);
+    console.log('PASS public read-only share viewer and invalid-link handling');
+  } finally { await publicContext.close(); }
 } finally {
   await browser.close();
   await new Promise(resolve=>app.close(resolve));
