@@ -196,19 +196,47 @@ if(updated.includes('js/card-actions.js')){
   const actions=readFileSync('js/card-actions.js','utf8');
   const first=baseline.indexOf('function toggleOwned(id){');
   const last=baseline.indexOf('function showModal(id){',first);
-  assert.ok(first>=0&&last>first,'Card actions source anchors missing');
-  const moved=baseline.slice(first,last);
   const call='const {toggleOwned,removeWish,toggleWish,updatePurchasePrice}=window.VintageCardActions.create({state,$,ensureCloudEdit,normalizeOrders:()=>normalizeOrders(),save,renderAll,toast,showModal:id=>showModal(id)});\n';
-  assert.equal(current,baseline.slice(0,first)+call+baseline.slice(last),
-    'Card actions extraction modified unrelated binder code');
-  assert.equal(actions,"(()=>{'use strict';\n"+
-    'window.VintageCardActions={create({state,$,ensureCloudEdit,normalizeOrders,save,renderAll,toast,showModal}){\n'+
-    moved+'\nreturn {toggleOwned,removeWish,toggleWish,updatePurchasePrice};\n}};\n})();\n',
-    'Extracted card action function bodies changed unexpectedly');
+  if (baseline.includes(call)) {
+    // This module is already on main, so later refactors may legitimately
+    // modify binder.js without changing its extracted card actions.
+    assert.equal(actions,execFileSync('git',['show','origin/main:js/card-actions.js'],
+      {encoding:'utf8'}),'Previously extracted card actions module changed');
+  } else {
+    assert.ok(first>=0&&last>first,'Card actions source anchors missing');
+    const moved=baseline.slice(first,last);
+    assert.equal(current,baseline.slice(0,first)+call+baseline.slice(last),
+      'Card actions extraction modified unrelated binder code');
+    assert.equal(actions,"(()=>{'use strict';\n"+
+      'window.VintageCardActions={create({state,$,ensureCloudEdit,normalizeOrders,save,renderAll,toast,showModal}){\n'+
+      moved+'\nreturn {toggleOwned,removeWish,toggleWish,updatePurchasePrice};\n}};\n})();\n',
+      'Extracted card action function bodies changed unexpectedly');
+  }
   const actionTag='<script src="js/card-actions.js?v=20261110-actions1"></script>';
   const binderTag='<script src="js/binder.js?v=20261109-js1"></script>';
   assert.ok(updated.indexOf(actionTag)>0&&updated.indexOf(actionTag)<updated.indexOf(binderTag),
     'Card actions script must load before binder');
+}
+// Exact relocation of the complete card details template and its event handlers.
+if(updated.includes('js/card-details.js')){
+  const originalBinder=execFileSync('git',['show','origin/main:js/binder.js'],{encoding:'utf8'});
+  const candidate=readFileSync('js/binder.js','utf8');
+  const modal=readFileSync('js/card-details.js','utf8');
+  const start=originalBinder.indexOf('function showModal(id){');
+  const end=originalBinder.indexOf('function download(content',start);
+  assert.ok(start>=0&&end>start,'Card details source boundaries missing');
+  const code=originalBinder.slice(start,end);
+  const call='const {showModal}=window.VintageCardDetails.create({state,MAP,$,esc,cardNumber,rarityHtml,dealAuctionUrl,toggleOwned,toggleWish,ensureCloudEdit,openMovePicker,save,renderCards,updatePurchasePrice});\n';
+  assert.equal(candidate,originalBinder.slice(0,start)+call+originalBinder.slice(end),
+    'Details extraction unexpectedly modified binder code');
+  const expected="(()=>{'use strict';\n"+
+    'window.VintageCardDetails={create({state,MAP,$,esc,cardNumber,rarityHtml,dealAuctionUrl,toggleOwned,toggleWish,ensureCloudEdit,openMovePicker,save,renderCards,updatePurchasePrice}){\n'+
+    code+'\nreturn {showModal};\n}};\n})();\n';
+  assert.equal(modal,expected,'Card details dialog markup or handlers changed');
+  const modalTag='<script src="js/card-details.js?v=20261110-details1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261109-js1"></script>';
+  assert.ok(updated.indexOf(modalTag)>0&&updated.indexOf(modalTag)<updated.indexOf(binderTag),
+    'Details module must load before binder');
 }
 const root = process.cwd();
 const mainAssets = new Map();
@@ -364,6 +392,75 @@ async function exercise(version, viewport) {
   if(version==='updated'&&updated.includes('js/card-actions.js')){
     assert.ok(fetched.some(x=>x.file==='card-actions.js'&&x.status===200),
       'Card actions script did not load');
+  }
+  // Exercise card details interactions with real DOM handlers and in-memory
+  // cloud authorization: condition, 1st edition, owned->wishlist and move to binder.
+  const detailState=await page.evaluate(()=>{
+    window.VintageCloud={canEdit:()=>true,onChange:()=>{}};
+    window.VintageBinder.adoptProgress({owned:{'base1-1':true}});
+    document.querySelector('[data-view-btn="catalog"]').click();
+    document.querySelector('#search').value='';
+    document.querySelector('#search').dispatchEvent(new Event('input',{bubbles:true}));
+    const card=document.querySelector('[data-preview="base1-1"]');
+    if(!card)throw Error('Card details preview entry not found');
+    card.click();
+    const modal=document.querySelector('#modal');
+    const details=document.querySelector('#modalContent');
+    const opening={
+      open:modal.open,
+      title:details.querySelector('h3')?.textContent,
+      ownedButton:!!details.querySelector('#modalOwned'),
+      wishButton:!!details.querySelector('#modalWish'),
+      purchaseFieldVisible:!details.querySelector('#modalPurchaseBox')?.hidden,
+      cardNumber:details.querySelector('.card-sub')?.textContent||''
+    };
+    const condition=details.querySelector('#modalCondition');
+    condition.value='LP';
+    condition.dispatchEvent(new Event('change',{bubbles:true}));
+    const edition=details.querySelector('#modalFirstEdition');
+    edition.checked=true;
+    edition.dispatchEvent(new Event('change',{bubbles:true}));
+    const afterMeta=window.VintageBinder.getProgress();
+    document.querySelector('#modalOwned').click();
+    const afterOwnedOff={
+      owned:!!window.VintageBinder.getProgress().owned['base1-1'],
+      wishActionVisible:!!document.querySelector('#modalWish'),
+      purchaseFieldVisible:!document.querySelector('#modalPurchaseBox')?.hidden
+    };
+    document.querySelector('#modalWish').click();
+    const afterWish={
+      wished:!!window.VintageBinder.getProgress().wish['base1-1'],
+      owned:!!window.VintageBinder.getProgress().owned['base1-1'],
+      canMove:!!document.querySelector('#modalMove')
+    };
+    document.querySelector('#modalMove').click();
+    const afterMove={
+      detailsClosed:!modal.open,
+      binderVisible:!document.querySelector('#binderPage').hidden,
+      targetName:document.querySelector('#binderSelected').textContent
+    };
+    window.VintageCloud={canEdit:()=>false,onChange:()=>{}};
+    return {
+      opening,
+      condition:afterMeta.conditions['base1-1'],
+      firstEdition:!!afterMeta.firstEdition['base1-1'],
+      afterOwnedOff,afterWish,afterMove
+    };
+  });
+  assert.equal(detailState.opening.open,true,'Details modal failed to open');
+  assert.equal(detailState.opening.purchaseFieldVisible,true,'Owned purchase input hidden');
+  assert.equal(detailState.condition,'LP','Condition edit did not persist');
+  assert.equal(detailState.firstEdition,true,'First Edition flag did not persist');
+  assert.equal(detailState.afterOwnedOff.owned,false,'Modal remove-owned failed');
+  assert.equal(detailState.afterOwnedOff.wishActionVisible,true,'Wishlist action missing');
+  assert.equal(detailState.afterOwnedOff.purchaseFieldVisible,false,'Purchase input remained visible');
+  assert.equal(detailState.afterWish.wished,true,'Modal add-wishlist failed');
+  assert.equal(detailState.afterWish.owned,false,'Modal Wishlist/owned exclusivity failed');
+  assert.equal(detailState.afterMove.detailsClosed,true,'Move-to-binder did not close details');
+  assert.equal(detailState.afterMove.binderVisible,true,'Move-to-binder did not navigate');
+  if(version==='updated'&&updated.includes('js/card-details.js')){
+    assert.ok(fetched.some(x=>x.file==='card-details.js'&&x.status===200),
+      'Card details module failed to load');
   }
   // Owned collection regression: sorting, filter, holo counts and price totals.
   // Use a deterministic local price stub; never touch live Firestore or price API.
@@ -608,7 +705,7 @@ async function exercise(version, viewport) {
     }
   }
   await context.close();
-  return {initial,states,filtered,cardActionState,ownedState,collectionState,dragState,normalized,shipmentState,errors};
+  return {initial,states,filtered,cardActionState,detailState,ownedState,collectionState,dragState,normalized,shipmentState,errors};
 }
 try {
   for (const viewport of [{width:390,height:844},{width:1440,height:900}]) {
@@ -618,6 +715,7 @@ try {
     assert.deepEqual(b.states, a.states, 'Navigation changed at '+viewport.width);
     assert.deepEqual(b.filtered, a.filtered, 'Catalog search changed at '+viewport.width);
     assert.deepEqual(b.cardActionState, a.cardActionState, 'Owned/Wishlist actions changed at '+viewport.width);
+    assert.deepEqual(b.detailState, a.detailState, 'Card details conditions or modal controls changed at '+viewport.width);
     assert.deepEqual(b.ownedState, a.ownedState, 'Owned cards sort/filter/value changed at '+viewport.width);
     assert.deepEqual(b.collectionState, a.collectionState, 'Binder/Wishlist interaction changed at '+viewport.width);
     assert.deepEqual(b.dragState, a.dragState, 'Pointer/touch drag behavior differs at '+viewport.width);
