@@ -29,6 +29,7 @@ jobs:
           node --check js/collection-drag.js
           node --check js/collection-ordering.js
           node --check js/collection-state.js
+          node --check js/collection-backup.js
           node --check js/card-actions.js
           node --check js/card-details.js
           node --check js/catalog-ui.js
