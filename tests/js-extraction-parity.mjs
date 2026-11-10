@@ -420,6 +420,11 @@ async function exercise(version, viewport) {
   });
   await page.goto(origin + '/' + version + '/', {waitUntil:'load'});
   await page.waitForFunction(() => window.VintageBinder && window.VintageReader && window.VintageMarketPrices);
+  if (version === 'updated') {
+    const initialPlacementClosed = await page.evaluate(() =>
+      !document.querySelector('.binder-place').open);
+    assert.equal(initialPlacementClosed, true, 'Placement must be closed on first load');
+  }
   const initial = await page.evaluate(() => ({
     cards: document.querySelectorAll('#cards .poke-card').length,
     catalogFallback: document.querySelectorAll('.static-card').length,
@@ -885,7 +890,9 @@ async function exercise(version, viewport) {
       const search = document.querySelector('#binderFind');
       const wish = document.querySelector('.binder-controls .switch-line').getBoundingClientRect();
       const reader = document.querySelector('#openReader').getBoundingClientRect();
-      const initialClosed = !panel.open && search.getClientRects().length === 0;
+      const openedFromDetailsEarlier = panel.open;
+      panel.open = false;
+      const collapsedBeforeToggle = !panel.open && search.getClientRects().length === 0;
       const sameRow = Math.abs(wish.top - reader.top) < 4;
       const title = summary.textContent.trim();
       const resetRemoved = !document.querySelector('#binderResetOrder');
@@ -900,9 +907,10 @@ async function exercise(version, viewport) {
         !document.querySelector('#binderPlaceSelected').disabled;
       window.VintageCloud = {canEdit:()=>false,onChange:()=>{}};
       const bookGap = document.querySelector('#binderBook').getBoundingClientRect().top - panel.getBoundingClientRect().bottom;
-      return {initialClosed,sameRow,title,resetRemoved,expanded,collapsedAgain,openedFromCard,bookGap};
+      return {openedFromDetailsEarlier,collapsedBeforeToggle,sameRow,title,resetRemoved,expanded,collapsedAgain,openedFromCard,bookGap};
     });
-    assert.equal(binderUi.initialClosed, true, 'Placement should start collapsed');
+    assert.equal(binderUi.openedFromDetailsEarlier, true, 'Card details move must expand placement');
+    assert.equal(binderUi.collapsedBeforeToggle, true, 'Placement does not collapse');
     assert.equal(binderUi.sameRow, true, 'Binder viewing controls must stay on one row');
     assert.equal(binderUi.title, '📖 העברת קלף למיקום בבינדר');
     assert.equal(binderUi.resetRemoved, true, 'Unused binder sort button is still present');
