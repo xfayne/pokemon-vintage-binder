@@ -30,6 +30,7 @@ jobs:
           node --check js/owned-cards.js
           node --check js/collection-drag.js
           node --check js/collection-ordering.js
+          node --check js/card-actions.js
           node --check js/binder.js
           node --check js/market-prices.js
           node --check js/public-reader.js
