@@ -250,19 +250,48 @@ if(updated.includes('js/catalog-ui.js')){
   const movedModule=readFileSync('js/catalog-ui.js','utf8');
   const start=originalBinder.indexOf('function catalog(){');
   const end=originalBinder.indexOf('function toast(msg)',start);
-  assert.ok(start>=0&&end>start,'Catalog UI source boundaries missing');
-  const block=originalBinder.slice(start,end);
   const call="const {catalog,relevantSetCards,showHolo,searchKey,searchText,visible,groups,renderSide,renderStats,rarityHtml,cardHTML,renderCards,renderAll}=window.VintageCatalogUI.create({state,MAP,SETS,$,esc,nf,cardNumber,normalNum,renderCollections:()=>renderCollections()});\n";
-  assert.equal(candidate,originalBinder.slice(0,start)+call+originalBinder.slice(end),
-    'Catalog extraction unexpectedly changed other app code');
-  const expected="(()=>{'use strict';\n"+
-    'window.VintageCatalogUI={create({state,MAP,SETS,$,esc,nf,cardNumber,normalNum,renderCollections}){\n'+
-    block+'\nreturn {catalog,relevantSetCards,showHolo,searchKey,searchText,visible,groups,renderSide,renderStats,rarityHtml,cardHTML,renderCards,renderAll};\n}};\n})();\n';
-  assert.equal(movedModule,expected,'Catalog UI function bodies changed');
+  if(originalBinder.includes(call)){
+    // The catalog UI extraction has already landed on main.
+    assert.equal(movedModule,execFileSync('git',['show','origin/main:js/catalog-ui.js'],
+      {encoding:'utf8'}),'Previously extracted catalog UI changed');
+  }else{
+    assert.ok(start>=0&&end>start,'Catalog UI source boundaries missing');
+    const block=originalBinder.slice(start,end);
+    assert.equal(candidate,originalBinder.slice(0,start)+call+originalBinder.slice(end),
+      'Catalog extraction unexpectedly changed other app code');
+    const expected="(()=>{'use strict';\n"+
+      'window.VintageCatalogUI={create({state,MAP,SETS,$,esc,nf,cardNumber,normalNum,renderCollections}){\n'+
+      block+'\nreturn {catalog,relevantSetCards,showHolo,searchKey,searchText,visible,groups,renderSide,renderStats,rarityHtml,cardHTML,renderCards,renderAll};\n}};\n})();\n';
+    assert.equal(movedModule,expected,'Catalog UI function bodies changed');
+  }
   const uiTag='<script src="js/catalog-ui.js?v=20261110-catui1"></script>';
   const binderTag='<script src="js/binder.js?v=20261109-js1"></script>';
   assert.ok(updated.indexOf(uiTag)>0&&updated.indexOf(uiTag)<updated.indexOf(binderTag),
     'Catalog UI must load before binder app');
+}
+// The offline set decoder and bootstrap are moved exactly, without editing data.
+if(updated.includes('js/catalog-loader.js')){
+  const before=execFileSync('git',['show','origin/main:js/binder.js'],{encoding:'utf8'});
+  const after=readFileSync('js/binder.js','utf8');
+  const loader=readFileSync('js/catalog-loader.js','utf8');
+  const a=before.indexOf('function embeddedCards(){');
+  const b=before.indexOf('const $=id',a);
+  const d=before.indexOf('function loadEmbeddedData(){');
+  const e=before.indexOf('const {catalog',d);
+  assert.ok(a>=0&&b>a&&d>b&&e>d,'Offline catalog loader boundaries missing');
+  const embedded=before.slice(a,b),load=before.slice(d,e);
+  const call='const {loadEmbeddedData}=window.VintageCatalogLoader.create({SETS,OFFLINE_PACKS,state,$,renderAll:()=>renderAll()});\n';
+  const expected=before.slice(0,a)+before.slice(b,d)+call+before.slice(e);
+  assert.equal(after,expected,'Loader extraction changed unrelated binder code');
+  const expectedModule="(()=>{'use strict';\n"+
+    'window.VintageCatalogLoader={create({SETS,OFFLINE_PACKS,state,$,renderAll}){\n'+
+    embedded+load+'\nreturn {loadEmbeddedData};\n}};\n})();\n';
+  assert.equal(loader,expectedModule,'Offline dataset decoder or bootstrap logic changed');
+  const loaderTag='<script src="js/catalog-loader.js?v=20261110-loader1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261109-js1"></script>';
+  assert.ok(updated.indexOf(loaderTag)>0&&updated.indexOf(loaderTag)<updated.indexOf(binderTag),
+    'Catalog loader must load before binder entrypoint');
 }
 const root = process.cwd();
 const mainAssets = new Map();
@@ -329,6 +358,37 @@ async function exercise(version, viewport) {
     ],
     tabs: [...document.querySelectorAll('[data-view-btn]')].map(b => b.dataset.viewBtn)
   }));
+  // Verify the generated catalog still exposes the same named cards, including
+  // the special Ancient Mew image, in both the baseline and candidate app.
+  const catalogSamples=await page.evaluate(()=>{
+    const ids=['base1-1','base2-3','neo4-105','movie2000-ancient-mew'];
+    return ids.map(id=>window.VintageBinder.getCardInfo(id));
+  });
+  assert.ok(catalogSamples.every(Boolean),'Some known vintage catalog entries are missing');
+  if(version==='updated'&&updated.includes('js/catalog-loader.js')){
+    assert.ok(fetched.some(x=>x.file==='catalog-loader.js'&&x.status===200),
+      'Catalog loader script did not load');
+    const boot=await page.evaluate(()=>{
+      const data=window.VintageCatalogData;
+      const local={cards:[],failures:['stale'],ready:false};
+      let rendered=0;
+      const el={hidden:false,classList:{add(){}},textContent:''};
+      const factory=window.VintageCatalogLoader.create({
+        SETS:data.SETS,OFFLINE_PACKS:data.OFFLINE_PACKS,state:local,
+        $:()=>el,renderAll:()=>{rendered++}
+      });
+      factory.loadEmbeddedData();
+      const ancient=local.cards.find(c=>c.id==='movie2000-ancient-mew');
+      return {
+        count:local.cards.length,unique:new Set(local.cards.map(c=>c.id)).size,
+        ready:local.ready,rendered,ancient:ancient?.image,failures:local.failures.length
+      };
+    });
+    assert.deepEqual(boot,{
+      count:1252,unique:1252,ready:true,rendered:1,
+      ancient:'assets/ancient-mew.jpg',failures:0
+    },'Isolated embedded catalog decoding or bootstrap regressed');
+  }
   const states = {};
   for (const tab of ['catalog','owned','binder','wishlist','shipments','deals']) {
     await page.evaluate(name => document.querySelector('[data-view-btn="' + name + '"]').click(), tab);
@@ -799,13 +859,14 @@ async function exercise(version, viewport) {
     }
   }
   await context.close();
-  return {initial,states,filtered,catalogState,cardActionState,detailState,ownedState,collectionState,dragState,normalized,shipmentState,errors};
+  return {initial,catalogSamples,states,filtered,catalogState,cardActionState,detailState,ownedState,collectionState,dragState,normalized,shipmentState,errors};
 }
 try {
   for (const viewport of [{width:390,height:844},{width:1440,height:900}]) {
     const a = await exercise('original', viewport);
     const b = await exercise('updated', viewport);
     assert.deepEqual(b.initial, a.initial, 'Bootstrap output changed at '+viewport.width);
+    assert.deepEqual(b.catalogSamples, a.catalogSamples, 'Generated vintage card metadata changed at '+viewport.width);
     assert.deepEqual(b.states, a.states, 'Navigation changed at '+viewport.width);
     assert.deepEqual(b.filtered, a.filtered, 'Catalog search changed at '+viewport.width);
     assert.deepEqual(b.catalogState, a.catalogState, 'Catalog filters, group navigation or sorting changed at '+viewport.width);
