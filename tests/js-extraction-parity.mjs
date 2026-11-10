@@ -84,7 +84,7 @@ if (updated.includes('js/shipments.js')) {
       'Shipment extraction changed any other binder behavior');
   }
   const shipmentsTag = '<script src="js/shipments.js?v=20261109-ship1"></script>';
-  const binderTag = '<script src="js/binder.js?v=20261110-backup1"></script>';
+  const binderTag = '<script src="js/binder.js?v=20261110-binderui1"></script>';
   assert.ok(updated.indexOf(shipmentsTag) > 0 && updated.indexOf(shipmentsTag) < updated.indexOf(binderTag),
     'Shipment controller must be loaded before binder.js');
 }
@@ -110,7 +110,7 @@ if (updated.includes('js/collection-views.js')) {
       'The extracted collection renderer differs from old binder code');
   }
   const viewScript='<script src="js/collection-views.js?v=20261109-views1"></script>';
-  const binderScript='<script src="js/binder.js?v=20261110-backup1"></script>';
+  const binderScript='<script src="js/binder.js?v=20261110-binderui1"></script>';
   assert.ok(updated.indexOf(viewScript)>0 && updated.indexOf(viewScript)<updated.indexOf(binderScript),
     'View renderer script must load before binder');
 }
@@ -133,7 +133,7 @@ if (updated.includes('js/owned-cards.js')) {
       'Owned-cards extraction changed binder logic beyond this exact block');
   }
   const ownedTag='<script src="js/owned-cards.js?v=20261109-owned1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261110-backup1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261110-binderui1"></script>';
   assert.ok(updated.indexOf(ownedTag)>0&&updated.indexOf(ownedTag)<updated.indexOf(binderTag),
     'Owned cards controller must load before binder');
 }
@@ -156,7 +156,7 @@ if (updated.includes('js/collection-drag.js')) {
       'Drag extraction modified unrelated collection logic or listeners');
   }
   const dragTag='<script src="js/collection-drag.js?v=20261109-drag1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261110-backup1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261110-binderui1"></script>';
   assert.ok(updated.indexOf(dragTag)>0&&updated.indexOf(dragTag)<updated.indexOf(binderTag),
     'Drag module must be available before the binder controller');
 }
@@ -190,7 +190,7 @@ if (updated.includes('js/collection-ordering.js')) {
     assert.equal(ordering,module,'Collection order implementation was changed during extraction');
   }
   const tag='<script src="js/collection-ordering.js?v=20261109-order1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261110-backup1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261110-binderui1"></script>';
   assert.ok(updated.indexOf(tag)>0&&updated.indexOf(tag)<updated.indexOf(binderTag),
     'Collection order module must load before binder');
 }
@@ -218,7 +218,7 @@ if(updated.includes('js/card-actions.js')){
       'Extracted card action function bodies changed unexpectedly');
   }
   const actionTag='<script src="js/card-actions.js?v=20261110-actions1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261110-backup1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261110-binderui1"></script>';
   assert.ok(updated.indexOf(actionTag)>0&&updated.indexOf(actionTag)<updated.indexOf(binderTag),
     'Card actions script must load before binder');
 }
@@ -244,7 +244,7 @@ if(updated.includes('js/card-details.js')){
     assert.equal(modal,expected,'Card details dialog markup or handlers changed');
   }
   const modalTag='<script src="js/card-details.js?v=20261110-details1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261110-backup1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261110-binderui1"></script>';
   assert.ok(updated.indexOf(modalTag)>0&&updated.indexOf(modalTag)<updated.indexOf(binderTag),
     'Details module must load before binder');
 }
@@ -271,7 +271,7 @@ if(updated.includes('js/catalog-ui.js')){
     assert.equal(movedModule,expected,'Catalog UI function bodies changed');
   }
   const uiTag='<script src="js/catalog-ui.js?v=20261110-catui1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261110-backup1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261110-binderui1"></script>';
   assert.ok(updated.indexOf(uiTag)>0&&updated.indexOf(uiTag)<updated.indexOf(binderTag),
     'Catalog UI must load before binder app');
 }
@@ -302,7 +302,7 @@ if(updated.includes('js/catalog-loader.js')){
     assert.equal(loader,expectedModule,'Offline dataset decoder or bootstrap logic changed');
   }
   const loaderTag='<script src="js/catalog-loader.js?v=20261110-loader1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261110-backup1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261110-binderui1"></script>';
   assert.ok(updated.indexOf(loaderTag)>0&&updated.indexOf(loaderTag)<updated.indexOf(binderTag),
     'Catalog loader must load before binder entrypoint');
 }
@@ -311,7 +311,7 @@ if(updated.includes('js/collection-state.js')){
   const module=readFileSync('js/collection-state.js','utf8');
   assert.ok(module.includes('window.VintageCollectionState={create('),'Missing collection-state factory');
   const stateTag='<script src="js/collection-state.js?v=20261110-state1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261110-backup1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261110-binderui1"></script>';
   assert.ok(updated.indexOf(stateTag)>0 && updated.indexOf(stateTag)<updated.indexOf(binderTag),
     'Collection state must load before binder');
   assert.ok(readFileSync('js/binder.js','utf8').includes('window.VintageCollectionState.create('),
@@ -346,7 +346,7 @@ if(updated.includes('js/collection-backup.js')){
   const factory='const {backup,copyWishlist,exportCSV,importBackup}=window.VintageCollectionBackup.create({state,MAP,cardNumber,toast,getProgress,normalizeOrders:()=>normalizeOrders(),sortedOwnedCards:()=>sortedOwnedCards(),ensureCloudEdit,save,renderAll,normalizeShipment});\n';
   const start=before.indexOf('function download(content,type,filename){');
   const backupTag='<script src="js/collection-backup.js?v=20261110-backup1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261110-backup1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261110-binderui1"></script>';
   assert.ok(updated.indexOf(backupTag)>0&&updated.indexOf(backupTag)<updated.indexOf(binderTag),
     'Backup controller must be loaded before binder');
   assert.ok(after.includes(factory),'Binder backup factory is not wired');
@@ -875,6 +875,41 @@ async function exercise(version, viewport) {
   if(version==='updated'&&updated.includes('js/collection-ordering.js')){
     assert.ok(fetched.some(e=>e.file==='collection-ordering.js'&&e.status===200),
       'Collection ordering script failed to load');
+  }
+  // Intentional binder UI change: the placement form is collapsed until requested,
+  // both viewing controls remain on a single row, and card actions open the panel.
+  if (version === 'updated') {
+    const binderUi = await page.evaluate(() => {
+      const panel = document.querySelector('.binder-place');
+      const summary = panel.querySelector('summary');
+      const search = document.querySelector('#binderFind');
+      const wish = document.querySelector('.binder-controls .switch-line').getBoundingClientRect();
+      const reader = document.querySelector('#openReader').getBoundingClientRect();
+      const initialClosed = !panel.open && search.getClientRects().length === 0;
+      const sameRow = Math.abs(wish.top - reader.top) < 4;
+      const title = summary.textContent.trim();
+      const resetRemoved = !document.querySelector('#binderResetOrder');
+      summary.click();
+      const expanded = panel.open && search.getClientRects().length > 0;
+      summary.click();
+      const collapsedAgain = !panel.open && search.getClientRects().length === 0;
+      window.VintageCloud = {canEdit:()=>true,onChange:()=>{}};
+      const moveButton = document.querySelector('[data-binder-move]');
+      moveButton.click();
+      const openedFromCard = panel.open && search.getClientRects().length > 0 &&
+        !document.querySelector('#binderPlaceSelected').disabled;
+      window.VintageCloud = {canEdit:()=>false,onChange:()=>{}};
+      const bookGap = document.querySelector('#binderBook').getBoundingClientRect().top - panel.getBoundingClientRect().bottom;
+      return {initialClosed,sameRow,title,resetRemoved,expanded,collapsedAgain,openedFromCard,bookGap};
+    });
+    assert.equal(binderUi.initialClosed, true, 'Placement should start collapsed');
+    assert.equal(binderUi.sameRow, true, 'Binder viewing controls must stay on one row');
+    assert.equal(binderUi.title, '📖 העברת קלף למיקום בבינדר');
+    assert.equal(binderUi.resetRemoved, true, 'Unused binder sort button is still present');
+    assert.equal(binderUi.expanded, true, 'Placement details do not expand');
+    assert.equal(binderUi.collapsedAgain, true, 'Placement details do not collapse');
+    assert.equal(binderUi.openedFromCard, true, 'Move action must open the placement panel');
+    assert.ok(binderUi.bookGap < 50, 'Unexpected blank area before binder book');
   }
   // Shipment controller: ownership rendering and edit form must remain identical.
   const shipmentState = await page.evaluate(() => {
