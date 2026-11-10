@@ -252,7 +252,7 @@ if(updated.includes('js/catalog-ui.js')){
   const end=originalBinder.indexOf('function toast(msg)',start);
   assert.ok(start>=0&&end>start,'Catalog UI source boundaries missing');
   const block=originalBinder.slice(start,end);
-  const call="const {catalog,relevantSetCards,showHolo,searchKey,searchText,visible,groups,renderSide,renderStats,rarityHtml,cardHTML,renderCards,renderAll}=window.VintageCatalogUI.create({state,MAP,SETS,$,esc,nf,cardNumber,normalNum,renderCollections:()=>renderCollections()});\\n";
+  const call="const {catalog,relevantSetCards,showHolo,searchKey,searchText,visible,groups,renderSide,renderStats,rarityHtml,cardHTML,renderCards,renderAll}=window.VintageCatalogUI.create({state,MAP,SETS,$,esc,nf,cardNumber,normalNum,renderCollections:()=>renderCollections()});\n";
   assert.equal(candidate,originalBinder.slice(0,start)+call+originalBinder.slice(end),
     'Catalog extraction unexpectedly changed other app code');
   const expected="(()=>{'use strict';\n"+
