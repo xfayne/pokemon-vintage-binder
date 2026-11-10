@@ -893,7 +893,7 @@ async function exercise(version, viewport) {
       const openedFromDetailsEarlier = panel.open;
       panel.open = false;
       const collapsedBeforeToggle = !panel.open && search.getClientRects().length === 0;
-      const sameRow = Math.abs(wish.top - reader.top) < 4;
+      const sameRow = Math.abs((wish.top + wish.height / 2) - (reader.top + reader.height / 2)) < 4;
       const title = summary.textContent.trim();
       const resetRemoved = !document.querySelector('#binderResetOrder');
       summary.click();
