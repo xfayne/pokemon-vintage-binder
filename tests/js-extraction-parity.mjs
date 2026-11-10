@@ -347,6 +347,80 @@ async function exercise(version, viewport) {
     cards: document.querySelectorAll('#cards .poke-card').length,
     search: document.querySelector('#search').value
   }));
+  // Exercise the real pointer event listeners, not the reorder buttons.
+  // document.elementFromPoint is overridden only to make the drop target
+  // deterministic under both 390px and 1440px viewports.
+  const dragState = await page.evaluate(async () => {
+    function seed() {
+      window.VintageBinder.adoptProgress({
+        owned:{'base1-1':true},
+        wish:{'base2-3':true,'base2-4':true},
+        wishOrder:['base2-3','base2-4'],
+        binderOrder:['base1-1','base2-3','base2-4']
+      });
+      window.VintageCloud={canEdit:()=>true,onChange:()=>{}};
+      document.querySelector('[data-view-btn="wishlist"]').click();
+    }
+    const orders=()=>window.VintageBinder.getProgress().wishOrder;
+    seed();
+    const dragFrom=document.querySelector('.wish-item[data-order-index="0"]');
+    const dropTo=document.querySelector('.wish-item[data-order-index="1"]');
+    const original=document.elementFromPoint.bind(document);
+    document.elementFromPoint=()=>dropTo;
+    try {
+      dragFrom.dispatchEvent(new PointerEvent('pointerdown',{
+        bubbles:true,pointerId:301,pointerType:'mouse',button:0,clientX:40,clientY:120
+      }));
+      document.dispatchEvent(new PointerEvent('pointermove',{
+        bubbles:true,pointerId:301,pointerType:'mouse',button:0,clientX:90,clientY:190
+      }));
+      document.dispatchEvent(new PointerEvent('pointerup',{
+        bubbles:true,pointerId:301,pointerType:'mouse',button:0,clientX:90,clientY:190
+      }));
+    } finally {
+      document.elementFromPoint=original;
+    }
+    const afterPointer=orders();
+    const noGhostAfterPointer=!document.querySelector('.drag-ghost,.drag-origin');
+    seed();
+    const touchFrom=document.querySelector('.wish-item[data-order-index="0"]');
+    const touchTo=document.querySelector('.wish-item[data-order-index="1"]');
+    const originalTouch=document.elementFromPoint.bind(document);
+    document.elementFromPoint=()=>touchTo;
+    const touch=(target,x,y)=>new Touch({
+      identifier:402,target,clientX:x,clientY:y,pageX:x,pageY:y,screenX:x,screenY:y
+    });
+    const begin=touch(touchFrom,40,160),move=touch(touchFrom,90,210);
+    try {
+      touchFrom.dispatchEvent(new TouchEvent('touchstart',{bubbles:true,cancelable:true,
+        touches:[begin],targetTouches:[begin],changedTouches:[begin]}));
+      // Wait for the long-press gesture itself, not a fixed time interval.
+      // Chromium and CI hosts may schedule the 320ms timer later under load.
+      const start=performance.now();
+      while(!document.querySelector('.drag-ghost') && performance.now()-start<2500){
+        await new Promise(resolve=>setTimeout(resolve,25));
+      }
+      if(!document.querySelector('.drag-ghost'))throw Error('Long-press gesture never activated; target connected='+touchFrom.isConnected);
+      document.dispatchEvent(new TouchEvent('touchmove',{bubbles:true,cancelable:true,
+        touches:[move],targetTouches:[move],changedTouches:[move]}));
+      document.dispatchEvent(new TouchEvent('touchend',{bubbles:true,cancelable:true,
+        touches:[],targetTouches:[],changedTouches:[move]}));
+    } finally {
+      document.elementFromPoint=originalTouch;
+    }
+    const afterTouch=orders();
+    const noGhostAfterTouch=!document.querySelector('.drag-ghost,.drag-origin');
+    window.VintageCloud={canEdit:()=>false,onChange:()=>{}};
+    return {afterPointer,noGhostAfterPointer,afterTouch,noGhostAfterTouch};
+  });
+  assert.deepEqual(dragState.afterPointer,['base2-4','base2-3'],'Pointer reorder failed');
+  assert.deepEqual(dragState.afterTouch,['base2-4','base2-3'],'Touch long-press reorder failed');
+  assert.equal(dragState.noGhostAfterPointer,true,'Pointer drag ghost left in DOM');
+  assert.equal(dragState.noGhostAfterTouch,true,'Touch drag ghost left in DOM');
+  if(version==='updated'&&updated.includes('js/collection-drag.js')){
+    assert.ok(fetched.some(e=>e.file==='collection-drag.js'&&e.status===200),
+      'Collection drag script did not load with HTTP 200');
+  }
   // Catalog behavior: set selection, ownership/Wishlist status, finish/type
   // filters, name/holo ordering and normalized text search.
   const catalogState=await page.evaluate(()=>{
@@ -640,80 +714,6 @@ async function exercise(version, viewport) {
     ['base2-3','base1-1','base1-2','base2-4'], 'Binder reorder failed');
   assert.equal(collectionState.overlayHidden.setting, false, 'Wishlist overlay toggle failed');
   assert.equal(collectionState.overlayHidden.mutedCards, 2, 'Wishlist-only pockets not muted');
-  // Exercise the real pointer event listeners, not the reorder buttons.
-  // document.elementFromPoint is overridden only to make the drop target
-  // deterministic under both 390px and 1440px viewports.
-  const dragState = await page.evaluate(async () => {
-    function seed() {
-      window.VintageBinder.adoptProgress({
-        owned:{'base1-1':true},
-        wish:{'base2-3':true,'base2-4':true},
-        wishOrder:['base2-3','base2-4'],
-        binderOrder:['base1-1','base2-3','base2-4']
-      });
-      window.VintageCloud={canEdit:()=>true,onChange:()=>{}};
-      document.querySelector('[data-view-btn="wishlist"]').click();
-    }
-    const orders=()=>window.VintageBinder.getProgress().wishOrder;
-    seed();
-    const dragFrom=document.querySelector('.wish-item[data-order-index="0"]');
-    const dropTo=document.querySelector('.wish-item[data-order-index="1"]');
-    const original=document.elementFromPoint.bind(document);
-    document.elementFromPoint=()=>dropTo;
-    try {
-      dragFrom.dispatchEvent(new PointerEvent('pointerdown',{
-        bubbles:true,pointerId:301,pointerType:'mouse',button:0,clientX:40,clientY:120
-      }));
-      document.dispatchEvent(new PointerEvent('pointermove',{
-        bubbles:true,pointerId:301,pointerType:'mouse',button:0,clientX:90,clientY:190
-      }));
-      document.dispatchEvent(new PointerEvent('pointerup',{
-        bubbles:true,pointerId:301,pointerType:'mouse',button:0,clientX:90,clientY:190
-      }));
-    } finally {
-      document.elementFromPoint=original;
-    }
-    const afterPointer=orders();
-    const noGhostAfterPointer=!document.querySelector('.drag-ghost,.drag-origin');
-    seed();
-    const touchFrom=document.querySelector('.wish-item[data-order-index="0"]');
-    const touchTo=document.querySelector('.wish-item[data-order-index="1"]');
-    const originalTouch=document.elementFromPoint.bind(document);
-    document.elementFromPoint=()=>touchTo;
-    const touch=(target,x,y)=>new Touch({
-      identifier:402,target,clientX:x,clientY:y,pageX:x,pageY:y,screenX:x,screenY:y
-    });
-    const begin=touch(touchFrom,40,160),move=touch(touchFrom,90,210);
-    try {
-      touchFrom.dispatchEvent(new TouchEvent('touchstart',{bubbles:true,cancelable:true,
-        touches:[begin],targetTouches:[begin],changedTouches:[begin]}));
-      // Wait for the long-press gesture itself, not a fixed time interval.
-      // Chromium and CI hosts may schedule the 320ms timer later under load.
-      const start=performance.now();
-      while(!document.querySelector('.drag-ghost') && performance.now()-start<2500){
-        await new Promise(resolve=>setTimeout(resolve,25));
-      }
-      if(!document.querySelector('.drag-ghost'))throw Error('Long-press gesture never activated');
-      document.dispatchEvent(new TouchEvent('touchmove',{bubbles:true,cancelable:true,
-        touches:[move],targetTouches:[move],changedTouches:[move]}));
-      document.dispatchEvent(new TouchEvent('touchend',{bubbles:true,cancelable:true,
-        touches:[],targetTouches:[],changedTouches:[move]}));
-    } finally {
-      document.elementFromPoint=originalTouch;
-    }
-    const afterTouch=orders();
-    const noGhostAfterTouch=!document.querySelector('.drag-ghost,.drag-origin');
-    window.VintageCloud={canEdit:()=>false,onChange:()=>{}};
-    return {afterPointer,noGhostAfterPointer,afterTouch,noGhostAfterTouch};
-  });
-  assert.deepEqual(dragState.afterPointer,['base2-4','base2-3'],'Pointer reorder failed');
-  assert.deepEqual(dragState.afterTouch,['base2-4','base2-3'],'Touch long-press reorder failed');
-  assert.equal(dragState.noGhostAfterPointer,true,'Pointer drag ghost left in DOM');
-  assert.equal(dragState.noGhostAfterTouch,true,'Touch drag ghost left in DOM');
-  if(version==='updated'&&updated.includes('js/collection-drag.js')){
-    assert.ok(fetched.some(e=>e.file==='collection-drag.js'&&e.status===200),
-      'Collection drag script did not load with HTTP 200');
-  }
   // Normalize legacy, duplicated or inconsistent order arrays deterministically.
   const normalized = await page.evaluate(() => {
     window.VintageBinder.adoptProgress({
