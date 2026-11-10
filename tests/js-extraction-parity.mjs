@@ -224,19 +224,45 @@ if(updated.includes('js/card-details.js')){
   const modal=readFileSync('js/card-details.js','utf8');
   const start=originalBinder.indexOf('function showModal(id){');
   const end=originalBinder.indexOf('function download(content',start);
-  assert.ok(start>=0&&end>start,'Card details source boundaries missing');
-  const code=originalBinder.slice(start,end);
   const call='const {showModal}=window.VintageCardDetails.create({state,MAP,$,esc,cardNumber,rarityHtml,dealAuctionUrl,toggleOwned,toggleWish,ensureCloudEdit,openMovePicker,save,renderCards,updatePurchasePrice});\n';
-  assert.equal(candidate,originalBinder.slice(0,start)+call+originalBinder.slice(end),
-    'Details extraction unexpectedly modified binder code');
-  const expected="(()=>{'use strict';\n"+
-    'window.VintageCardDetails={create({state,MAP,$,esc,cardNumber,rarityHtml,dealAuctionUrl,toggleOwned,toggleWish,ensureCloudEdit,openMovePicker,save,renderCards,updatePurchasePrice}){\n'+
-    code+'\nreturn {showModal};\n}};\n})();\n';
-  assert.equal(modal,expected,'Card details dialog markup or handlers changed');
+  if(originalBinder.includes(call)){
+    assert.equal(modal,execFileSync('git',['show','origin/main:js/card-details.js'],
+      {encoding:'utf8'}),'Previously extracted card details module changed');
+  }else{
+    assert.ok(start>=0&&end>start,'Card details source boundaries missing');
+    const code=originalBinder.slice(start,end);
+    assert.equal(candidate,originalBinder.slice(0,start)+call+originalBinder.slice(end),
+      'Details extraction unexpectedly modified binder code');
+    const expected="(()=>{'use strict';\n"+
+      'window.VintageCardDetails={create({state,MAP,$,esc,cardNumber,rarityHtml,dealAuctionUrl,toggleOwned,toggleWish,ensureCloudEdit,openMovePicker,save,renderCards,updatePurchasePrice}){\n'+
+      code+'\nreturn {showModal};\n}};\n})();\n';
+    assert.equal(modal,expected,'Card details dialog markup or handlers changed');
+  }
   const modalTag='<script src="js/card-details.js?v=20261110-details1"></script>';
   const binderTag='<script src="js/binder.js?v=20261109-js1"></script>';
   assert.ok(updated.indexOf(modalTag)>0&&updated.indexOf(modalTag)<updated.indexOf(binderTag),
     'Details module must load before binder');
+}
+// Catalog filtering, rendering and progress counters are extracted byte-for-byte.
+if(updated.includes('js/catalog-ui.js')){
+  const originalBinder=execFileSync('git',['show','origin/main:js/binder.js'],{encoding:'utf8'});
+  const candidate=readFileSync('js/binder.js','utf8');
+  const movedModule=readFileSync('js/catalog-ui.js','utf8');
+  const start=originalBinder.indexOf('function catalog(){');
+  const end=originalBinder.indexOf('function toast(msg)',start);
+  assert.ok(start>=0&&end>start,'Catalog UI source boundaries missing');
+  const block=originalBinder.slice(start,end);
+  const call="const {catalog,relevantSetCards,showHolo,searchKey,searchText,visible,groups,renderSide,renderStats,rarityHtml,cardHTML,renderCards,renderAll}=window.VintageCatalogUI.create({state,MAP,SETS,$,esc,nf,cardNumber,normalNum,renderCollections:()=>renderCollections()});\\n";
+  assert.equal(candidate,originalBinder.slice(0,start)+call+originalBinder.slice(end),
+    'Catalog extraction unexpectedly changed other app code');
+  const expected="(()=>{'use strict';\n"+
+    'window.VintageCatalogUI={create({state,MAP,SETS,$,esc,nf,cardNumber,normalNum,renderCollections}){\n'+
+    block+'\nreturn {catalog,relevantSetCards,showHolo,searchKey,searchText,visible,groups,renderSide,renderStats,rarityHtml,cardHTML,renderCards,renderAll};\n}};\n})();\n';
+  assert.equal(movedModule,expected,'Catalog UI function bodies changed');
+  const uiTag='<script src="js/catalog-ui.js?v=20261110-catui1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261109-js1"></script>';
+  assert.ok(updated.indexOf(uiTag)>0&&updated.indexOf(uiTag)<updated.indexOf(binderTag),
+    'Catalog UI must load before binder app');
 }
 const root = process.cwd();
 const mainAssets = new Map();
@@ -321,6 +347,64 @@ async function exercise(version, viewport) {
     cards: document.querySelectorAll('#cards .poke-card').length,
     search: document.querySelector('#search').value
   }));
+  // Catalog behavior: set selection, ownership/Wishlist status, finish/type
+  // filters, name/holo ordering and normalized text search.
+  const catalogState=await page.evaluate(()=>{
+    const $=id=>document.getElementById(id);
+    const cards=()=>[...document.querySelectorAll('#cards .poke-card')].map(n=>n.dataset.id);
+    const update=(id,value,type='change')=>{
+      const el=$(id);
+      if(!el)throw Error('Catalog control missing '+id);
+      if(el.type==='checkbox')el.checked=Boolean(value);else el.value=value;
+      el.dispatchEvent(new Event(type,{bubbles:true}));
+    };
+    window.VintageBinder.adoptProgress({
+      owned:{'base1-1':true},
+      wish:{'base1-2':true},
+      wishOrder:['base1-2']
+    });
+    document.querySelector('[data-view-btn="catalog"]').click();
+    update('search','','input');
+    const initial={
+      cards:cards().slice(0,5),
+      count:$('resultsCount').textContent,
+      sideGroups:[...document.querySelectorAll('#sideBase [data-set]')].map(n=>n.dataset.set).slice(0,5)
+    };
+    const baseButton=document.querySelector('#side [data-set="base1"]');
+    if(!baseButton)throw Error('Base set button missing');
+    baseButton.click();
+    const base={cards:cards().slice(0,5),section:$('sectionTitle').textContent};
+    update('statusSelect','owned');
+    const owned=cards();
+    update('statusSelect','wish');
+    const wish=cards();
+    update('statusSelect','all');
+    update('holoOnly',true);
+    const holo=cards().slice(0,20);
+    update('holoOnly',false);
+    update('pokemonOnly',true);
+    const pokemon=cards();
+    update('pokemonOnly',false);
+    update('sortSelect','name');
+    const byName=cards().slice(0,8);
+    update('sortSelect','holo');
+    const holoFirst=cards().slice(0,8);
+    update('sortSelect','num');
+    update('search','Gyrados','input');
+    const fuzzy={cards:cards(),count:$('resultsCount').textContent};
+    update('search','','input');
+    return {initial,base,owned,wish,holo,pokemon,byName,holoFirst,fuzzy};
+  });
+  assert.ok(catalogState.base.cards.includes('base1-1'),'Base set filtering omitted expected card');
+  assert.deepEqual(catalogState.owned,['base1-1'],'Owned filter missing selected card');
+  assert.deepEqual(catalogState.wish,['base1-2'],'Wishlist filter missing selected card');
+  assert.ok(catalogState.holo.includes('base1-1'),'Holographic filter did not show a holo card');
+  assert.ok(!catalogState.pokemon.includes('base1-96'),'Pokémon-only filter included Energy');
+  assert.ok(catalogState.fuzzy.cards.length>=1,'Normalized Gyarados spelling search failed');
+  if(version==='updated'&&updated.includes('js/catalog-ui.js')){
+    assert.ok(fetched.some(x=>x.file==='catalog-ui.js'&&x.status===200),
+      'Catalog UI module did not load');
+  }
   // Actual collection-card clicks (no real Google session). Verify bidirectional
   // exclusivity, tombstone persistence, purchase amount and currency editing.
   const cardActionState=await page.evaluate(()=>{
@@ -705,7 +789,7 @@ async function exercise(version, viewport) {
     }
   }
   await context.close();
-  return {initial,states,filtered,cardActionState,detailState,ownedState,collectionState,dragState,normalized,shipmentState,errors};
+  return {initial,states,filtered,catalogState,cardActionState,detailState,ownedState,collectionState,dragState,normalized,shipmentState,errors};
 }
 try {
   for (const viewport of [{width:390,height:844},{width:1440,height:900}]) {
@@ -714,6 +798,7 @@ try {
     assert.deepEqual(b.initial, a.initial, 'Bootstrap output changed at '+viewport.width);
     assert.deepEqual(b.states, a.states, 'Navigation changed at '+viewport.width);
     assert.deepEqual(b.filtered, a.filtered, 'Catalog search changed at '+viewport.width);
+    assert.deepEqual(b.catalogState, a.catalogState, 'Catalog filters, group navigation or sorting changed at '+viewport.width);
     assert.deepEqual(b.cardActionState, a.cardActionState, 'Owned/Wishlist actions changed at '+viewport.width);
     assert.deepEqual(b.detailState, a.detailState, 'Card details conditions or modal controls changed at '+viewport.width);
     assert.deepEqual(b.ownedState, a.ownedState, 'Owned cards sort/filter/value changed at '+viewport.width);
