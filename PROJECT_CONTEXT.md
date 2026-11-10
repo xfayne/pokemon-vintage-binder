@@ -62,7 +62,8 @@ Collector preference: English vintage Unlimited, ungraded/raw cards; prioritize 
 - Keep a changelog or update this document after major changes.
 
 ## Development guidelines
-- Bump the query-string asset version in `index.html` whenever changing the contents of externally loaded JavaScript (particularly `js/binder.js`), to avoid stale browser/CDN script caches. Keep browser-test asset references in sync.
+- Edit `templates/index.template.html` for the UI shell or asset query strings and `templates/static-catalog.html` for the no-JS catalog; run `node scripts/build-index.mjs` to regenerate and commit `index.html`. CI runs `node scripts/build-index.mjs --check` to enforce exact reproduction. See `templates/README.md`. Never delete the no-JS/iOS Files static catalog or replace it with runtime fetches.
+- Bump the query-string asset version in `templates/index.template.html` whenever changing externally loaded JavaScript (particularly `js/binder.js`), then regenerate `index.html` and update browser-test asset references in sync.
 - Read relevant current source before editing; avoid regressing drag-and-drop, binder ordering, Firestore sync, login, and mobile layout.
 - Prefer small focused changes and tests, especially around eBay parsing/filtering.
 - Distinguish listing price from all-in price, and tentative match from verified card identity.
