@@ -316,6 +316,27 @@ if(updated.includes('js/collection-state.js')){
     'Collection state must load before binder');
   assert.ok(readFileSync('js/binder.js','utf8').includes('window.VintageCollectionState.create('),
     'Binder no longer wires the collection state factory');
+  const baseBinder=execFileSync('git',['show','origin/main:js/binder.js'],{encoding:'utf8'});
+  const currentBinder=readFileSync('js/binder.js','utf8');
+  const call='const {state,getProgress,adoptProgress,ensureCloudEdit,save,normalizeShipment}=window.VintageCollectionState.create({$: $,normalizeOrders:()=>normalizeOrders(),renderAll:()=>renderAll(),renderCollections:()=>renderCollections(),toast:msg=>toast(msg)});\n';
+  const oldStart=baseBinder.indexOf('const state={cards:[]');
+  if(oldStart>=0){
+    const oldEnd=baseBinder.indexOf('window.VintageBinder={',oldStart);
+    assert.ok(oldEnd>oldStart,'State extraction boundary missing');
+    const oldSource=baseBinder.slice(oldStart,oldEnd);
+    const expectedModule="(()=>{'use strict';\n"+
+      '// The collection\'s single in-memory state and the cloud-edit/save bridge.\n'+
+      '// Persistent storage remains exclusively in firebase-cloud.js / Firestore.\n'+
+      'window.VintageCollectionState={create({$,normalizeOrders,renderAll,renderCollections,toast}){\n'+
+      oldSource+'return {state,getProgress,adoptProgress,ensureCloudEdit,save,normalizeShipment};\n}};\n})();\n';
+    assert.equal(module,expectedModule,'Collection state implementation changed during extraction');
+    assert.equal(currentBinder,baseBinder.slice(0,oldStart)+call+baseBinder.slice(oldEnd),
+      'Collection state extraction altered unrelated binder logic');
+  } else {
+    // On subsequent refactors, the state module already exists in main.
+    assert.equal(module,execFileSync('git',['show','origin/main:js/collection-state.js'],
+      {encoding:'utf8'}),'Extracted collection state unexpectedly changed');
+  }
 }
 const root = process.cwd();
 const mainAssets = new Map();
