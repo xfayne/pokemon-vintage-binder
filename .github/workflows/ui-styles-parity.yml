@@ -1,11 +1,9 @@
 name: Main UI Styles Parity
 on:
   pull_request:
-    paths:
-      - "index.html"
-      - "css/**"
-      - "tests/style-parity.mjs"
-      - ".github/workflows/ui-styles-parity.yml"
+  push:
+    branches:
+      - main
   workflow_dispatch:
 permissions:
   contents: read
