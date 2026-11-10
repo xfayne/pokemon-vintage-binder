@@ -189,6 +189,27 @@ if (updated.includes('js/collection-ordering.js')) {
   assert.ok(updated.indexOf(tag)>0&&updated.indexOf(tag)<updated.indexOf(binderTag),
     'Collection order module must load before binder');
 }
+// Exact migration of owned/wishlist mutation actions (including cloud tombstones).
+if(updated.includes('js/card-actions.js')){
+  const baseline=execFileSync('git',['show','origin/main:js/binder.js'],{encoding:'utf8'});
+  const current=readFileSync('js/binder.js','utf8');
+  const actions=readFileSync('js/card-actions.js','utf8');
+  const first=baseline.indexOf('function toggleOwned(id){');
+  const last=baseline.indexOf('function showModal(id){',first);
+  assert.ok(first>=0&&last>first,'Card actions source anchors missing');
+  const moved=baseline.slice(first,last);
+  const call='const {toggleOwned,removeWish,toggleWish,updatePurchasePrice}=window.VintageCardActions.create({state,$,ensureCloudEdit,normalizeOrders,save,renderAll,toast,showModal:id=>showModal(id)});\n';
+  assert.equal(current,baseline.slice(0,first)+call+baseline.slice(last),
+    'Card actions extraction modified unrelated binder code');
+  assert.equal(actions,"(()=>{'use strict';\n"+
+    'window.VintageCardActions={create({state,$,ensureCloudEdit,normalizeOrders,save,renderAll,toast,showModal}){\n'+
+    moved+'\nreturn {toggleOwned,removeWish,toggleWish,updatePurchasePrice};\n}};\n})();\n',
+    'Extracted card action function bodies changed unexpectedly');
+  const actionTag='<script src="js/card-actions.js?v=20261110-actions1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261109-js1"></script>';
+  assert.ok(updated.indexOf(actionTag)>0&&updated.indexOf(actionTag)<updated.indexOf(binderTag),
+    'Card actions script must load before binder');
+}
 const root = process.cwd();
 const mainAssets = new Map();
 function readMainAsset(name) {
@@ -272,6 +293,78 @@ async function exercise(version, viewport) {
     cards: document.querySelectorAll('#cards .poke-card').length,
     search: document.querySelector('#search').value
   }));
+  // Actual collection-card clicks (no real Google session). Verify bidirectional
+  // exclusivity, tombstone persistence, purchase amount and currency editing.
+  const cardActionState=await page.evaluate(()=>{
+    const saved=[];
+    window.VintageCloud={canEdit:()=>true,onChange:args=>saved.push(!!args?.immediate)};
+    window.VintageBinder.adoptProgress({
+      owned:{},
+      wish:{'base1-1':true},
+      wishOrder:['base1-1']
+    });
+    document.querySelector('[data-view-btn="catalog"]').click();
+    document.querySelector('#search').value='';
+    document.querySelector('#search').dispatchEvent(new Event('input',{bubbles:true}));
+    const click=selector=>{
+      const node=document.querySelector(selector);
+      if(!node)throw Error('Missing card action '+selector);
+      node.click();
+    };
+    click('[data-own="base1-1"]');
+    const afterOwned=window.VintageBinder.getProgress();
+    click('[data-own="base1-1"]');
+    const afterRemove=window.VintageBinder.getProgress();
+    click('[data-wish="base1-1"]');
+    const afterWish=window.VintageBinder.getProgress();
+    click('[data-wish="base1-1"]');
+    const afterWishRemove=window.VintageBinder.getProgress();
+    click('[data-own="base1-1"]');
+    click('[data-preview="base1-1"]');
+    const modalOpen=document.querySelector('#modal').open;
+    document.querySelector('#modalPurchaseAmount').value='12.50';
+    document.querySelector('#modalPurchaseCurrency').value='EUR';
+    document.querySelector('#modalPurchaseAmount').dispatchEvent(new Event('change',{bubbles:true}));
+    const afterPurchase=window.VintageBinder.getProgress();
+    document.querySelector('#modalPurchaseAmount').value='';
+    document.querySelector('#modalPurchaseAmount').dispatchEvent(new Event('change',{bubbles:true}));
+    const afterPurchaseClear=window.VintageBinder.getProgress();
+    document.querySelector('#modal').close();
+    window.VintageCloud={canEdit:()=>false,onChange:()=>{}};
+    return {
+      afterOwned:{owned:!!afterOwned.owned['base1-1'],wish:!!afterOwned.wish['base1-1'],
+        tombstone:!!afterOwned.removedWish['base1-1'],
+        wishOrder:afterOwned.wishOrder,addedAt:afterOwned.ownedAddedAt['base1-1']>0},
+      afterRemove:{owned:!!afterRemove.owned['base1-1'],
+        ownedAddedAt:afterRemove.ownedAddedAt['base1-1']??null},
+      afterWish:{wish:!!afterWish.wish['base1-1'],owned:!!afterWish.owned['base1-1'],
+        wishOrder:afterWish.wishOrder,tombstone:!!afterWish.removedWish['base1-1']},
+      afterWishRemove:{wish:!!afterWishRemove.wish['base1-1'],
+        tombstone:!!afterWishRemove.removedWish['base1-1'],wishOrder:afterWishRemove.wishOrder},
+      modalOpen,paid:afterPurchase.purchasePrices['base1-1'],
+      cleared:afterPurchaseClear.purchasePrices['base1-1']??null,
+      immediateSaves:saved.filter(Boolean).length
+    };
+  });
+  assert.equal(cardActionState.afterOwned.owned,true,'Add-to-owned failed');
+  assert.equal(cardActionState.afterOwned.wish,false,'Owned/Wishlist exclusivity failed');
+  assert.equal(cardActionState.afterOwned.tombstone,true,'Wishlist removal tombstone missing');
+  assert.equal(cardActionState.afterOwned.addedAt,true,'Owned added timestamp missing');
+  assert.equal(cardActionState.afterRemove.owned,false,'Remove owned failed');
+  assert.equal(cardActionState.afterRemove.ownedAddedAt,null,'Owned added timestamp not cleared');
+  assert.deepEqual(cardActionState.afterWish.wishOrder,['base1-1'],'Wishlist add failed');
+  assert.equal(cardActionState.afterWish.tombstone,false,'Re-added wishlist tombstone not cleared');
+  assert.equal(cardActionState.afterWishRemove.tombstone,true,'Wishlist delete tombstone missing');
+  assert.deepEqual(cardActionState.afterWishRemove.wishOrder,[],'Deleted wish still in order');
+  assert.equal(cardActionState.modalOpen,true,'Owned card details did not open');
+  assert.deepEqual(cardActionState.paid,{amount:12.5,currency:'EUR'},
+    'Owned card purchase cost or currency changed');
+  assert.equal(cardActionState.cleared,null,'Clearing purchase cost failed');
+  assert.ok(cardActionState.immediateSaves>=4,'Expected cloud change notifications missing');
+  if(version==='updated'&&updated.includes('js/card-actions.js')){
+    assert.ok(fetched.some(x=>x.file==='card-actions.js'&&x.status===200),
+      'Card actions script did not load');
+  }
   // Owned collection regression: sorting, filter, holo counts and price totals.
   // Use a deterministic local price stub; never touch live Firestore or price API.
   const ownedState = await page.evaluate(() => {
@@ -515,7 +608,7 @@ async function exercise(version, viewport) {
     }
   }
   await context.close();
-  return {initial,states,filtered,ownedState,collectionState,dragState,normalized,shipmentState,errors};
+  return {initial,states,filtered,cardActionState,ownedState,collectionState,dragState,normalized,shipmentState,errors};
 }
 try {
   for (const viewport of [{width:390,height:844},{width:1440,height:900}]) {
@@ -524,6 +617,7 @@ try {
     assert.deepEqual(b.initial, a.initial, 'Bootstrap output changed at '+viewport.width);
     assert.deepEqual(b.states, a.states, 'Navigation changed at '+viewport.width);
     assert.deepEqual(b.filtered, a.filtered, 'Catalog search changed at '+viewport.width);
+    assert.deepEqual(b.cardActionState, a.cardActionState, 'Owned/Wishlist actions changed at '+viewport.width);
     assert.deepEqual(b.ownedState, a.ownedState, 'Owned cards sort/filter/value changed at '+viewport.width);
     assert.deepEqual(b.collectionState, a.collectionState, 'Binder/Wishlist interaction changed at '+viewport.width);
     assert.deepEqual(b.dragState, a.dragState, 'Pointer/touch drag behavior differs at '+viewport.width);
