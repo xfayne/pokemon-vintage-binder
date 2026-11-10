@@ -1,6 +1,6 @@
 # Pokémon Vintage Binder — Project Context
 
-_Last reviewed: 2026-11-09. This document distinguishes repository-verified facts from conversation history and planned work._
+_Last reviewed: 2026-11-10. This document distinguishes repository-verified facts from conversation history and planned work._
 
 ## Purpose and collection preferences
 Personal web app for collecting vintage Pokémon TCG cards (Base, Jungle, Fossil through Neo): catalog, owned cards, wishlist, visual binder, market values, deal discovery, and shipment tracking.
@@ -11,8 +11,8 @@ Collector preference: English vintage Unlimited, ungraded/raw cards; prioritize 
 - GitHub Pages: https://xfayne.github.io/pokemon-vintage-binder/
 - Main page: `index.html` (large single-page HTML markup and static no-JS catalog fallback).
 - Styles: `css/app.css` (extracted 2026-11-09); `index.html` retains small inline no-JS fallback rules for standalone iOS Files/Quick Look previews.
-- JavaScript: `js/catalog-data.js` (vintage SETS and OFFLINE_PACKS), `js/shipments.js` (shipment tracking and editor controller), `js/collection-views.js` (binder and wishlist HTML rendering with dependency injection), `js/collection-drag.js` (pointer and long-press touch reordering), `js/collection-ordering.js` (shared Wishlist/binder order normalization and movement), `js/owned-cards.js` (owned cards sorting, market value and list rendering), `js/binder.js` (remaining collection controller), `js/market-prices.js` (TCGTracking), `js/public-reader.js` (shared binder view), and `js/firebase-cloud.js` (Firebase Authentication/Firestore ES module). Data, shipment logic, and collection views have been extracted incrementally without intentional behavior changes.
-- CI: `tests/style-parity.mjs` and `tests/js-extraction-parity.mjs` run Chromium mobile/desktop smoke/parity tests via `.github/workflows/`. Worker-specific tests exist separately. Current browser tests compare baseline-vs-branch behavior, including owned-card sorting, pricing totals and search, shipment editing, Wishlist move-to-top, binder reordering, long-press touch and pointer drag, legacy duplicate/unknown order normalization, and Wishlist overlay. They use an offline authorization stub and do **not** execute authenticated Firestore writes or live 17TRACK calls.
+- JavaScript: `js/catalog-data.js` (vintage SETS and OFFLINE_PACKS), `js/shipments.js` (shipment tracking and editor controller), `js/collection-views.js` (binder and wishlist HTML rendering with dependency injection), `js/collection-drag.js` (pointer and long-press touch reordering), `js/collection-ordering.js` (shared Wishlist/binder order normalization and movement), `js/owned-cards.js` (owned cards sorting, market value and list rendering), `js/card-actions.js` (owned and Wishlist mutations, tombstones and purchase prices), `js/card-details.js` (card details modal and condition/1st Edition controls), `js/binder.js` (remaining collection controller), `js/market-prices.js` (TCGTracking), `js/public-reader.js` (shared binder view), and `js/firebase-cloud.js` (Firebase Authentication/Firestore ES module). Data, shipment logic, and collection views have been extracted incrementally without intentional behavior changes.
+- CI: `tests/style-parity.mjs` and `tests/js-extraction-parity.mjs` run Chromium mobile/desktop smoke/parity tests via `.github/workflows/`. Worker-specific tests exist separately. Current browser tests compare baseline-vs-branch behavior, including card details condition/1st Edition editing, owned/Wishlist add/remove, purchase amount/currency, tombstone writes, owned-card sorting, pricing totals and search, shipment editing, Wishlist move-to-top, binder reordering, long-press touch and pointer drag, legacy duplicate/unknown order normalization, and Wishlist overlay. They use an offline authorization stub and do **not** execute authenticated Firestore writes or live 17TRACK calls.
 - `deal-finder/`: separate deal-discovery UI, styles, scoring and documentation. `scoring.js` and `dashboard-template.js` are documented as historical/not currently loaded.
 - `ebay-worker/`: Cloudflare Worker backend, Wrangler config, tests, documentation.
 - `assets/`: static assets including Ancient Mew image.
@@ -52,7 +52,7 @@ Collector preference: English vintage Unlimited, ungraded/raw cards; prioritize 
 - Deal discovery should aggressively reject junk listings (including keyring/keychain) without falsely treating uncertain matches as confirmed deals.
 
 ## Open questions / backlog
-- The remaining `js/binder.js` IIFE (~34KB) still needs careful decomposition into feature modules, with explicit shared state/interfaces and tests first; moving the four scripts out of HTML is only phase 2A.
+- The remaining `js/binder.js` IIFE (~29KB) still needs careful decomposition into feature modules, with explicit shared state/interfaces and tests first; moving the four scripts out of HTML is only phase 2A.
 
 - Confirm deployed UI and actual live API/Worker behavior against main branch, especially whether eBay Production credentials are enabled.
 - Confirm shipment unread-update indicator is implemented and persisted; prior discussion requested it.
