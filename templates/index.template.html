@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<meta name="theme-color" content="#10182b" />
+<title>Pokémon Vintage Binder · My Binder</title>
+<noscript><style id="offline-fallback-styles">
+
+:root{--ink:#172038;--muted:#6c778c;--navy:#111a2e;--navy2:#202c47;--card:#fff;--bg:#f5f7fb;--border:#e2e7f0;--pink:#ae5b8a;--yellow:#eac16c;--blue:#586bd1;--green:#14856a;--red:#b75261;--radius:16px}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;font-size:14px}button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.5;cursor:default}a{color:#5366d6}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #b2bbf5;outline-offset:2px}
+
+/* JS-free iOS Files/Quick Look fallback: cards are fully present as ordinary HTML. */
+.static-catalog{display:block}.js-ready .static-catalog{display:none}
+.hero .stats,.hero .hero-actions,.side,.toolbar,.list-header,#cards,#loadMore,#fetchStatus{display:none}
+.js-ready .hero .stats{display:grid}.js-ready .hero .hero-actions{display:flex}
+.js-ready .side{display:block}.js-ready .toolbar{display:block}.js-ready .list-header{display:flex}.js-ready #cards{display:grid}.js-ready #fetchStatus{display:block}#fetchStatus[hidden]{display:none!important}
+.js-ready #loadMore:not([hidden]){display:block}
+.static-callout{background:#f0f4ff;border:1px solid #d2ddf6;padding:16px 17px;border-radius:14px;line-height:1.7;margin-bottom:16px;font-size:14px}
+.static-callout b{color:#24375b}.static-callout p{margin:7px 0 0}.static-callout p:last-child{color:#5b657b;font-size:12px}
+.static-jumps{display:flex;flex-wrap:wrap;gap:7px;margin:14px 0 18px}
+.static-jumps a{font-size:12px;font-weight:700;color:#3b4e8c;text-decoration:none;padding:7px 10px;border:1px solid #d7dfef;background:white;border-radius:9px}
+.static-set{background:#fff;border:1px solid #d9e1ee;border-radius:14px;margin-bottom:12px;overflow:hidden;scroll-margin-top:15px}
+.static-set>summary{cursor:pointer;list-style:none;display:flex;gap:10px;justify-content:space-between;align-items:center;background:#f7f9ff;padding:17px;color:#1c2b46}
+.static-set>summary::-webkit-details-marker{display:none}.static-set>summary:after{content:'⌄';font-size:20px;color:#6b79a4}.static-set[open]>summary:after{content:'⌃'}
+.static-set>summary b{font-size:17px}.static-set>summary small,.static-count{color:#77829a;font-size:12px}.static-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;padding:12px}
+.static-card{min-width:0;display:flex;gap:11px;align-items:center;padding:9px;border:1px solid #e4e9f3;background:#fff;border-radius:11px}
+.static-img{width:75px;min-width:75px;height:104px;border-radius:7px;background:linear-gradient(155deg,#e4e9f4,#f8fafc);overflow:hidden;display:flex;justify-content:center;align-items:center}
+.static-img img{display:block;width:100%;height:100%;object-fit:contain}
+.static-card-info{min-width:0;display:flex;flex-direction:column;gap:5px}.static-card-info strong{font-size:13px;line-height:1.3;overflow-wrap:anywhere}.static-number{font-size:11px;color:#66738c;text-align:right}.static-finish{font-size:11px;color:#7b8598}.static-finish.foil{color:#88612b;font-weight:750}
+.static-own{display:flex;align-items:center;gap:5px;font-size:12px;color:#42587e;margin-top:4px}.static-own input{width:17px;height:17px;accent-color:#5366d6}
+@media(max-width:900px){.js-ready .side{display:flex}}
+@media(max-width:650px){.static-grid{grid-template-columns:1fr}.static-set>summary{padding:14px 12px}.static-img{width:74px;min-width:74px;height:103px}.static-catalog{margin-top:3px}}
+@media print{.static-jumps,.static-own{display:none}.static-set{break-inside:auto}.static-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+
+.static-img {height:121px;align-items:stretch;}
+.static-img a {display:flex; flex-direction:column;align-items:center;justify-content:space-between;width:100%;height:100%;text-decoration:none;color:#485991;background:#f4f6fc;}
+.static-img img {height:101px;min-height:0;}
+.static-img .open-photo {font-size:9px;padding:3px 0;display:block;text-align:center;color:#4456a4;font-weight:700;}
+@media(max-width:650px){.static-img{height:121px;}}
+
+</style></noscript>
+<link rel="stylesheet" href="css/app.css?v=20261109-refactor-1">
+<link rel="stylesheet" href="deal-finder/live.css?v=20261107-strictmatch-1">
+</head>
+<body>
+<div class="sticky-sitebar" aria-label="ניווט האתר">
+<header class="hero"><div class="hero-inner"><div class="hero-top"><h1>Pokémon Vintage Binder <span aria-hidden="true">✦</span></h1>
+ <div class="account-area">
+  <button type="button" id="accountTrigger" class="account-trigger" aria-haspopup="menu" aria-expanded="false" aria-label="התחברות"><span id="accountAvatar" class="account-avatar" aria-hidden="true">👤</span><span id="accountName">התחברות</span><span class="account-chevron" aria-hidden="true">⌄</span></button>
+  <div class="account-menu" id="accountMenu" role="menu" hidden>
+   <button type="button" id="exportJSON" role="menuitem">⇩ הורדת גיבוי</button>
+   <button type="button" id="importJSON" role="menuitem">⇧ ייבוא גיבוי</button>
+   <div class="account-separator"></div>
+   <button type="button" id="accountSignOut" role="menuitem">התנתקות</button>
+  </div>
+ </div></div></div></header>
+<nav class="main-nav" aria-label="ניווט בין הקטלוג, הבינדר ו־Wishlist">
+  <button type="button" class="active" data-view-btn="catalog" aria-pressed="true">📚 קטלוג</button>
+  <button type="button" data-view-btn="owned" aria-pressed="false">✅ הקלפים שלי <span class="nav-number" id="ownedCountTab"></span></button>
+  <button type="button" data-view-btn="binder" aria-pressed="false">📖 הבינדר שלי <span class="nav-number" id="binderCountTab"></span></button>
+  <button type="button" data-view-btn="wishlist" aria-pressed="false">💜 Wishlist <span class="nav-number" id="wishCountTab"></span></button>
+  <button type="button" data-view-btn="shipments" aria-pressed="false">📦 משלוחים <span id="shipmentUnreadTab" class="shipment-unread" hidden></span></button>
+  <button type="button" data-view-btn="deals" aria-pressed="false">🔎 מציאות</button>
+</nav>
+</div>
+
+<dialog id="cloudDialog" class="dialog cloud-config" aria-label="חיבור Firebase">
+ <div class="modal-inner">
+  <div class="modal-top"><strong style="font-size:21px">☁️ האוסף שלי בענן</strong><button class="btn sm" id="cloudClose" type="button">סגירה ✕</button></div>
+  <p class="cloud-steps">התחבר עם Google כדי לטעון ולשמור את האוסף ב־Firestore. ללא התחברות אפשר לעיין בקלפים, אך לא לערוך את האוסף. כל משתמש רואה רק את האוסף הפרטי שלו.</p>
+  <div class="cloudmeta"><strong id="cloudStatus">דרושה התחברות ל־Google</strong><small id="cloudDetail">השינויים נשמרים ב־Firestore בלבד.</small></div>
+  <div class="cloud-controls">
+   <button class="btn primary" id="cloudSignIn" disabled type="button">התחבר עם Google</button>
+   <button class="btn" id="cloudSignOut" hidden type="button">התנתק</button>
+   <button class="btn" id="cloudSyncNow" type="button" hidden>↻ סנכרן עכשיו</button>
+  </div>
+  <div class="cloud-message" id="cloudMessage" role="status"></div>
+  <p class="cloud-detail"><b>פרטיות:</b> האוסף נשמר בענן בחשבון הפרטי שלך, עם הרשאות Firestore לפי המשתמש המחובר. גם גיבוי JSON נשאר זמין.</p>
+ </div>
+</dialog>
+
+<input id="fileInput" type="file" accept=".json,application/json" hidden />
+
+
+<section class="collection-page" id="ownedPage" hidden aria-label="הקלפים שלי ברשימה">
+ <div class="collection-panel">
+  <div class="collection-heading owned-heading">
+  <div class="owned-title-row"><h2>✅ הקלפים שלי</h2><div class="owned-title-actions"><span id="ownedTotalValue" class="owned-total-value" aria-live="polite" title="שווי שוק משוער לפי מצב והדפסה">טוען…</span><button class="owned-export" id="exportCSV" type="button" aria-label="ייצוא הקלפים שלי ל־CSV" title="ייצוא הקלפים שלי ל־CSV"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M4 16v4h16v-4"/></svg></button></div></div>
+ </div>
+ <div class="owned-meta-row"><span class="info-pill" id="ownedCount"></span>
+  <label class="owned-sort" for="ownedSort"><span>מיון</span><select id="ownedSort" aria-label="מיין את הקלפים שלי"><option value="added">סדר הוספה</option><option value="holo">Holo קודם</option><option value="set">לפי סדרה</option><option value="price">מחיר יורד</option></select></label>
+ </div>
+ <input id="ownedFind" class="binder-place-search" type="search" placeholder="חיפוש בקלפים שלי: שם, סדרה או מספר..." aria-label="חיפוש בקלפים שיש לי" autocomplete="off">
+  <div id="ownedItems" class="owned-items" role="list"></div>
+ </div>
+</section>
+<section class="collection-page" id="binderPage" hidden aria-label="הבינדר שלי">
+  <div class="collection-panel">
+    <div class="collection-heading"><div><h2>📖 הבינדר שלי</h2><div class="subtle">תשעה כיסים בכל עמוד. לכל קלף אפשר לבחור עמוד וכיס, או להסיר אותו מהבינדר בלי להסיר אותו מהאוסף.</div></div><span id="binderCount" class="info-pill"></span></div>
+    <div class="binder-controls"><label class="switch-line"><input id="binderIncludeWish" type="checkbox" checked> הצג משאלות בצבע מלא</label><button class="btn sm" type="button" id="binderResetOrder">סדר לפי סדרות ↺</button><button class="btn primary sm" type="button" id="openReader" title="פתח בלשונית חדשה, עם קישור שאפשר לשתף">👁 מצב צפייה ↗</button></div>
+    <div class="binder-place" aria-label="מיקום קלף בבינדר">
+      <div class="binder-place-title">📍 רוצה קלף מסוים בעמוד הראשון?</div>
+      <div class="binder-place-hint">חפש אותו כאן, ואז בחר עמוד וכיס (1–9). הקלפים האחרים יזוזו מקום אחד — שום קלף לא יימחק.</div>
+      <input id="binderFind" class="binder-place-search" type="search" placeholder="חפש קלף שיש לך או ברשימת המשאלות..." autocomplete="off" aria-label="חיפוש קלף בבינדר">
+      <div id="binderMatches" class="binder-matches" role="listbox" aria-label="תוצאות חיפוש בבינדר"></div>
+      <div id="binderSelected" class="binder-selected" role="status">בחר קלף מהרשימה</div>
+      <div class="binder-place-targets">
+        <label>עמוד<select id="binderTargetPage" aria-label="עמוד יעד"></select></label>
+        <label>כיס<select id="binderTargetSlot" aria-label="מיקום בעמוד"></select></label>
+        <button class="btn primary" type="button" id="binderPlaceSelected" disabled>📖 העבר למיקום שבחרתי</button>
+      </div>
+    </div>
+    <div id="binderEmpty" class="no-cards" hidden>הבינדר שלך עדיין ריק. אפשר להוסיף קלפים מהקטלוג, מרשימת המשאלות או מלשונית ״הקלפים שלי״. <button class="btn sm primary" type="button" data-view-btn="catalog">לקטלוג</button></div>
+    <div class="binder-book" id="binderBook"><div class="binder-grid" id="binderGrid" role="list" aria-label="תשעת הקלפים בעמוד"></div></div>
+    <div class="pager" id="binderPager"><button type="button" id="binderPrev">❮ עמוד קודם</button><span id="binderPageLabel"></span><button type="button" id="binderNext">עמוד הבא ❯</button></div>
+    <div class="subtle" style="margin-top:13px">הקלפים שבבעלותך מסומנים בירוק. כאשר מסתירים משאלות הן נשארות כצללית חלשה באותו הכיס — בלי לשנות את סדר הבינדר.</div>
+  </div>
+</section>
+<section class="collection-page" id="wishPage" hidden aria-label="רשימת המשאלות">
+  <div class="collection-panel">
+    <div class="collection-heading"><div><h2>💜 Wishlist</h2><div class="subtle">לחץ ״↗ העבר״ כדי לבחור מיקום מדויק או לעבור ישר לראש הרשימה. אפשר גם לגרור לסידור קצר.</div></div><div class="wishlist-heading-actions"><span id="wishCount" class="info-pill"></span><button id="copyWishlist" type="button" class="btn sm">⧉ העתק רשימה</button></div></div>
+    <div id="wishlistItems" class="wishlist-items" role="list"></div>
+  </div>
+</section>
+<section class="collection-page" id="shipmentsPage" hidden aria-label="מעקב משלוחים">
+ <div class="collection-panel">
+  <div class="collection-heading shipment-head">
+   <div><h2>📦 משלוחים</h2><div class="subtle">מעקב משלוחים ושיוך קלפים מהקטלוג שלך</div></div>
+   <div class="shipment-head-actions"><button type="button" class="btn sm" id="shipmentRefresh">↻ עדכון</button><button type="button" class="btn primary sm" id="shipmentAdd">+ משלוח</button></div>
+  </div>
+  <div class="subtle shipment-notice" id="shipmentNotice" role="status"></div>
+  <div class="shipment-list" id="shipmentList"></div>
+ </div>
+</section>
+<dialog id="shipmentDialog" class="shipment-dialog" aria-labelledby="shipmentDialogTitle">
+ <form id="shipmentForm" class="shipment-form">
+  <div class="shipment-dialog-head"><h3 id="shipmentDialogTitle">משלוח חדש</h3><button type="button" id="shipmentCancelTop" class="btn sm">✕</button></div>
+  <label>שם המשלוח <input id="shipmentName" maxlength="70" placeholder="למשל: קלפים מגרמניה" autocomplete="off"></label>
+  <label>מספר מעקב <input id="shipmentNumber" maxlength="50" required dir="ltr" placeholder="LA657049767NL" autocomplete="off" autocapitalize="characters" spellcheck="false"></label>
+  <div class="shipment-picker-label">קלפים במשלוח <small>(אפשר לבחור כמה)</small></div>
+  <input id="shipmentCardSearch" type="search" placeholder="חפש קלף לפי שם, סדרה או מספר…" autocomplete="off">
+  <div id="shipmentSelected" class="shipment-selected"></div>
+  <div id="shipmentCardResults" class="shipment-card-results"></div>
+  <div class="shipment-form-actions"><button class="btn primary" type="submit">שמור משלוח</button><button class="btn" type="button" id="shipmentCancel">ביטול</button></div>
+ </form>
+</dialog>
+<section class="collection-page" id="dealsPage" hidden aria-label="מציאות ומכרזי eBay">
+ <div class="collection-panel"><div class="collection-heading"><div><h2>🔎 מציאות</h2><div class="subtle">מכרזים אמיתיים על קלפים מרשימת הרצונות שלך</div></div></div></div>
+</section>
+<dialog id="wishMoveDialog" class="wish-move-dialog" aria-labelledby="wishMoveTitle">
+ <h3 id="wishMoveTitle">העברת קלף ברשימת המשאלות</h3>
+ <p id="wishMoveCurrent" class="wish-move-summary"></p>
+ <label for="wishMovePosition">מיקום חדש ברשימה</label>
+ <input id="wishMovePosition" type="number" min="1" step="1" inputmode="numeric" autocomplete="off" />
+ <div class="wish-move-actions">
+  <button type="button" class="btn" id="wishMoveTop">↑ לראש הרשימה</button>
+  <button type="button" class="btn primary" id="wishMoveConfirm">העבר למיקום שנבחר</button>
+ </div>
+ <button type="button" class="wish-move-cancel" id="wishMoveCancel">ביטול</button>
+</dialog>
+
+<div class="shell" id="catalogShell">
+ <aside class="side" id="side">
+  <div class="side-title">הסדרות <span>1999–2002</span></div>
+  <button class="set-btn active" data-set="all"><span>✦ כל הסדרות</span><small id="allMini"></small></button>
+  <div class="side-group">Base</div><div id="sideBase"></div>
+  <div class="side-group">Gym</div><div id="sideGym"></div>
+  <div class="side-group">Neo</div><div id="sideNeo"></div>
+  <div class="side-group">אוספים נוספים</div><div id="sideExtra"></div>
+  <div class="aside-note">הרשימה מתעדת את הקלף לפי סדרה ומספר, לא את כל וריאציות ההדפסה (1st Edition, Shadowless וכו׳). הפרומואים ו־Legendary Collection אופציונליים.</div>
+ </aside>
+ <main class="main">
+
+<!-- POKEMON_STATIC_CATALOG_BUILD_SLOT -->
+  <div class="notice" id="fetchStatus" hidden></div>
+  <div class="toolbar">
+   <div class="toolbar-top"><div><h2 id="sectionTitle">כל הסדרות</h2><small id="sectionSub">רשימות קלפים מקוריות באנגלית</small></div><button class="btn sm" id="resetFilters">איפוס סינון ↺</button></div>
+   <div class="filters">
+    <div class="search-wrap"><input class="field" id="search" placeholder="חיפוש: Gengar, Snorlax, 11/64..." dir="auto" aria-label="חפש קלף"/><span class="search-icon">⌕</span></div>
+    <select class="field" id="statusSelect" aria-label="מצב באוסף"><option value="all">הכול</option><option value="owned">יש לי</option><option value="missing">חסר לי</option><option value="wish">Wishlist ☆</option></select>
+    <select class="field" id="sortSelect" aria-label="סדר מיון"><option value="num">לפי מספר בסט</option><option value="name">לפי שם</option><option value="holo">Holo קודם</option></select>
+   </div>
+   <div class="checks">
+    <label class="check"><input type="checkbox" id="holoOnly"/> רק Holo / Shining ✨</label>
+    <label class="check"><input type="checkbox" id="pokemonOnly"/> רק קלפי פוקימון (בלי מאמנים ואנרגיות)</label>
+    <label class="check"><input type="checkbox" id="extrasEnabled"/> לכלול גם אוספים נוספים</label>
+    <span class="info-pill" id="holoLegend">✨ Holo · 🌟 Shining · ◇ רגיל</span>
+   </div>
+  </div>
+  <div class="list-header"><span id="resultsCount">1,070 קלפים ב־11 סדרות</span><div class="view-controls"><button class="btn sm" id="showOwned" title="הצג רק קלפים שיש לך">✓ האוסף שלי</button><button class="btn sm" id="showHolo" title="סנן קלפים הולוגרפיים">✨ הולוגרפיים</button></div></div>
+  <div class="list-grid" id="cards" role="list"></div>
+  <button class="btn btn-load" id="loadMore" hidden>הצג עוד קלפים ↓</button>
+ </main>
+</div>
+<footer class="footer">רשימת השמות והנדירות משולבת בקובץ על בסיס <a href="https://github.com/tradingcarddex/Pokemon-Card-CSV" target="_blank" rel="noopener">TradingCardDex</a>; התמונות מקושרות ל־<a href="https://github.com/PokemonTCG/pokemon-tcg-data" target="_blank" rel="noopener">Pokémon TCG Data</a>. כולל את 11 ההרחבות המרכזיות מ־Base Set ועד Neo Destiny (1,070 קלפים), ובאפשרותך להוסיף Southern Islands, Wizards Black Star Promos ו־Legendary Collection. פרומואים עשויים להופיע בגרסאות שונות; Legendary Collection קיימת גם ב־Reverse Holo, שלא נחשב כאן לקלף נפרד. התמונות © Pokémon / Nintendo / Creatures / GAME FREAK / Wizards of the Coast, למטרות זיהוי בלבד. סימוני האוסף נשמרים בענן ב־Firebase בלבד לאחר התחברות ל־Google. אין שמירה מקומית אוטומטית. מומלץ מדי פעם לייצא גיבוי JSON.</footer>
+<dialog class="dialog" id="modal" aria-label="פרטי קלף"><div class="modal-inner"><div class="modal-top"><span class="eyebrow" style="color:#607099">פרטי קלף</span><button class="btn sm ghost" id="closeModal" aria-label="סגירה">✕</button></div><div id="modalContent"></div></div></dialog>
+<div class="toast" id="toast" role="status"></div>
+
+<section id="readerShell" aria-label="תצוגת בינדר לקריאה בלבד">
+ <main class="reader-stage" id="readerStage" dir="ltr" aria-label="דפדוף בבינדר">
+  <button class="reader-nav reader-nav-prev" id="readerPrev" type="button" aria-label="עמוד קודם" title="עמוד קודם">‹</button>
+  <div class="reader-spread" id="readerSpread" aria-label="עמודי הבינדר"></div>
+  <button class="reader-nav reader-nav-next" id="readerNext" type="button" aria-label="עמוד הבא" title="עמוד הבא">›</button>
+  <div id="readerFooter" class="reader-foot" aria-live="polite"></div>
+  <div id="readerInstructions" class="reader-info">החלק שמאלה כדי לעבור לעמוד הבא, או השתמש בחצים הקטנים.</div>
+ </main>
+</section>
+
+<script src="js/catalog-data.js?v=20261109-data1"></script>
+<script src="js/shipments.js?v=20261109-ship1"></script>
+<script src="js/collection-views.js?v=20261109-views1"></script>
+<script src="js/owned-cards.js?v=20261109-owned1"></script>
+<script src="js/collection-drag.js?v=20261109-drag1"></script>
+<script src="js/collection-ordering.js?v=20261109-order1"></script>
+<script src="js/card-actions.js?v=20261110-actions1"></script>
+<script src="js/card-details.js?v=20261110-details1"></script>
+<script src="js/catalog-ui.js?v=20261110-catui1"></script>
+<script src="js/catalog-loader.js?v=20261110-loader1"></script>
+<script src="js/collection-state.js?v=20261110-state1"></script>
+<script src="js/collection-backup.js?v=20261110-backup1"></script>
+<script src="js/binder.js?v=20261110-backup1"></script>
+
+
+<script src="js/market-prices.js?v=20261109-js1"></script>
+<script src="js/public-reader.js?v=20261109-js1"></script>
+
+<script type="module" src="js/firebase-cloud.js?v=20261109-js1"></script>
+<script defer src="deal-finder/dashboard.js?v=20261106-clean-1"></script>
+<script defer src="deal-finder/live.js?v=20261107-strictmatch-2"></script>
+</body></html>
