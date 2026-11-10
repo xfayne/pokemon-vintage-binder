@@ -687,7 +687,13 @@ async function exercise(version, viewport) {
     try {
       touchFrom.dispatchEvent(new TouchEvent('touchstart',{bubbles:true,cancelable:true,
         touches:[begin],targetTouches:[begin],changedTouches:[begin]}));
-      await new Promise(resolve=>setTimeout(resolve,380));
+      // Wait for the long-press gesture itself, not a fixed time interval.
+      // Chromium and CI hosts may schedule the 320ms timer later under load.
+      const start=performance.now();
+      while(!document.querySelector('.drag-ghost') && performance.now()-start<2500){
+        await new Promise(resolve=>setTimeout(resolve,25));
+      }
+      if(!document.querySelector('.drag-ghost'))throw Error('Long-press gesture never activated');
       document.dispatchEvent(new TouchEvent('touchmove',{bubbles:true,cancelable:true,
         touches:[move],targetTouches:[move],changedTouches:[move]}));
       document.dispatchEvent(new TouchEvent('touchend',{bubbles:true,cancelable:true,
