@@ -72,7 +72,9 @@
 .collection-panel h2{font-size:25px;margin:0 0 5px;color:#172038}
 .collection-panel .subtle{color:#6b778e;font-size:13px;line-height:1.8}
 .collection-heading{display:flex;justify-content:space-between;gap:15px;flex-wrap:wrap;align-items:start;margin-bottom:16px}
-.binder-controls{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:12px 0 19px}
+.binder-controls{display:flex;align-items:center;gap:9px;flex-wrap:nowrap;margin:12px 0 19px}
+.binder-controls .switch-line{flex:1;min-width:0}
+.binder-controls #openReader{flex:0 0 auto;white-space:nowrap}
 .switch-line{border:1px solid #d5deed;border-radius:11px;padding:10px 13px;display:flex;align-items:center;gap:8px;font-weight:700;background:#f8faff;font-size:13px}
 .switch-line input{width:19px;height:19px;accent-color:#586bd1}
 .binder-book{border-radius:20px;padding:19px 23px 22px;background:linear-gradient(110deg,#17223b,#263652);border:3px solid #101c36;box-shadow:inset 0 0 0 2px #4c5874,0 16px 32px #14213c2b;position:relative}
@@ -114,8 +116,16 @@
 
 
 /* Easier iPhone drag & direct placement into any binder page */
-.binder-place{border:1px solid #d9e0f2;background:linear-gradient(125deg,#f8faff,#f0f4ff);border-radius:15px;padding:14px;margin:2px 0 18px}
-.binder-place-title{font-weight:800;color:#1a2b4d;font-size:15px;margin:0 0 5px}
+.binder-place{border:1px solid #d9e0f2;background:linear-gradient(125deg,#f8faff,#f0f4ff);border-radius:15px;padding:0;margin:2px 0 18px}
+.binder-place[open]{padding:0 14px 14px}
+.binder-place:not([open]) > :not(summary){display:none}
+.binder-place-title{display:block;position:relative;cursor:pointer;list-style:none;font-weight:800;color:#1a2b4d;font-size:15px;margin:0;padding:13px 15px;padding-inline-end:40px}
+.binder-place-title::-webkit-details-marker{display:none}
+.binder-place-title::marker{content:''}
+.binder-place-title::after{content:'▾';position:absolute;inset-inline-end:15px;top:50%;transform:translateY(-50%);font-size:17px;color:#51648b}
+.binder-place[open]>.binder-place-title{margin:0 -14px 9px}
+.binder-place[open]>.binder-place-title::after{transform:translateY(-50%) rotate(180deg)}
+.binder-place-title:focus-visible{outline:2px solid #586bd1;outline-offset:-3px;border-radius:14px}
 .binder-place-hint{font-size:12px;color:#586b87;line-height:1.5;margin-bottom:10px}
 .binder-place input,.binder-place select{border:1px solid #cbd6eb;background:#fff;color:#203150;border-radius:9px;padding:10px;font-size:15px;min-height:42px;max-width:100%}
 .binder-place-search{width:100%;display:block;box-sizing:border-box;direction:auto;text-align:start}
@@ -126,6 +136,7 @@
 .binder-match-label{flex:1;min-width:0;font-size:13px;line-height:1.3;overflow-wrap:anywhere}
 .binder-match-label small{display:block;font-size:11px;color:#6c7b94;margin-top:3px}
 .binder-selected{font-size:13px;color:#3b4e6e;font-weight:700;min-height:20px}
+.binder-selected:empty{display:none}
 .binder-place-targets{display:flex;gap:8px;align-items:end;flex-wrap:wrap;margin-top:10px}
 .binder-place-targets label{display:flex;flex-direction:column;gap:5px;font-size:12px;color:#4c6080;font-weight:700}
 .binder-place-targets select{min-width:88px}
@@ -139,7 +150,7 @@
 .drag-ghost small{color:#71819b;font-size:10px}
 body.dragging-card{user-select:none;-webkit-user-select:none}
 body.dragging-card .wish-item{touch-action:auto}
-@media(max-width:650px){.binder-place{padding:10px;margin-bottom:13px}.binder-place-targets{gap:6px}.binder-place-targets label{flex:1;min-width:70px}.binder-place-targets select{width:100%;min-width:0}.binder-place-targets .btn{flex:1 1 100%}.binder-pocket .quick-front{font-size:9px;padding:5px 3px}.wish-item .drag-handle{min-width:68px}.wish-item img[data-drag-kind]{border:1px solid #bbc7e4}}
+@media(max-width:650px){.binder-controls{gap:6px}.binder-controls .switch-line{padding:9px 8px;gap:5px;font-size:12px}.binder-place{padding:0;margin-bottom:13px}.binder-place[open]{padding:0 10px 10px}.binder-place-title{padding:11px 12px;padding-inline-end:36px}.binder-place[open]>.binder-place-title{margin:0 -10px 9px}.binder-place-targets{gap:6px}.binder-place-targets label{flex:1;min-width:70px}.binder-place-targets select{width:100%;min-width:0}.binder-place-targets .btn{flex:1 1 100%}.binder-pocket .quick-front{font-size:9px;padding:5px 3px}.wish-item .drag-handle{min-width:68px}.wish-item img[data-drag-kind]{border:1px solid #bbc7e4}}
 
 /* Compact, readable wishlist cards on iPhone: details above a dedicated controls row. */
 @media(max-width:650px){

@@ -41,7 +41,7 @@
 @media(max-width:650px){.static-img{height:121px;}}
 
 </style></noscript>
-<link rel="stylesheet" href="css/app.css?v=20261109-refactor-1">
+<link rel="stylesheet" href="css/app.css?v=20261110-binderui1">
 <link rel="stylesheet" href="deal-finder/live.css?v=20261107-strictmatch-1">
 </head>
 <body>
@@ -99,19 +99,19 @@
 <section class="collection-page" id="binderPage" hidden aria-label="הבינדר שלי">
   <div class="collection-panel">
     <div class="collection-heading"><div><h2>📖 הבינדר שלי</h2><div class="subtle">תשעה כיסים בכל עמוד. לכל קלף אפשר לבחור עמוד וכיס, או להסיר אותו מהבינדר בלי להסיר אותו מהאוסף.</div></div><span id="binderCount" class="info-pill"></span></div>
-    <div class="binder-controls"><label class="switch-line"><input id="binderIncludeWish" type="checkbox" checked> הצג משאלות בצבע מלא</label><button class="btn sm" type="button" id="binderResetOrder">סדר לפי סדרות ↺</button><button class="btn primary sm" type="button" id="openReader" title="פתח בלשונית חדשה, עם קישור שאפשר לשתף">👁 מצב צפייה ↗</button></div>
-    <div class="binder-place" aria-label="מיקום קלף בבינדר">
-      <div class="binder-place-title">📍 רוצה קלף מסוים בעמוד הראשון?</div>
+    <div class="binder-controls"><label class="switch-line"><input id="binderIncludeWish" type="checkbox" checked> הצג משאלות בצבע מלא</label><button class="btn primary sm" type="button" id="openReader" title="פתח בלשונית חדשה, עם קישור שאפשר לשתף">👁 מצב צפייה ↗</button></div>
+    <details class="binder-place" aria-label="העברת קלף למיקום בבינדר">
+      <summary class="binder-place-title">📖 העברת קלף למיקום בבינדר</summary>
       <div class="binder-place-hint">חפש אותו כאן, ואז בחר עמוד וכיס (1–9). הקלפים האחרים יזוזו מקום אחד — שום קלף לא יימחק.</div>
       <input id="binderFind" class="binder-place-search" type="search" placeholder="חפש קלף שיש לך או ברשימת המשאלות..." autocomplete="off" aria-label="חיפוש קלף בבינדר">
       <div id="binderMatches" class="binder-matches" role="listbox" aria-label="תוצאות חיפוש בבינדר"></div>
-      <div id="binderSelected" class="binder-selected" role="status">בחר קלף מהרשימה</div>
+      <div id="binderSelected" class="binder-selected" role="status"></div>
       <div class="binder-place-targets">
         <label>עמוד<select id="binderTargetPage" aria-label="עמוד יעד"></select></label>
         <label>כיס<select id="binderTargetSlot" aria-label="מיקום בעמוד"></select></label>
         <button class="btn primary" type="button" id="binderPlaceSelected" disabled>📖 העבר למיקום שבחרתי</button>
       </div>
-    </div>
+    </details>
     <div id="binderEmpty" class="no-cards" hidden>הבינדר שלך עדיין ריק. אפשר להוסיף קלפים מהקטלוג, מרשימת המשאלות או מלשונית ״הקלפים שלי״. <button class="btn sm primary" type="button" data-view-btn="catalog">לקטלוג</button></div>
     <div class="binder-book" id="binderBook"><div class="binder-grid" id="binderGrid" role="list" aria-label="תשעת הקלפים בעמוד"></div></div>
     <div class="pager" id="binderPager"><button type="button" id="binderPrev">❮ עמוד קודם</button><span id="binderPageLabel"></span><button type="button" id="binderNext">עמוד הבא ❯</button></div>
@@ -1518,7 +1518,7 @@
 <script src="js/catalog-loader.js?v=20261110-loader1"></script>
 <script src="js/collection-state.js?v=20261110-state1"></script>
 <script src="js/collection-backup.js?v=20261110-backup1"></script>
-<script src="js/binder.js?v=20261110-backup1"></script>
+<script src="js/binder.js?v=20261110-binderui1"></script>
 
 
 <script src="js/market-prices.js?v=20261109-js1"></script>

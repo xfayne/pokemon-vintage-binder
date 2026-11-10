@@ -87,7 +87,7 @@ function removeFromBinder(id){
  if(!ensureCloudEdit())return;
  if(!state.binderOrder.includes(id))return;
  state.binderExcluded[id]=true;state.binderOrder=state.binderOrder.filter(x=>x!==id);
- if(binderSelectedId===id){binderSelectedId=null;$('binderSelected').textContent='בחר קלף מהרשימה';$('binderPlaceSelected').disabled=true;}
+ if(binderSelectedId===id){binderSelectedId=null;$('binderSelected').textContent='';$('binderPlaceSelected').disabled=true;}
  normalizeOrders();save();toast('הקלף הוסר רק מהבינדר. הוא עדיין נשאר באוסף / במשאלות.');
 }
 function addToBinder(id){
@@ -106,7 +106,7 @@ function openMovePicker(id){
  $('binderFind').value=c?.name||'';searchBinder();
  refreshPlacementTargets();
  $('binderTargetPage').value='1';$('binderTargetSlot').value='1';
- const panel=document.querySelector('.binder-place');panel.classList.add('binder-place-attention');
+ const panel=document.querySelector('.binder-place');panel.open=true;panel.classList.add('binder-place-attention');
  setTimeout(()=>panel.classList.remove('binder-place-attention'),1800);
  panel.scrollIntoView({behavior:'smooth',block:'start'});
  toast('בחר עמוד וכיס ואז לחץ ״העבר למיקום שבחרתי״');
@@ -170,8 +170,6 @@ function attachCollections(){
  $('binderIncludeWish').onchange=e=>{if(!ensureCloudEdit()){e.target.checked=state.binderIncludeWish;return;}state.binderIncludeWish=e.target.checked;save();};
  $('binderPrev').onclick=()=>{state.binderPage=Math.max(0,state.binderPage-1);renderCollections();};
  $('binderNext').onclick=()=>{state.binderPage++;renderCollections();};
- $('binderResetOrder').onclick=()=>{if(!ensureCloudEdit())return;if(!confirm('לסדר מחדש את הבינדר לפי סדרות ומספרי קלפים? סדר המשאלות יישמר.'))return;
- state.binderOrder=state.cards.filter(c=>(state.owned[c.id]||state.wish[c.id])&&!state.binderExcluded[c.id]).map(c=>c.id);state.binderPage=0;save();toast('הבינדר סודר לפי סדרות');};
  window.VintageCollectionDrag.attach({reorder,toast});
 }
 
