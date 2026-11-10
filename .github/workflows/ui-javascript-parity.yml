@@ -1,11 +1,9 @@
 name: Main UI JavaScript Parity
 on:
   pull_request:
-    paths:
-      - "index.html"
-      - "js/**"
-      - "tests/js-extraction-parity.mjs"
-      - ".github/workflows/ui-javascript-parity.yml"
+  push:
+    branches:
+      - main
   workflow_dispatch:
 permissions:
   contents: read
