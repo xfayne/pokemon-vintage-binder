@@ -20,9 +20,14 @@ for (let i = 0; i < paths.length; i++) {
   const file = paths[i];
   const source = readFileSync(file, 'utf8');
   assert.ok(source.length > 100, file + ' is unexpectedly empty');
-  const tag = '<script' + (i === 3 ? ' type="module"' : '') +
-    ' src="' + file + '?v=20261109-js1"></script>';
-  assert.ok(restored.includes(tag), file + ' is not included in index');
+  // Read the deployed query version from HTML so cache-busting a script
+  // does not invalidate behavioral regression tests.
+  const prefix = '<script' + (i === 3 ? ' type="module"' : '') +
+    ' src="' + file + '?v=';
+  const start = restored.indexOf(prefix);
+  const end = restored.indexOf('</script>', start);
+  assert.ok(start >= 0 && end > start, file + ' is not included in index');
+  const tag = restored.slice(start, end + '</script>'.length);
   if (extractionPR) {
     assert.equal(source, oldScripts[i][2], file + ' differs from original inline source');
     restored = restored.replace(tag, () => oldScripts[i][0]);
