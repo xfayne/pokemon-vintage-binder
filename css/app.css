@@ -118,6 +118,7 @@
 /* Easier iPhone drag & direct placement into any binder page */
 .binder-place{border:1px solid #d9e0f2;background:linear-gradient(125deg,#f8faff,#f0f4ff);border-radius:15px;padding:0;margin:2px 0 18px}
 .binder-place[open]{padding:0 14px 14px}
+.binder-place:not([open]) > :not(summary){display:none}
 .binder-place-title{display:block;position:relative;cursor:pointer;list-style:none;font-weight:800;color:#1a2b4d;font-size:15px;margin:0;padding:13px 15px;padding-inline-end:40px}
 .binder-place-title::-webkit-details-marker{display:none}
 .binder-place-title::marker{content:''}
