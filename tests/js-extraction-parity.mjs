@@ -109,7 +109,7 @@ if (updated.includes('js/collection-views.js')) {
     const afterWishlist=" renderOwnedList();";
     assert.ok(views.includes(searchStart), 'Wishlist search logic missing');
     assert.equal(views.slice(0,views.indexOf(searchStart)),
-      previousViews.slice(0,previousViews.indexOf(beforeWishlist)),
+      previousViews.slice(0,previousViews.indexOf(searchStart)),
       'Binder rendering changed outside the Wishlist search feature');
     assert.equal(views.slice(views.indexOf(afterWishlist)),
       previousViews.slice(previousViews.indexOf(afterWishlist)),
