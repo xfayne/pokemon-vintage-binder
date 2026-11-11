@@ -44,7 +44,7 @@ The following tier labels are shorthand for **photographic** estimates of ungrad
 7. Grade selection must be based on evidence in pictures, not the seller's title, claimed condition, price or the supposed bargain percentage. Those may be presented **after** the grade as a comparison and should not contaminate the visual estimate.
 
 ## Model integration
-- First candidate: `gpt-5.4-mini` via an authenticated Cloudflare Worker using an API secret. It accepts image inputs and schema-constrained results. Keep the model identifier configurable and versioned. Compare against `gpt-5.4` on the same photo set only if benchmarking shows a material improvement is needed.
+- Model/provider remains undecided: benchmark Gemini, OpenAI, Claude, DeepSeek, and Qwen on the same evidence and this exact rubric before selecting a production model. Route all inference through an authenticated Cloudflare Worker with provider secrets, validate output schemas, and store chosen model/provider/version with each analysis.
 - Start by sending up to ~10 **listing-only** images at appropriate detail; use image selection that covers front, back and close-ups and remains within a measured cost budget. Do not assume every listing has ten photos.
 - Ask for strict JSON including `grade`, `confidencePercent`, all five `gradePercentages`, `observations`, `limitations`, `visibleSides` and `photoIndices`. Validate all fields and bound output size server-side.
 - Store `rubricVersion: "tcg-text-v1"` and a separate `promptVersion` with every Firestore analysis. Never automatically re-infer upon changing either version; show a stale label and permit explicit reanalysis.
