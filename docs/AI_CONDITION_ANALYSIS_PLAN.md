@@ -1,6 +1,6 @@
 # Reusable AI card-condition analysis — implementation plan
 
-_Status: approved product requirements; implementation not started. Created: 2026-11-11. This is the living design document for the feature._
+_Status: implementation in PR #57 (2026-11-11); mocked CI tests required, real owner-account / Gemini end-to-end validation and deployed Firestore rules still pending. Created: 2026-11-11. This is the living design document for the feature._
 
 ## Objective
 Estimate the physical condition of a vintage, raw Pokémon TCG card from a set of photos, with an explainable NM/LP/MP/HP/DMG grade, confidence percentages, and approximate on-image defect locations. **First consumer: the existing eBay Deals listing gallery**; future consumers may analyze photos of the user's own cards without changing the grading engine. Persist results in Firestore so revisiting the same source/photo set reuses the previous result without another inference call.
@@ -143,4 +143,4 @@ Actual `cardId` should use the app's existing stable card ID, if available; do n
 - **Phase 3**: implement Firestore cache bridge and UI/Deals integration with mobile regression coverage.
 - **Phase 4**: test real results and on-image marks interactively **after implementation**, using a few representative listings chosen by the user, then refine conservatism, prompt and overlays as necessary. No large upfront benchmark.
 
-No AI keys, billing changes, Firestore writes or production Worker deployment are part of the planning PR.
+**Implementation notes:** `ebay-worker/card-condition.js` contains the source-neutral grader with a Gemini REST adapter; the Worker eBay adapter permits only verified eBay CDN images, validates owner Firebase token and enforces per-item cooldown. `js/firebase-cloud.js` persists analyses under the `conditionAnalyses` collection. Gallery displays manual/cached results and overlay rectangles; image-set SHA-256 fingerprint allows stale notices without automatic reanalysis. See [Firestore rule addition](FIRESTORE_CONDITION_RULES.md). Mocked Worker and browser tests never access paid APIs or actual user Firestore. Verify production rules and live Gemini behavior after deployment.
