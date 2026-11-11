@@ -6,7 +6,20 @@ const MAP=new Map(SETS.map(s=>[s.id,s]));const BASE_COUNT=SETS.filter(s=>s.group
 const $=id=>document.getElementById(id);
 const {state,getProgress,adoptProgress,ensureCloudEdit,save,normalizeShipment}=window.VintageCollectionState.create({$: $,normalizeOrders:()=>normalizeOrders(),renderAll:()=>renderAll(),renderCollections:()=>renderCollections(),toast:msg=>toast(msg)});
 window.VintageBinder={getProgress,adoptProgress,getCardInfo:(id)=>{const c=state.cards.find(x=>x.id===id);return c?{id:c.id,name:c.name,image:c.image,setName:MAP.get(c.set)?.name||""}:null}};
+let cardDealsOrigin=null;
 window.VintageDealBridge={
+ getCardForDeals:(id)=>{
+  const c=state.cards.find(card=>card.id===id);
+  return c?{id:c.id,rank:1,name:c.name,number:cardNumber(c),setName:MAP.get(c.set)?.name||'',image:c.image,condition:state.conditions[id]||'',firstEdition:!!state.firstEdition[id],finish:c.finish||null}:null;
+ },
+ returnToCardDetails:(id)=>{
+  if(!cardDealsOrigin)return;
+  const origin=cardDealsOrigin;
+  cardDealsOrigin=null;
+  showView(origin.view,false);
+  window.scrollTo({top:origin.scrollY,behavior:'instant'});
+  showModal(id);
+ },
  getWishlistCards:()=>{
   normalizeOrders();
   const lookup=new Map(state.cards.map(c=>[c.id,c]));
@@ -34,7 +47,7 @@ const {loadEmbeddedData}=window.VintageCatalogLoader.create({SETS,OFFLINE_PACKS,
 const {catalog,relevantSetCards,showHolo,searchKey,searchText,visible,groups,renderSide,renderStats,rarityHtml,cardHTML,renderCards,renderAll}=window.VintageCatalogUI.create({state,MAP,SETS,$,esc,nf,cardNumber,normalNum,renderCollections:()=>renderCollections()});
 function toast(msg){const e=$('toast');e.textContent=msg;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',2800)}
 const {toggleOwned,removeWish,toggleWish,updatePurchasePrice}=window.VintageCardActions.create({state,$,ensureCloudEdit,normalizeOrders:()=>normalizeOrders(),save,renderAll,toast,showModal:id=>showModal(id)});
-const {showModal}=window.VintageCardDetails.create({state,MAP,$,esc,cardNumber,rarityHtml,dealAuctionUrl,toggleOwned,toggleWish,ensureCloudEdit,openMovePicker,save,renderCards,updatePurchasePrice});
+const {showModal}=window.VintageCardDetails.create({state,MAP,$,esc,cardNumber,rarityHtml,dealAuctionUrl,openDealsForCard,toggleOwned,toggleWish,ensureCloudEdit,openMovePicker,save,renderCards,updatePurchasePrice});
 const {backup,copyWishlist,exportCSV,importBackup}=window.VintageCollectionBackup.create({state,MAP,cardNumber,toast,getProgress,normalizeOrders:()=>normalizeOrders(),sortedOwnedCards:()=>sortedOwnedCards(),ensureCloudEdit,save,renderAll,normalizeShipment});
 const {normalizeOrders,binderVisible,binderPageCount,reorder}=window.VintageCollectionOrdering.create({state,ensureCloudEdit,save});
 let binderSelectedId=null;
@@ -68,10 +81,15 @@ function placeBinder(id,page,slot){
 }
 
 const {renderShipments,refreshShipments}=window.VintageShipments.create({state,MAP,cardNumber,esc,$,ensureCloudEdit,save,toast});
-function showView(view,doScroll=true){if(!['catalog','owned','binder','wishlist','shipments','deals'].includes(view))return;state.view=view;
+function showView(view,doScroll=true,dealsCardId=null){if(!['catalog','owned','binder','wishlist','shipments','deals'].includes(view))return;state.view=view;
  $('catalogShell').hidden=view!=='catalog';$('ownedPage').hidden=view!=='owned';$('binderPage').hidden=view!=='binder';$('wishPage').hidden=view!=='wishlist';$('dealsPage').hidden=view!=='deals';$('shipmentsPage').hidden=view!=='shipments';
  document.querySelectorAll('[data-view-btn]').forEach(b=>{const a=b.dataset.viewBtn===view;b.classList.toggle('active',a);b.setAttribute('aria-pressed',String(a));});
- if(view!=='catalog')renderCollections();if(view==='deals')window.VintageEbayLive?.open?.();if(view==='shipments')refreshShipments();if(doScroll)window.scrollTo({top:0,behavior:'smooth'});
+ if(view!=='catalog')renderCollections();if(view==='deals'){if(dealsCardId)window.VintageEbayLive?.openCard?.(dealsCardId);else window.VintageEbayLive?.open?.();}if(view==='shipments')refreshShipments();if(doScroll)window.scrollTo({top:0,behavior:'smooth'});
+}
+function openDealsForCard(id){
+ if(!state.cards.some(card=>card.id===id))return;
+ cardDealsOrigin={view:state.view,scrollY:window.scrollY};
+ showView('deals',true,id);
 }
 const {sortedOwnedCards,refreshOwned,renderOwnedList}=window.VintageOwnedCards.create({state,MAP,$,SETS,showHolo,normalNum,searchKey,searchText,rarityHtml,esc,cardNumber,renderCollections:()=>renderCollections()});
 function dealAuctionUrl(c,precise){

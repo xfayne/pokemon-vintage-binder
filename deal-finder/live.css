@@ -185,3 +185,11 @@
  .live-gallery-thumbs button{width:65px;height:65px}
  .live-gallery-arrow{width:32px;height:32px;font-size:19px}
 }
+
+/* Scoped search uses the same Deals results/filter UI, with a compact return route. */
+.live-scope-actions{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:13px;padding-bottom:12px;border-bottom:1px solid #e1e7f2}
+.live-scope-actions[hidden]{display:none}
+.live-scope-actions>span{font-weight:750;font-size:12px;color:#435478}
+.live-scope-actions>div{display:flex;gap:7px;flex-wrap:wrap}
+.live-scope-actions .btn{padding:7px 10px;font-size:12px}
+@media(max-width:650px){.live-scope-actions>div{width:100%}.live-scope-actions .btn{flex:1;min-height:38px}}

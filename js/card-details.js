@@ -1,10 +1,14 @@
 (()=>{'use strict';
-window.VintageCardDetails={create({state,MAP,$,esc,cardNumber,rarityHtml,dealAuctionUrl,toggleOwned,toggleWish,ensureCloudEdit,openMovePicker,save,renderCards,updatePurchasePrice}){
-function showModal(id){const c=state.cards.find(c=>c.id===id);if(!c)return;const s=MAP.get(c.set);$('modalContent').innerHTML=`<div class="modal-main"><div><img class="modal-img" src="${esc(c.large)}" alt="${esc(c.name)}"></div><div class="modal-data"><div class="eyebrow" style="color:#697997;letter-spacing:.5px">${esc(s.name)} · ${s.year}</div><h3>${esc(c.name)}</h3><div class="card-sub">#${esc(cardNumber(c))}</div><p class="modal-rarity-only">${rarityHtml(c)}</p><div class="modal-own-row">
-  <button type="button" class="btn ${state.owned[c.id]?'':'primary'}" id="modalOwned">${state.owned[c.id]?'✓ יש לי — הסר':'✓ יש לי'}</button>
-  ${!state.owned[c.id]?`<button type="button" class="btn" id="modalWish">${state.wish[c.id]?'★ Wishlist':'☆ Wishlist'}</button>`:''}
-  ${state.owned[c.id]||state.wish[c.id]?`<button type="button" class="btn" id="modalMove">${state.binderOrder.includes(c.id)?'📍 העבר':'＋ לבינדר'}</button>`:''}
-  <a class="btn" href="${esc(dealAuctionUrl(c,true))}" target="_blank" rel="noopener noreferrer" title="חיפוש מכרזים ב־eBay">🔎 eBay ↗</a> </div><div class="modal-actions compact-details">
+window.VintageCardDetails={create({state,MAP,$,esc,cardNumber,rarityHtml,dealAuctionUrl,openDealsForCard,toggleOwned,toggleWish,ensureCloudEdit,openMovePicker,save,renderCards,updatePurchasePrice}){
+function showModal(id){const c=state.cards.find(c=>c.id===id);if(!c)return;const s=MAP.get(c.set);$('modalContent').innerHTML=`<div class="modal-main"><div><img class="modal-img" src="${esc(c.large)}" alt="${esc(c.name)}"></div><div class="modal-data"><div class="modal-meta-row"><span class="modal-set-name">${esc(s.name)} · ${s.year}</span><span class="modal-card-number card-sub">#${esc(cardNumber(c))}</span>${rarityHtml(c)}</div>
+<div class="modal-title-row"><h3>${esc(c.name)}</h3><div class="modal-collection-actions">
+ <button type="button" class="btn ${state.owned[c.id]?'':'primary'}" id="modalOwned">${state.owned[c.id]?'✓ יש לי — הסר':'✓ יש לי'}</button>
+ ${!state.owned[c.id]?`<button type="button" class="btn" id="modalWish">${state.wish[c.id]?'★ Wishlist':'☆ Wishlist'}</button>`:''}
+</div></div><div class="modal-own-row">
+ ${state.owned[c.id]||state.wish[c.id]?`<button type="button" class="btn" id="modalMove">${state.binderOrder.includes(c.id)?'📍 העבר':'＋ לבינדר'}</button>`:''}
+ <button type="button" class="btn primary" id="modalDeals">🔎 מציאות</button>
+ <a class="btn" href="${esc(dealAuctionUrl(c,true))}" target="_blank" rel="noopener noreferrer" title="חיפוש מכרזים ב־eBay">eBay ↗</a>
+</div><div class="modal-actions compact-details">
  <div class="condition-box">
   <label class="condition-label" for="modalCondition">מצב הקלף</label>
   <div class="condition-controls">
@@ -32,6 +36,7 @@ function showModal(id){const c=state.cards.find(c=>c.id===id);if(!c)return;const
   $('modal').close();
   openMovePicker(c.id);
  };
+ $('modalDeals').onclick=()=>{$('modal').close();openDealsForCard(c.id);};
  $('modalCondition').onchange=e=>{
   const v=e.target.value;
   if(window.VintageCloud?.canEdit?.()){
