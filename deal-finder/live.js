@@ -202,7 +202,7 @@
     score.group===1?'<span class="live-watch">מעניין בקרוב</span>':
     '<span class="live-strong-badge">התאמה חזקה</span>';
    const warnings=score.warnings.length?'<div class="live-flags">'+score.warnings.slice(0,3).map(x=>'<span>'+escape(x)+'</span>').join('')+'</div>':'';
-   const image=item.image?'<img src="'+escape(item.image)+'" alt="" loading="lazy" decoding="async">':'<div class="live-no-image">✦</div>';
+     const image=item.image?'<button type="button" class="live-image-open" data-image-key="'+escape(key)+'" title="פתח את תמונות המודעה" aria-label="פתח גלריית תמונות עבור '+escape(item.title)+'"><img src="'+escape(item.image)+'" alt="" loading="lazy" decoding="async"></button>':'<div class="live-no-image">✦</div>';
    const name=card?card.name+' · '+card.setName:'קלף לא מזוהה';
    return '<article class="live-item" role="listitem"><div class="live-card-main">'+image+
     '<div class="live-card-text"><small>'+escape(name)+'</small><strong>'+escape(item.title)+'</strong>'+
@@ -225,6 +225,130 @@
   }).join(''):state.status==='ready'&&!state.loading?
    '<div class="live-empty">'+(state.items.length?'אין מודעות שתואמות לפילטרים. לחץ על איפוס סינון.':state.done?'לא נמצאו מודעות תואמות בקלפים שנבדקו. נסה לסרוק מחדש.':'עדיין לא נמצאו מודעות תואמות.')+'</div>':'';
  }
+
+
+ // Gallery fetch is intentionally separate from search and condition enrichment.
+ // Only a direct tap on a listing thumbnail asks eBay for the complete photo set.
+ const gallery=document.createElement('dialog');
+ gallery.id='liveGallery';gallery.className='live-gallery-dialog';
+ gallery.setAttribute('aria-label','גלריית תמונות של מודעת eBay');
+ gallery.innerHTML='<div class="live-gallery-shell" dir="rtl">'+
+  '<header class="live-gallery-head"><button type="button" id="liveGalleryClose" class="live-gallery-close" aria-label="סגור גלריה">✕</button>'+
+  '<div class="live-gallery-heading"><strong id="liveGalleryTitle"></strong><small id="liveGalleryMeta"></small></div></header>'+
+  '<div id="liveGalleryStage" class="live-gallery-stage">'+
+  '<img id="liveGalleryImage" alt="" hidden>'+
+  '<div id="liveGalleryEmpty" class="live-gallery-empty" hidden>אין תמונה זמינה</div>'+
+  '<span id="liveGalleryCounter" class="live-gallery-counter" dir="ltr"></span>'+
+  '<button id="liveGalleryPrevious" type="button" class="live-gallery-arrow previous" aria-label="תמונה קודמת">❮</button>'+
+  '<button id="liveGalleryNext" type="button" class="live-gallery-arrow next" aria-label="תמונה הבאה">❯</button></div>'+
+  '<div id="liveGalleryStatus" class="live-gallery-status" aria-live="polite"></div>'+
+  '<div id="liveGalleryThumbs" class="live-gallery-thumbs" aria-label="תמונות המודעה"></div>'+
+  '<div class="live-gallery-actions"><button id="liveGalleryDemoButton" type="button" class="live-gallery-demo-button" aria-expanded="false">✨ ניתוח מצב (דמו)</button>'+
+  '<a id="liveGalleryEbay" href="#" target="_blank" rel="noopener noreferrer">למודעה ב־eBay ↗</a></div>'+
+  '<section id="liveGalleryDemo" class="live-gallery-demo" hidden aria-label="הדגמת ניתוח מצב">'+
+  '<strong>LP — תוצאת הדגמה בלבד</strong>'+
+  '<p>זוהי תצוגת דמה של פיצ׳ר עתידי. התמונות לא נותחו, ואין כאן הערכת מצב אמיתית.</p>'+
+  '<div><span>פינות</span><b>שחיקה קלה (דוגמה)</b></div>'+
+  '<div><span>קצוות</span><b>סימנים קלים (דוגמה)</b></div>'+
+  '<div><span>משטח הקלף</span><b>נראה תקין (דוגמה)</b></div></section></div>';
+ document.body.appendChild(gallery);
+ const galleryCache=new Map();
+ let galleryImages=[],galleryIndex=0,galleryItem=null,gallerySerial=0,galleryAbort=null;
+ const galleryStatus=$('liveGalleryStatus');
+ const imageUrl=src=>{try{return typeof src==='string'&&new URL(src).protocol==='https:'}catch{return false}};
+ function showGalleryImage(){
+  const img=$('liveGalleryImage'),count=galleryImages.length;
+  img.hidden=!count;$('liveGalleryEmpty').hidden=!!count;
+  if(count){img.src=galleryImages[galleryIndex];img.alt='תמונה '+(galleryIndex+1)+' מתוך '+count+' של '+(galleryItem?.title||'מודעת eBay');}
+  else img.removeAttribute('src');
+  $('liveGalleryCounter').textContent=count?(galleryIndex+1)+' / '+count:'';
+  $('liveGalleryPrevious').disabled=count<=1;$('liveGalleryNext').disabled=count<=1;
+  gallery.querySelectorAll('[data-gallery-index]').forEach(btn=>{
+   const active=Number(btn.dataset.galleryIndex)===galleryIndex;
+   btn.classList.toggle('selected',active);btn.setAttribute('aria-current',active?'true':'false');
+   if(active)btn.scrollIntoView({block:'nearest',inline:'nearest'});
+  });
+ }
+ function setGalleryPhotos(images){
+  galleryImages=images;galleryIndex=0;
+  $('liveGalleryThumbs').innerHTML=images.map((url,i)=>'<button type="button" data-gallery-index="'+i+
+   '" aria-label="הצג תמונה '+(i+1)+'"><img src="'+escape(url)+'" alt="" loading="lazy" decoding="async"></button>').join('');
+  showGalleryImage();
+ }
+ function changeGalleryImage(step){
+  if(galleryImages.length<2)return;
+  galleryIndex=(galleryIndex+step+galleryImages.length)%galleryImages.length;
+  showGalleryImage();
+ }
+ async function openGallery(item){
+  if(!item)return;
+  if(gallery.open)gallery.close();
+  const serial=++gallerySerial,key=keyFor(item);
+  galleryItem=item;
+  $('liveGalleryTitle').textContent=item.title||'מודעה ב־eBay';
+  $('liveGalleryMeta').textContent=[item.marketplace,item.format==='AUCTION'?'מכרז':'קנייה מיידית'].filter(Boolean).join(' · ');
+  $('liveGalleryEbay').href=item.url;
+  $('liveGalleryDemo').hidden=true;
+  $('liveGalleryDemoButton').setAttribute('aria-expanded','false');
+  setGalleryPhotos(item.image&&imageUrl(item.image)?[item.image]:[]);
+  galleryStatus.textContent='טוען את תמונות המודעה מ־eBay…';
+  gallery.showModal();
+  const cached=galleryCache.get(key);
+  if(cached){setGalleryPhotos(cached);galleryStatus.textContent='';return;}
+  const controller=new AbortController();galleryAbort=controller;
+  try{
+   const response=await fetch(state.endpoint+'/api/item-images',{
+    method:'POST',headers:{'content-type':'application/json'},
+    body:JSON.stringify({itemId:item.itemId,marketplace:item.marketplace}),
+    signal:controller.signal
+   });
+   const data=await response.json();
+   if(!response.ok)throw Error(data.error||'תמונות המודעה אינן זמינות');
+   if(serial!==gallerySerial||!gallery.open)return;
+   const images=[...new Set((Array.isArray(data.images)?data.images:[]).filter(imageUrl))].slice(0,25);
+   const resolved=images.length?images:galleryImages;
+   galleryCache.set(key,resolved);
+   setGalleryPhotos(resolved);
+   galleryStatus.textContent=images.length?'':'לא התקבלו תמונות נוספות מ־eBay.';
+  }catch(error){
+   if(serial!==gallerySerial||!gallery.open)return;
+   galleryStatus.textContent='לא ניתן לטעון תמונות נוספות כעת. ניתן לפתוח את המודעה ב־eBay.';
+  }finally{if(galleryAbort===controller)galleryAbort=null;}
+ }
+ gallery.addEventListener('close',()=>{
+  gallerySerial++;galleryAbort?.abort();galleryAbort=null;
+  galleryItem=null;galleryImages=[];$('liveGalleryDemo').hidden=true;
+ });
+ gallery.addEventListener('click',e=>{
+  if(e.target===gallery){gallery.close();return;}
+  if(e.target.closest('#liveGalleryClose')){gallery.close();return;}
+  if(e.target.closest('#liveGalleryPrevious')){changeGalleryImage(-1);return;}
+  if(e.target.closest('#liveGalleryNext')){changeGalleryImage(1);return;}
+  const thumb=e.target.closest('[data-gallery-index]');
+  if(thumb){galleryIndex=Number(thumb.dataset.galleryIndex);showGalleryImage();return;}
+  if(e.target.closest('#liveGalleryDemoButton')){
+   const demo=$('liveGalleryDemo');demo.hidden=!demo.hidden;
+   $('liveGalleryDemoButton').setAttribute('aria-expanded',String(!demo.hidden));
+  }
+ });
+ gallery.addEventListener('keydown',e=>{
+  if(e.key==='ArrowLeft'||e.key==='ArrowRight'){
+   e.preventDefault();changeGalleryImage(e.key==='ArrowLeft'?1:-1);
+  }
+ });
+ let touchStart=null;
+ const galleryStage=$('liveGalleryStage');
+ galleryStage.addEventListener('touchstart',e=>{
+  if(e.touches.length!==1){touchStart=null;return;}
+  touchStart={x:e.touches[0].clientX,y:e.touches[0].clientY};
+ },{passive:true});
+ galleryStage.addEventListener('touchend',e=>{
+  if(!touchStart||!e.changedTouches.length)return;
+  const dx=e.changedTouches[0].clientX-touchStart.x;
+  const dy=e.changedTouches[0].clientY-touchStart.y;
+  touchStart=null;
+  if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.25)changeGalleryImage(dx<0?1:-1);
+ },{passive:true});
 
  async function connect(){
   if(!state.endpoint){state.status='setup';render();return false}
@@ -402,6 +526,8 @@
   render();
  });
  $('liveListings').addEventListener('click',async e=>{
+  const photo=e.target.closest('button.live-image-open');
+  if(photo){const item=state.items.find(x=>keyFor(x)===photo.dataset.imageKey);openGallery(item);return;}
   const button=e.target.closest('button.live-condition-fetch');
   if(!button)return;
   const key=button.dataset.itemKey,item=state.items.find(x=>keyFor(x)===key);
