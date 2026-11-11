@@ -263,6 +263,7 @@
     '<a href="'+escape(item.url)+'" target="_blank" rel="noopener noreferrer">למודעה ב־eBay ↗</a></div></article>';
   }).join(''):state.status==='ready'&&!state.loading?
    '<div class="live-empty">'+(state.items.length?'אין מודעות שתואמות לפילטרים. לחץ על איפוס סינון.':state.done?'לא נמצאו מודעות תואמות בקלפים שנבדקו. נסה לסרוק מחדש.':'עדיין לא נמצאו מודעות תואמות.')+'</div>':'';
+  warmCachedAnalyses();
  }
 
 
@@ -276,20 +277,16 @@
   '<div class="live-gallery-heading"><strong id="liveGalleryTitle"></strong><small id="liveGalleryMeta"></small></div></header>'+
   '<div id="liveGalleryStage" class="live-gallery-stage">'+
   '<img id="liveGalleryImage" alt="" hidden>'+
+  '<div id="liveGalleryOverlay" class="live-gallery-overlay" aria-hidden="true"></div>'+
   '<div id="liveGalleryEmpty" class="live-gallery-empty" hidden>אין תמונה זמינה</div>'+
   '<span id="liveGalleryCounter" class="live-gallery-counter" dir="ltr"></span>'+
   '<button id="liveGalleryPrevious" type="button" class="live-gallery-arrow previous" aria-label="תמונה קודמת">❮</button>'+
   '<button id="liveGalleryNext" type="button" class="live-gallery-arrow next" aria-label="תמונה הבאה">❯</button></div>'+
   '<div id="liveGalleryStatus" class="live-gallery-status" aria-live="polite"></div>'+
   '<div id="liveGalleryThumbs" class="live-gallery-thumbs" aria-label="תמונות המודעה"></div>'+
-  '<div class="live-gallery-actions"><button id="liveGalleryDemoButton" type="button" class="live-gallery-demo-button" aria-expanded="false">✨ ניתוח מצב (דמו)</button>'+
+  '<div class="live-gallery-actions"><button id="liveGalleryDemoButton" type="button" class="live-gallery-demo-button" aria-expanded="false">✨ נתח מצב ב־AI</button>'+
   '<a id="liveGalleryEbay" href="#" target="_blank" rel="noopener noreferrer">למודעה ב־eBay ↗</a></div>'+
-  '<section id="liveGalleryDemo" class="live-gallery-demo" hidden aria-label="הדגמת ניתוח מצב">'+
-  '<strong>LP — תוצאת הדגמה בלבד</strong>'+
-  '<p>זוהי תצוגת דמה של פיצ׳ר עתידי. התמונות לא נותחו, ואין כאן הערכת מצב אמיתית.</p>'+
-  '<div><span>פינות</span><b>שחיקה קלה (דוגמה)</b></div>'+
-  '<div><span>קצוות</span><b>סימנים קלים (דוגמה)</b></div>'+
-  '<div><span>משטח הקלף</span><b>נראה תקין (דוגמה)</b></div></section></div>';
+  '<section id="liveGalleryDemo" class="live-gallery-demo" hidden aria-label="תוצאות ניתוח מצב"></section></div>';
  document.body.appendChild(gallery);
  const galleryCache=new Map();
  let galleryImages=[],galleryIndex=0,galleryItem=null,gallerySerial=0,galleryAbort=null;
