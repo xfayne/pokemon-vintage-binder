@@ -159,8 +159,8 @@
 .live-gallery-empty{color:#7888a4;font-size:14px}
 .live-gallery-counter{position:absolute;inset-block-start:10px;inset-inline-start:10px;border-radius:50px;background:#17223bc9;color:white;font-size:12px;font-weight:800;padding:5px 10px}
 .live-gallery-arrow{position:absolute;top:50%;transform:translateY(-50%);width:37px;height:37px;border:0;border-radius:50%;background:#122040b8;color:white;font-size:22px;display:grid;place-items:center;cursor:pointer}
-.live-gallery-arrow.previous{inset-inline-start:10px}
-.live-gallery-arrow.next{inset-inline-end:10px}
+.live-gallery-arrow.previous{left:10px}
+.live-gallery-arrow.next{right:10px}
 .live-gallery-arrow:disabled{opacity:.25;cursor:default}
 .live-gallery-status{min-height:0;color:#75839c;font-size:12px;text-align:center;line-height:1.4}
 .live-gallery-status:empty{display:none}
