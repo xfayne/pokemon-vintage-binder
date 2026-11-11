@@ -28,7 +28,8 @@ const single=(id,title,price)=>({
   currentBid:{value:price,currency:'USD'},shipping:{value:0,currency:'USD'},
   matchConfidence:96,verificationStatus:'strong',verificationReasons:[],
   conditionSource:'seller',conditionGrade:'NM',sellerName:'fixture-seller',
-  sellerFeedback:100,bestOffer:false,bidCount:null,image:null
+  sellerFeedback:100,bestOffer:false,bidCount:null,
+  image:id==='item-0'?'https://i.ebayimg.com/fixture-primary.jpg':null
 });
 const cards=Array.from({length:52},(_,i)=>single('item-'+i,
   'Slowking 14/111 Neo Genesis Holo Unlimited Pokemon Card '+i,
@@ -53,8 +54,23 @@ try{
       convertToUSD:(amount,currency)=>currency==='USD'?amount:null
     };
   });
+  let galleryCalls=0;
+  const galleryPhotos=['https://i.ebayimg.com/fixture-primary.jpg',
+    'https://i.ebayimg.com/fixture-back.jpg','https://i.ebayimg.com/fixture-corner.jpg'];
+  await context.route('https://i.ebayimg.com/**',route=>route.fulfill({
+    status:200,contentType:'image/svg+xml',
+    body:'<svg xmlns="http://www.w3.org/2000/svg" width="200" height="300"></svg>'
+  }));
   await context.route('https://pokemon-vintage-ebay-deals.xfayne.workers.dev/**',route=>{
     const requestUrl=route.request().url();
+    if(requestUrl.endsWith('/api/item-images')){
+      galleryCalls++;
+      const body=JSON.parse(route.request().postData()||'{}');
+      assert.equal(body.itemId,'item-0');
+      assert.equal(body.marketplace,'EBAY_US');
+      return route.fulfill({status:200,contentType:'application/json',
+        body:JSON.stringify({images:galleryPhotos})});
+    }
     const response=requestUrl.endsWith('/health')
       ?{ready:true}:requestUrl.endsWith('/api/search')
         ?{items:[...cards,...accessories],fetchedAt:new Date().toISOString(),errors:[]}
@@ -78,6 +94,43 @@ try{
   assert.ok(!initial.some(key=>key.startsWith('case-')));
   assert.match(await page.locator('#liveCount').textContent(),/מתוך 52 מודעות/,
     'Accessories must be excluded from the full candidate count');
+
+  assert.equal(galleryCalls,0,'Gallery photos were fetched during search');
+  assert.equal(await page.locator('#liveGallery').evaluate(el=>el.open),false);
+  await page.locator('.live-image-open[data-image-key="item-0"]').click();
+  await page.waitForFunction(()=>document.querySelectorAll('#liveGalleryThumbs button').length===3);
+  assert.equal(galleryCalls,1,'Gallery should fetch detail only on open');
+  assert.equal(await page.locator('#liveGallery').evaluate(el=>el.open),true);
+  assert.equal(await page.locator('#liveGalleryCounter').textContent(),'1 / 3');
+  await page.locator('#liveGalleryNext').click();
+  assert.equal(await page.locator('#liveGalleryCounter').textContent(),'2 / 3');
+  await page.locator('#liveGalleryThumbs [data-gallery-index="2"]').click();
+  assert.equal(await page.locator('#liveGalleryCounter').textContent(),'3 / 3');
+  await page.locator('#liveGallery').press('ArrowLeft');
+  assert.equal(await page.locator('#liveGalleryCounter').textContent(),'1 / 3',
+    'Keyboard navigation must wrap from last to first');
+  await page.evaluate(()=>{
+    const stage=document.querySelector('#liveGalleryStage');
+    const start=new Event('touchstart');
+    Object.defineProperty(start,'touches',{value:[{clientX:300,clientY:200}]});
+    stage.dispatchEvent(start);
+    const end=new Event('touchend');
+    Object.defineProperty(end,'changedTouches',{value:[{clientX:100,clientY:210}]});
+    stage.dispatchEvent(end);
+  });
+  assert.equal(await page.locator('#liveGalleryCounter').textContent(),'2 / 3',
+    'Swipe left must navigate to next gallery photo');
+  assert.equal(await page.locator('#liveGalleryDemo').isVisible(),false);
+  await page.locator('#liveGalleryDemoButton').click();
+  assert.equal(await page.locator('#liveGalleryDemo').isVisible(),true);
+  assert.match(await page.locator('#liveGalleryDemo').innerText(),/הדגמה בלבד/,
+    'AI result must clearly state no real photo analysis occurred');
+  await page.locator('#liveGalleryClose').click();
+  assert.equal(await page.locator('#liveGallery').evaluate(el=>el.open),false);
+  await page.locator('.live-image-open[data-image-key="item-0"]').click();
+  assert.equal(await page.locator('#liveGalleryCounter').textContent(),'1 / 3');
+  assert.equal(galleryCalls,1,'Reopening the same listing should use cached gallery metadata');
+  await page.locator('#liveGalleryClose').click();
 
   const first=page.locator('#liveListings select.live-item-grade').first();
   await first.selectOption('DMG');
@@ -105,7 +158,7 @@ try{
     'Manual comparison grade should survive a deliberate sort and show more');
 
   assert.deepEqual(pageErrors,[],'No uncaught browser errors expected');
-  console.log('PASS Deals mobile grade comparison keeps listing visible, recalculates value, honors explicit sort, and filters art cases');
+  console.log('PASS Deals mobile gallery fetches photos only on open, navigates by buttons, thumbnails, keyboard and touch, previews AI demo without analysis, and preserves grade sorting');
   await context.close();
 }finally{
   await browser.close();
