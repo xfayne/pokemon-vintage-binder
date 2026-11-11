@@ -20,6 +20,7 @@ assert.equal(offlineStyles[0], baselineStyles[0], 'Standalone fallback styles ch
 const normalizeScripts = html => html.replace(/<script\b[^>]*>[\s\S]*?<\/script>\s*/gi, '');
 const normalizeUnchangedLayout = html => normalizeScripts(html)
   .replace(/css\/app\.css\?v=[^"]+/g, 'css/app.css?v=VERSION')
+  .replace(/deal-finder\/live\.css\?v=[^"]+/g, 'deal-finder/live.css?v=VERSION')
   .replace(/<section class="collection-page" id="binderPage"[\s\S]*?<\/section>/,
     '<!-- intentionally updated binder controls and placement accordion -->')
   .replace(/<section class="collection-page" id="wishPage"[\s\S]*?<\/section>/,
