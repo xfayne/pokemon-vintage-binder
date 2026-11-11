@@ -313,6 +313,9 @@ async function analyzeConditionApi(request,env,headers){
   const photos=fetched.filter(x=>x.status==='fulfilled').map(x=>x.value);
   if(!photos.length)return reply({error:'AI_NO_USABLE_IMAGES'},422,headers);
   const analysis=await analyzeCardCondition({photos,cardContext:{name,setName}},{apiKey:env.GEMINI_API_KEY});
+  // A URL-set fingerprint detects listing photo changes without persisting seller bytes.
+  const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(listing.images.join('\n')));
+  analysis.imageSetFingerprint=Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('');
   return reply({analysis,source:{type:'ebay-listing',marketplace,itemId},imageCount:listing.images.length,analyzedPhotoIndices:photos.map(x=>x.index)},200,headers);
  }catch(e){
   const msg=String(e?.message||'AI_UNAVAILABLE');
