@@ -84,7 +84,7 @@ if (updated.includes('js/shipments.js')) {
       'Shipment extraction changed any other binder behavior');
   }
   const shipmentsTag = '<script src="js/shipments.js?v=20261109-ship1"></script>';
-  const binderTag = '<script src="js/binder.js?v=20261110-binderui1"></script>';
+  const binderTag = '<script src="js/binder.js?v=20261111-search1"></script>';
   assert.ok(updated.indexOf(shipmentsTag) > 0 && updated.indexOf(shipmentsTag) < updated.indexOf(binderTag),
     'Shipment controller must be loaded before binder.js');
 }
@@ -103,14 +103,23 @@ if (updated.includes('js/collection-views.js')) {
     if (!updated.includes('js/owned-cards.js')) {
       assert.equal(newBinder,oldBinder,'Binder code changed outside collection views');
     }
-    assert.equal(views,execFileSync('git',['show','origin/main:js/collection-views.js'],{encoding:'utf8'}),
-      'Collection renderer changed unexpectedly');
+    const previousViews=execFileSync('git',['show','origin/main:js/collection-views.js'],{encoding:'utf8'});
+    const beforeWishlist=" $('wishlistItems').innerHTML=";
+    const searchStart=" const wishQuery=";
+    const afterWishlist=" renderOwnedList();";
+    assert.ok(views.includes(searchStart), 'Wishlist search logic missing');
+    assert.equal(views.slice(0,views.indexOf(searchStart)),
+      previousViews.slice(0,previousViews.indexOf(beforeWishlist)),
+      'Binder rendering changed outside the Wishlist search feature');
+    assert.equal(views.slice(views.indexOf(afterWishlist)),
+      previousViews.slice(previousViews.indexOf(afterWishlist)),
+      'Post-Wishlist collection behavior changed unexpectedly');
   } else {
     assert.equal(newBinder.replace(call,()=>extracted),oldBinder,
       'The extracted collection renderer differs from old binder code');
   }
-  const viewScript='<script src="js/collection-views.js?v=20261109-views1"></script>';
-  const binderScript='<script src="js/binder.js?v=20261110-binderui1"></script>';
+  const viewScript='<script src="js/collection-views.js?v=20261111-search1"></script>';
+  const binderScript='<script src="js/binder.js?v=20261111-search1"></script>';
   assert.ok(updated.indexOf(viewScript)>0 && updated.indexOf(viewScript)<updated.indexOf(binderScript),
     'View renderer script must load before binder');
 }
@@ -133,7 +142,7 @@ if (updated.includes('js/owned-cards.js')) {
       'Owned-cards extraction changed binder logic beyond this exact block');
   }
   const ownedTag='<script src="js/owned-cards.js?v=20261109-owned1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261110-binderui1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261111-search1"></script>';
   assert.ok(updated.indexOf(ownedTag)>0&&updated.indexOf(ownedTag)<updated.indexOf(binderTag),
     'Owned cards controller must load before binder');
 }
@@ -156,7 +165,7 @@ if (updated.includes('js/collection-drag.js')) {
       'Drag extraction modified unrelated collection logic or listeners');
   }
   const dragTag='<script src="js/collection-drag.js?v=20261109-drag1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261110-binderui1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261111-search1"></script>';
   assert.ok(updated.indexOf(dragTag)>0&&updated.indexOf(dragTag)<updated.indexOf(binderTag),
     'Drag module must be available before the binder controller');
 }
@@ -190,7 +199,7 @@ if (updated.includes('js/collection-ordering.js')) {
     assert.equal(ordering,module,'Collection order implementation was changed during extraction');
   }
   const tag='<script src="js/collection-ordering.js?v=20261109-order1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261110-binderui1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261111-search1"></script>';
   assert.ok(updated.indexOf(tag)>0&&updated.indexOf(tag)<updated.indexOf(binderTag),
     'Collection order module must load before binder');
 }
@@ -218,7 +227,7 @@ if(updated.includes('js/card-actions.js')){
       'Extracted card action function bodies changed unexpectedly');
   }
   const actionTag='<script src="js/card-actions.js?v=20261110-actions1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261110-binderui1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261111-search1"></script>';
   assert.ok(updated.indexOf(actionTag)>0&&updated.indexOf(actionTag)<updated.indexOf(binderTag),
     'Card actions script must load before binder');
 }
@@ -244,7 +253,7 @@ if(updated.includes('js/card-details.js')){
     assert.equal(modal,expected,'Card details dialog markup or handlers changed');
   }
   const modalTag='<script src="js/card-details.js?v=20261110-details1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261110-binderui1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261111-search1"></script>';
   assert.ok(updated.indexOf(modalTag)>0&&updated.indexOf(modalTag)<updated.indexOf(binderTag),
     'Details module must load before binder');
 }
@@ -271,7 +280,7 @@ if(updated.includes('js/catalog-ui.js')){
     assert.equal(movedModule,expected,'Catalog UI function bodies changed');
   }
   const uiTag='<script src="js/catalog-ui.js?v=20261110-catui1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261110-binderui1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261111-search1"></script>';
   assert.ok(updated.indexOf(uiTag)>0&&updated.indexOf(uiTag)<updated.indexOf(binderTag),
     'Catalog UI must load before binder app');
 }
@@ -302,7 +311,7 @@ if(updated.includes('js/catalog-loader.js')){
     assert.equal(loader,expectedModule,'Offline dataset decoder or bootstrap logic changed');
   }
   const loaderTag='<script src="js/catalog-loader.js?v=20261110-loader1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261110-binderui1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261111-search1"></script>';
   assert.ok(updated.indexOf(loaderTag)>0&&updated.indexOf(loaderTag)<updated.indexOf(binderTag),
     'Catalog loader must load before binder entrypoint');
 }
@@ -311,7 +320,7 @@ if(updated.includes('js/collection-state.js')){
   const module=readFileSync('js/collection-state.js','utf8');
   assert.ok(module.includes('window.VintageCollectionState={create('),'Missing collection-state factory');
   const stateTag='<script src="js/collection-state.js?v=20261110-state1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261110-binderui1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261111-search1"></script>';
   assert.ok(updated.indexOf(stateTag)>0 && updated.indexOf(stateTag)<updated.indexOf(binderTag),
     'Collection state must load before binder');
   assert.ok(readFileSync('js/binder.js','utf8').includes('window.VintageCollectionState.create('),
@@ -346,7 +355,7 @@ if(updated.includes('js/collection-backup.js')){
   const factory='const {backup,copyWishlist,exportCSV,importBackup}=window.VintageCollectionBackup.create({state,MAP,cardNumber,toast,getProgress,normalizeOrders:()=>normalizeOrders(),sortedOwnedCards:()=>sortedOwnedCards(),ensureCloudEdit,save,renderAll,normalizeShipment});\n';
   const start=before.indexOf('function download(content,type,filename){');
   const backupTag='<script src="js/collection-backup.js?v=20261110-backup1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261110-binderui1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261111-search1"></script>';
   assert.ok(updated.indexOf(backupTag)>0&&updated.indexOf(backupTag)<updated.indexOf(binderTag),
     'Backup controller must be loaded before binder');
   assert.ok(after.includes(factory),'Binder backup factory is not wired');
@@ -857,6 +866,66 @@ async function exercise(version, viewport) {
     ['base2-3','base1-1','base1-2','base2-4'], 'Binder reorder failed');
   assert.equal(collectionState.overlayHidden.setting, false, 'Wishlist overlay toggle failed');
   assert.equal(collectionState.overlayHidden.mutedCards, 2, 'Wishlist-only pockets not muted');
+  // Wishlist search is view-only: original global priority indices and drag targets
+  // must remain intact, including when a filtered card is moved to the top.
+  if(version==='updated'){
+    const wishlistSearch=await page.evaluate(()=>{
+      window.VintageBinder.adoptProgress({
+        owned:{},
+        wish:{'base2-3':true,'base2-4':true},
+        wishOrder:['base2-4','base2-3']
+      });
+      window.VintageCloud={canEdit:()=>true,onChange:()=>{}};
+      document.querySelector('[data-view-btn="wishlist"]').click();
+      const input=document.querySelector('#wishFind');
+      input.focus();
+      const show=()=>[...document.querySelectorAll('#wishlistItems .wish-item')].map(el=>({
+        id:el.dataset.openWish,
+        position:Number(el.dataset.orderIndex),
+        dragIndex:Number(el.dataset.dragIndex),
+        rank:el.querySelector('.wish-rank')?.textContent.trim()
+      }));
+      const type=value=>{input.value=value;input.dispatchEvent(new Event('input',{bubbles:true}));};
+      const initial=show();
+      type('FLAREON');
+      const byName=show(),focused=document.activeElement===input;
+      const count=document.querySelector('#wishCount').textContent;
+      const savedOrder=window.VintageBinder.getProgress().wishOrder;
+      type('Jungle');
+      const bySet=show();
+      type('4/64');
+      const byNumber=show();
+      type('card-that-does-not-exist');
+      const noMatches=show().length===0 &&
+        document.querySelector('#wishlistItems').textContent.includes('לא נמצאו קלפים');
+      type('Flareon');
+      document.querySelector('[data-wish-move="base2-3"]').click();
+      document.querySelector('#wishMoveTop').click();
+      const afterMove=show();
+      const reordered=window.VintageBinder.getProgress().wishOrder;
+      type('');
+      const restored=show();
+      document.querySelector('[data-view-btn="binder"]').click();
+      window.VintageCloud={canEdit:()=>false,onChange:()=>{}};
+      return {initial,byName,bySet,byNumber,focused,count,savedOrder,
+        noMatches,afterMove,reordered,restored};
+    });
+    const ids=rows=>rows.map(r=>r.id);
+    assert.deepEqual(ids(wishlistSearch.initial),['base2-4','base2-3']);
+    assert.deepEqual(ids(wishlistSearch.byName),['base2-3'],'Wishlist name filter failed');
+    assert.equal(wishlistSearch.byName[0].position,1,'Filtered card lost its original index');
+    assert.equal(wishlistSearch.byName[0].dragIndex,1,'Filtered drag index is incorrect');
+    assert.equal(wishlistSearch.byName[0].rank,'2','Filtered card priority was renumbered');
+    assert.deepEqual(ids(wishlistSearch.bySet),['base2-4','base2-3'],'Wishlist set filter failed');
+    assert.deepEqual(ids(wishlistSearch.byNumber),['base2-4'],'Wishlist number filter failed');
+    assert.equal(wishlistSearch.focused,true,'Typing into Wishlist search lost focus');
+    assert.equal(wishlistSearch.count,'2 משאלות','Search changed the full Wishlist count');
+    assert.deepEqual(wishlistSearch.savedOrder,['base2-4','base2-3'],'Search mutated saved order');
+    assert.equal(wishlistSearch.noMatches,true,'No-results message missing');
+    assert.deepEqual(wishlistSearch.reordered,['base2-3','base2-4'],'Move-to-top under filter failed');
+    assert.equal(wishlistSearch.afterMove[0].rank,'1','Priority did not update after move');
+    assert.deepEqual(ids(wishlistSearch.restored),['base2-3','base2-4'],'Clearing search did not restore order');
+  }
   // Normalize legacy, duplicated or inconsistent order arrays deterministically.
   const normalized = await page.evaluate(() => {
     window.VintageBinder.adoptProgress({

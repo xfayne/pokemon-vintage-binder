@@ -20,7 +20,14 @@ function renderCollections(){if(!state.ready)return;normalizeOrders();renderShip
  $('binderBook').hidden=list.length===0;$('binderPager').hidden=list.length===0;$('binderEmpty').hidden=list.length!==0;
  $('binderPageLabel').textContent='עמוד '+(state.binderPage+1)+' מתוך '+pageCount;
  $('binderPrev').disabled=state.binderPage===0;$('binderNext').disabled=state.binderPage>=pageCount-1;
- $('wishlistItems').innerHTML=state.wishOrder.length?state.wishOrder.map((id,i)=>{
+ const wishQuery=$('wishFind').value.trim().toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'');
+ const wishMatches=state.wishOrder.map((id,i)=>({id,i})).filter(({id})=>{
+  if(!wishQuery)return true;
+  const card=cardLookup.get(id);
+  const searchable=card && [card.name,MAP.get(card.set)?.name||'',cardNumber(card),id].join(' ');
+  return searchable && searchable.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').includes(wishQuery);
+ });
+ $('wishlistItems').innerHTML=state.wishOrder.length ? wishMatches.length ? wishMatches.map(({id,i})=>{
   const c=cardLookup.get(id);if(!c)return '';
   const condition=state.conditions[id]||'';
   const market=condition?window.VintageMarketPrices?.getOwnedPrice?.(c,MAP.get(c.set)?.name||'',condition,!!state.firstEdition[id]):null;
@@ -37,7 +44,7 @@ function renderCollections(){if(!state.ready)return;normalizeOrders();renderShip
     <button type="button" class="btn sm wish-move-action" data-wish-move="${esc(id)}" aria-label="שנה מיקום של ${esc(c.name)} ב־Wishlist">↗ העבר</button>
    </div>
   </article>`;
- }).join(''):
+ }).join('') : `<div class="no-cards">לא נמצאו קלפים שמתאימים לחיפוש.</div>` :
  `<div class="no-cards">Wishlist עדיין ריקה. סמן ☆ ליד קלף בקטלוג כדי להוסיף אותו. <button type="button" class="btn sm primary" data-view-btn="catalog">לקטלוג</button></div>`;
  renderOwnedList();
  if(state.view==='deals')renderDeals();
