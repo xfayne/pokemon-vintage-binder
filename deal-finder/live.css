@@ -156,6 +156,21 @@
 .live-gallery-stage{position:relative;display:grid;place-items:center;background:#f0f3f9;border-radius:14px;overflow:hidden;min-height:250px;height:min(55vh,470px);touch-action:pan-y}
 .live-gallery-stage>img{max-width:100%;max-height:100%;width:100%;height:100%;object-fit:contain}
 .live-gallery-stage>img[hidden],.live-gallery-stage>.live-gallery-empty[hidden]{display:none}
+.live-gallery-overlay{position:absolute;inset:0;pointer-events:none;z-index:1}
+.live-gallery-defect-box{position:absolute;border:2px solid #f04d74;border-radius:4px;background:#f04d7426;box-shadow:0 0 0 1px #ffffffaa}
+.live-gallery-defect-box.highlighted{border-color:#ffc12c;background:#ffc12c33;border-width:3px;box-shadow:0 0 0 2px #ffffffcc}
+.live-gallery-arrow,.live-gallery-counter{z-index:2}
+.live-gallery-demo .live-ai-distribution{display:flex;gap:9px;flex-wrap:wrap;justify-content:start}
+.live-ai-distribution span{font-weight:750;font-size:11px;color:#61429b}
+.live-ai-findings{display:grid!important;gap:7px!important;align-items:stretch!important}
+.live-ai-finding{border:1px solid #e4d9fd;border-radius:8px;padding:9px;background:#fff;color:#453967;text-align:start;display:grid;grid-template-columns:auto 1fr;gap:4px 7px;font:inherit;cursor:pointer}
+.live-ai-finding span{font-size:10px;color:#826ca6}
+.live-ai-finding strong{font-size:12px}
+.live-ai-finding small{grid-column:1/-1;color:#766998}
+.live-ai-limitations{margin:0;padding-inline-start:18px;line-height:1.65;color:#6d6088}
+.live-ai-warning{color:#a03b48!important}
+.live-ai-secondary{background:#fff;border:1px solid #d5c5fb;border-radius:9px;padding:8px 12px;color:#5433a0;font:inherit;font-weight:700;cursor:pointer}
+
 .live-gallery-empty{color:#7888a4;font-size:14px}
 .live-gallery-counter{position:absolute;inset-block-start:10px;inset-inline-start:10px;border-radius:50px;background:#17223bc9;color:white;font-size:12px;font-weight:800;padding:5px 10px}
 .live-gallery-arrow{position:absolute;top:50%;transform:translateY(-50%);width:37px;height:37px;border:0;border-radius:50%;background:#122040b8;color:white;font-size:22px;display:grid;place-items:center;cursor:pointer}

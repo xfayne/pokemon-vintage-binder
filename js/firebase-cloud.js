@@ -133,7 +133,42 @@ async function init(config){
   },e=>{setStatus('בעיה בהתחברות',authError(e));say(authError(e));});
  }catch(e){setStatus('⚠️ Firebase אינו זמין', 'לא נשמר מידע בדפדפן.');say(authError(e));}
 }
-window.VintageCloud={canEdit:()=>Boolean(user&&ready),getIdToken:async()=>user&&ready?await sdk.getIdToken(user):null,onChange:({immediate=false}={})=>{
+// AI condition cache deliberately lives in a separate per-user subcollection,
+// never in the progress document (which is replaced by the collection sync bridge).
+function conditionAnalysisKey(source){
+ if(source?.type==='ebay-listing'&&/^EBAY_(US|GB|DE)$/.test(source.marketplace)&&
+    /^v\d\|\d{3,20}\|\d{1,6}$/.test(source.itemId))
+  return 'ebay-listing__'+source.marketplace+'__'+source.itemId.replace(/\|/g,'_');
+ return null; // owned-card adapters get their own stable namespaced key later.
+}
+function conditionRef(source){
+ const key=conditionAnalysisKey(source);
+ if(!user||!ready||!db||!sdk||!key)throw Error('יש להתחבר כדי לשמור ניתוח מצב.');
+ return sdk.doc(db,'users',user.uid,'conditionAnalyses',key);
+}
+async function getConditionAnalysis(source){
+ const ref=conditionRef(source);
+ const uid=user.uid;
+ const snapshot=await sdk.getDocFromServer(ref);
+ if(uid!==user?.uid||!ready)throw Error('SESSION_CHANGED');
+ return snapshot.exists()?snapshot.data():null;
+}
+async function saveConditionAnalysis(source,analysis,photoIndices){
+ const ref=conditionRef(source),uid=user.uid;
+ if(!analysis||!['NM','LP','MP','HP','DMG'].includes(analysis.grade))throw Error('INVALID_CONDITION_ANALYSIS');
+ const current=await sdk.getDocFromServer(ref);
+ if(uid!==user?.uid||!ready)throw Error('SESSION_CHANGED');
+ // Preserve a newer record if another tab has already analyzed this listing.
+ const existing=current.exists()?current.data():null;
+ if(existing?.analyzedAt?.toMillis&&Number(existing.analyzedAt.toMillis())>Date.now()-15000)
+  return existing;
+ const documentData={schemaVersion:1,source:{...source},analysis,photoIndices:Array.isArray(photoIndices)?photoIndices.slice(0,8):[],
+  imageCount:Number(analysis.imageCount)||0,analyzedAt:sdk.serverTimestamp(),clientAnalyzedAt:Date.now()};
+ await sdk.setDoc(ref,documentData);
+ if(uid!==user?.uid||!ready)throw Error('SESSION_CHANGED');
+ return documentData;
+}
+window.VintageCloud={getConditionAnalysis,saveConditionAnalysis,conditionAnalysisKey,getUserUid:()=>user&&ready?user.uid:null,canEdit:()=>Boolean(user&&ready),getIdToken:async()=>user&&ready?await sdk.getIdToken(user):null,onChange:({immediate=false}={})=>{
  if(!user||!ready)return;
  changeSeq++;pending=true;setStatus('☁️ ממתין לשמירה…',user.email||'Google');
  clearTimeout(flushTimer);flushTimer=setTimeout(flush,immediate?0:350);

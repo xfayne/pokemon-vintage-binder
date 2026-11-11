@@ -11,6 +11,7 @@ A mobile-friendly web app for organizing a personal **vintage Pokémon TCG** col
 - **My Binder** — arrange cards in 3×3 binder pages and share a read-only binder view.
 - **Wishlist** — prioritize and reorder wanted cards.
 - **Deals** — discover eBay listings for wishlist cards, compare condition-specific prices, and filter suspicious or irrelevant listings.
+- **AI condition analysis** — manually analyze a listing's front/back photos through Gemini, inspect approximate defect highlights, and reuse the result privately from Firestore (requires owner login and Firestore rules). The grading core is reusable for future owned-card photos.
 - **Shipments** — track parcels and associate them with cards.
 - **Google sign-in and backups** — collection data is stored in Firestore; JSON backup/import is available.
 
@@ -26,10 +27,11 @@ This is a lightweight vanilla JavaScript application, hosted on **GitHub Pages**
 | Styles | `css/app.css` |
 | Collection, binder and wishlist modules | `js/` |
 | eBay Deals UI | `deal-finder/` |
+| Photo-condition grading core | `ebay-worker/card-condition.js` |
 | Cloudflare Worker backend | `ebay-worker/` |
 | Browser and regression tests | `tests/` |
 
-Firebase Authentication handles Google sign-in, and **Firestore is the source of truth** for collection data. The eBay backend uses a Cloudflare Worker to keep API credentials off the client. Do not commit secrets or Firebase service-account keys.
+Firebase Authentication handles Google sign-in, and **Firestore is the source of truth** for collection data. The eBay backend uses a Cloudflare Worker to keep API credentials off the client. Do not commit secrets or Firebase service-account keys. AI grading uses the separately configured Cloudflare Worker secret `GEMINI_API_KEY` and authenticated `POST /api/analyze-condition`; Firestore owner-only rules for `users/{uid}/conditionAnalyses` are described in [`docs/FIRESTORE_CONDITION_RULES.md`](docs/FIRESTORE_CONDITION_RULES.md).
 
 ## Development
 

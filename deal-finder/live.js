@@ -44,6 +44,34 @@
  }catch(_){}
  const GRADES=['NM','LP','MP','HP','DMG'];
  const gradeRank={NM:0,LP:1,MP:2,HP:3,DMG:4};
+ // Cached analyses are namespaced by signed-in Firebase user, not by Deals search scope.
+ const aiCache=new Map(),aiCacheRequested=new Set();
+ const aiSource=item=>({type:'ebay-listing',marketplace:item.marketplace,itemId:item.itemId});
+ const aiCacheKey=item=>{
+  const cloud=window.VintageCloud,uid=cloud?.getUserUid?.(),key=cloud?.conditionAnalysisKey?.(aiSource(item));
+  return uid&&key?uid+':'+key:null;
+ };
+ const aiFor=item=>{
+  const key=aiCacheKey(item);
+  return key?aiCache.get(key)?.analysis||null:null;
+ };
+ function warmCachedAnalyses(){
+  const cloud=window.VintageCloud;
+  if(!cloud?.canEdit?.())return;
+  const byKey=new Map(state.items.map(item=>[keyFor(item),item]));
+  for(const id of state.lastRenderedOrder.slice(0,Math.min(state.visibleCount,65))){
+   const item=byKey.get(id),key=item&&aiCacheKey(item);
+   if(!key||aiCacheRequested.has(key))continue;
+   aiCacheRequested.add(key);
+   cloud.getConditionAnalysis(aiSource(item)).then(saved=>{
+    if(saved?.analysis&&cloud.getUserUid()===key.split(':')[0]){
+     aiCache.set(key,saved);
+     if(state.items.some(x=>keyFor(x)===keyFor(item)))render();
+    }
+   }).catch(()=>{}); // Firestore rules may need a separate deployment.
+  }
+ }
+
  const isArtCase=title=>/\bart[\s_-]*cases?\b/i.test(String(title||''));
  const japaneseTitle=title=>/[\u3040-\u30ff\u3400-\u9fff]/u.test(String(title||''))||/\b(?:japanese|japanisch\w*|jpn|jap|japonais\w*|japon[eé]s\w*|japan\s+(?:edition|version|print|language|import|card))\b/i.test(String(title||''));
  const usdMoney=value=>typeof value==='number'&&Number.isFinite(value)?new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:2}).format(value):'—';
@@ -68,10 +96,11 @@
  const resolvedGrade=item=>{
   const key=keyFor(item),detail=state.conditionDetails.get(key);
   const declared=(detail&&detail.source==='seller'&&detail.grade)?detail.grade:null;
-  const grade=state.gradeOverrides.get(key)||declared||item.conditionGrade||'MP';
-  const source=declared?'seller':item.conditionSource||'unknown';
-  const label=detail?.label||item.conditionLabel||item.condition||'';
-  return {grade,source,label,overridden:state.gradeOverrides.has(key)};
+  const ai=aiFor(item),override=state.gradeOverrides.get(key),cached=aiCache.get(aiCacheKey(item));
+  const grade=override||ai?.grade||declared||item.conditionGrade||'MP';
+  const source=override?'user':ai?'ai':declared?'seller':item.conditionSource||'unknown';
+  const label=ai?(cached?.stale?'תמונות השתנו · ניתוח AI ישן':'AI · '+ai.confidencePercent+'% ביטחון'):detail?.label||item.conditionLabel||item.condition||'';
+  return {grade,source,label,confidence:cached?.stale?0:ai?.confidencePercent??null,stale:!!cached?.stale,overridden:!!override};
  };
  function evaluation(item,card){
   const gradeInfo=resolvedGrade(item);
@@ -85,7 +114,7 @@
   const difference=market!==null&&comparable!==null?(market-comparable)/market:null;
   const discount=allIn!==null&&verification.status==='strong'?difference:null;
   const hours=item.format==='AUCTION'?(new Date(item.endTime).getTime()-Date.now())/3600000:null;
-  const reliable=verification.status==='strong'&&discount!==null&&verification.confidence>=70&&gradeInfo.source!=='unknown'&&!/\\b(?:damaged|creased|folded|poor condition)\\b/i.test(item.title||'')&&!/\\b(?:lot|bundle)\\b/i.test(item.title||'');
+  const reliable=verification.status==='strong'&&discount!==null&&verification.confidence>=70&&gradeInfo.source!=='unknown'&&(gradeInfo.source!=='ai'||gradeInfo.confidence>=75)&&!/\\b(?:damaged|creased|folded|poor condition)\\b/i.test(item.title||'')&&!/\\b(?:lot|bundle)\\b/i.test(item.title||'');
   let group=4;
   if(reliable&&discount>=0.20&&((item.format==='FIXED_PRICE')||(hours!==null&&hours>=0&&hours<=6)))group=0;
   else if(reliable&&discount>=0.15&&((item.format==='FIXED_PRICE')||(hours!==null&&hours>=0&&hours<=24)))group=1;
@@ -198,7 +227,7 @@
     score.difference>=0?(item.format==='AUCTION'?'ההצעה כרגע נמוכה ב־':'זול ב־')+pct+'%':(item.format==='AUCTION'?'ההצעה כרגע גבוהה ב־':'יקר ב־')+pct+'%';
    const tone=!verified?'unknown':score.provisional?'provisional':score.discount===null?'unknown':score.discount>=0?'cheaper':'pricier';
    const key=keyFor(item);
-   const conditionText=score.gradeInfo.source==='seller'?'על פי eBay':score.gradeInfo.source==='title'?'מזוהה בכותרת':'לא ידוע (MP כברירת מחדל)';
+   const conditionText=score.gradeInfo.source==='ai'?'ניתוח AI · '+score.gradeInfo.confidence+'% ביטחון':score.gradeInfo.source==='user'?'בחירה ידנית':score.gradeInfo.source==='seller'?'על פי eBay':score.gradeInfo.source==='title'?'מזוהה בכותרת':'לא ידוע (MP כברירת מחדל)';
    const selectedLabel=score.gradeInfo.overridden?' · שינית ידנית':'';
    const detail=state.conditionDetails.get(key);
    const showFetch=(!verified||score.gradeInfo.source!=='seller')&&!detail;
@@ -234,6 +263,7 @@
     '<a href="'+escape(item.url)+'" target="_blank" rel="noopener noreferrer">למודעה ב־eBay ↗</a></div></article>';
   }).join(''):state.status==='ready'&&!state.loading?
    '<div class="live-empty">'+(state.items.length?'אין מודעות שתואמות לפילטרים. לחץ על איפוס סינון.':state.done?'לא נמצאו מודעות תואמות בקלפים שנבדקו. נסה לסרוק מחדש.':'עדיין לא נמצאו מודעות תואמות.')+'</div>':'';
+  warmCachedAnalyses();
  }
 
 
@@ -247,25 +277,174 @@
   '<div class="live-gallery-heading"><strong id="liveGalleryTitle"></strong><small id="liveGalleryMeta"></small></div></header>'+
   '<div id="liveGalleryStage" class="live-gallery-stage">'+
   '<img id="liveGalleryImage" alt="" hidden>'+
+  '<div id="liveGalleryOverlay" class="live-gallery-overlay" aria-hidden="true"></div>'+
   '<div id="liveGalleryEmpty" class="live-gallery-empty" hidden>אין תמונה זמינה</div>'+
   '<span id="liveGalleryCounter" class="live-gallery-counter" dir="ltr"></span>'+
   '<button id="liveGalleryPrevious" type="button" class="live-gallery-arrow previous" aria-label="תמונה קודמת">❮</button>'+
   '<button id="liveGalleryNext" type="button" class="live-gallery-arrow next" aria-label="תמונה הבאה">❯</button></div>'+
   '<div id="liveGalleryStatus" class="live-gallery-status" aria-live="polite"></div>'+
   '<div id="liveGalleryThumbs" class="live-gallery-thumbs" aria-label="תמונות המודעה"></div>'+
-  '<div class="live-gallery-actions"><button id="liveGalleryDemoButton" type="button" class="live-gallery-demo-button" aria-expanded="false">✨ ניתוח מצב (דמו)</button>'+
+  '<div class="live-gallery-actions"><button id="liveGalleryDemoButton" type="button" class="live-gallery-demo-button" aria-expanded="false">✨ נתח מצב ב־AI</button>'+
   '<a id="liveGalleryEbay" href="#" target="_blank" rel="noopener noreferrer">למודעה ב־eBay ↗</a></div>'+
-  '<section id="liveGalleryDemo" class="live-gallery-demo" hidden aria-label="הדגמת ניתוח מצב">'+
-  '<strong>LP — תוצאת הדגמה בלבד</strong>'+
-  '<p>זוהי תצוגת דמה של פיצ׳ר עתידי. התמונות לא נותחו, ואין כאן הערכת מצב אמיתית.</p>'+
-  '<div><span>פינות</span><b>שחיקה קלה (דוגמה)</b></div>'+
-  '<div><span>קצוות</span><b>סימנים קלים (דוגמה)</b></div>'+
-  '<div><span>משטח הקלף</span><b>נראה תקין (דוגמה)</b></div></section></div>';
+  '<section id="liveGalleryDemo" class="live-gallery-demo" hidden aria-label="תוצאות ניתוח מצב"></section></div>';
  document.body.appendChild(gallery);
  const galleryCache=new Map();
  let galleryImages=[],galleryIndex=0,galleryItem=null,gallerySerial=0,galleryAbort=null;
  const galleryStatus=$('liveGalleryStatus');
  const imageUrl=src=>{try{return typeof src==='string'&&new URL(src).protocol==='https:'}catch{return false}};
+
+ // The analysis schema and box coordinates are photo-source independent.
+ // The gallery is the eBay-specific presentation and cache consumer.
+ let galleryAnalysisRecord=null,gallerySaveFailed=false,galleryAnalyzing=false,galleryHighlighted=-1;
+ let galleryFingerprint='';
+ function validBox(box){
+  return Array.isArray(box)&&box.length===4&&box.every(n=>Number.isInteger(n)&&n>=0&&n<=1000)&&box[0]<box[2]&&box[1]<box[3];
+ }
+ function drawGalleryDefects(){
+  const overlay=$('liveGalleryOverlay'),img=$('liveGalleryImage'),stage=$('liveGalleryStage');
+  overlay.replaceChildren();
+  const observations=galleryAnalysisRecord?.analysis?.observations||[];
+  if(!Array.isArray(observations)||!img.complete||!img.naturalWidth||!img.naturalHeight||!galleryImages.length)return;
+  const width=stage.clientWidth,height=stage.clientHeight;
+  const scale=Math.min(width/img.naturalWidth,height/img.naturalHeight);
+  const drawnWidth=img.naturalWidth*scale,drawnHeight=img.naturalHeight*scale;
+  const offsetX=(width-drawnWidth)/2,offsetY=(height-drawnHeight)/2;
+  observations.slice(0,24).forEach((obs,index)=>{
+   for(const loc of (Array.isArray(obs.locations)?obs.locations:[])){
+    if(loc?.photoIndex!==galleryIndex+1||!validBox(loc.box2d))continue;
+    const [ymin,xmin,ymax,xmax]=loc.box2d;
+    const mark=document.createElement('span');
+    mark.className='live-gallery-defect-box'+(galleryHighlighted===index?' highlighted':'');
+    mark.style.left=(offsetX+xmin*drawnWidth/1000)+'px';
+    mark.style.top=(offsetY+ymin*drawnHeight/1000)+'px';
+    mark.style.width=((xmax-xmin)*drawnWidth/1000)+'px';
+    mark.style.height=((ymax-ymin)*drawnHeight/1000)+'px';
+    mark.title=String(obs.finding||'פגם אפשרי');
+    overlay.appendChild(mark);
+   }
+  });
+ }
+ async function checkGalleryPhotoFingerprint(images,serial){
+  if(!globalThis.crypto?.subtle||!Array.isArray(images)||!images.length)return;
+  try{
+   const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(images.join('\n')));
+   if(serial!==gallerySerial||!gallery.open)return;
+   galleryFingerprint=Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('');
+   const record=galleryAnalysisRecord;
+   if(record?.analysis?.imageSetFingerprint){
+    const stale=record.analysis.imageSetFingerprint!==galleryFingerprint;
+    if(record.stale!==stale){
+     record.stale=stale;
+     const key=galleryItem&&aiCacheKey(galleryItem);
+     if(key)aiCache.set(key,record);
+     render();
+    }
+    renderGalleryAnalysis();
+   }
+  }catch(_){}
+ }
+ function renderGalleryAnalysis(){
+  const panel=$('liveGalleryDemo'),button=$('liveGalleryDemoButton'),record=galleryAnalysisRecord,analysis=record?.analysis;
+  if(!analysis){
+   if(!galleryAnalyzing){panel.hidden=true;button.disabled=false;button.textContent='✨ נתח מצב ב־AI';button.setAttribute('aria-expanded','false');}
+   drawGalleryDefects();return;
+  }
+  const confidence=Math.round(Number(analysis.confidencePercent)||0);
+  const distribution=GRADES.map(g=>'<span>'+g+': '+Number(analysis.gradePercentages?.[g]||0)+'%</span>').join('');
+  const observations=(Array.isArray(analysis.observations)?analysis.observations:[]).slice(0,24);
+  const findings=observations.length?observations.map((obs,i)=>{
+   const loc=(Array.isArray(obs.locations)?obs.locations:[]).find(x=>Number.isInteger(x.photoIndex)&&x.photoIndex>=1&&x.photoIndex<=galleryImages.length&&validBox(x.box2d));
+   return '<button type="button" class="live-ai-finding" data-ai-finding="'+i+'"><span>'+escape(obs.area||'פגם')+'</span><strong>'+escape(obs.finding||'')+'</strong>'+
+     (loc?'<small>תמונה '+loc.photoIndex+' · הצג פגם</small>':'<small>ללא סימון מדויק</small>')+'</button>';
+  }).join(''):'<p>לא זוהו פגמים שניתן לתאר בביטחון מתוך התמונות שסופקו.</p>';
+  const limits=(Array.isArray(analysis.limitations)?analysis.limitations:[]).slice(0,8).map(x=>'<li>'+escape(x)+'</li>').join('');
+  panel.innerHTML='<strong>הערכת AI: '+escape(analysis.grade)+' · '+confidence+'% ביטחון</strong>'+    (record.stale?'<p class="live-ai-warning">⚠️ תמונות המודעה השתנו מאז הניתוח. אפשר לנתח מחדש ידנית.</p>':'')+
+    '<p>הערכה לפי התמונות בלבד, אינה דירוג מקצועי. המסגרות מצביעות על פגמים אפשריים.</p>'+
+    '<div class="live-ai-distribution">'+distribution+'</div>'+
+    '<div class="live-ai-findings">'+findings+'</div>'+
+    (limits?'<ul class="live-ai-limitations">'+limits+'</ul>':'')+
+    (gallerySaveFailed?'<p class="live-ai-warning">⚠️ הניתוח לא נשמר ב־Firestore. בדוק הרשאות ונסה לשמור שוב.</p><button type="button" id="liveGalleryRetrySave" class="live-ai-secondary">נסה לשמור בלי לנתח מחדש</button>':'')+
+    '<button type="button" id="liveGalleryReanalyze" class="live-ai-secondary">↻ נתח מחדש (בקשת AI נוספת)</button>';
+  panel.hidden=false;button.disabled=false;button.textContent='✨ '+escape(analysis.grade)+' · '+confidence+'%';button.setAttribute('aria-expanded','true');
+  drawGalleryDefects();
+ }
+ function setGalleryAnalysis(record){
+  if(!record?.analysis||!GRADES.includes(record.analysis.grade))return;
+  galleryAnalysisRecord=record;galleryHighlighted=-1;
+  if(record.analysis.imageSetFingerprint&&galleryFingerprint)record.stale=record.analysis.imageSetFingerprint!==galleryFingerprint;
+  renderGalleryAnalysis();
+  const key=galleryItem&&aiCacheKey(galleryItem);
+  if(key){state.preserveGradeOrder=true;aiCache.set(key,record);render();}
+ }
+ function analysisError(message){
+  const panel=$('liveGalleryDemo');panel.hidden=false;
+  panel.innerHTML='<p class="live-ai-warning">'+escape(message)+'</p>';
+  $('liveGalleryDemoButton').disabled=false;
+  $('liveGalleryDemoButton').setAttribute('aria-expanded','true');
+ }
+ async function loadGalleryStored(item,serial){
+  const cloud=window.VintageCloud;
+  if(!cloud?.canEdit?.())return;
+  const key=aiCacheKey(item);
+  if(key&&aiCache.has(key)){
+   if(gallerySerial===serial&&gallery.open)setGalleryAnalysis(aiCache.get(key));
+   return;
+  }
+  try{
+   const saved=await cloud.getConditionAnalysis(aiSource(item));
+   if(saved?.analysis&&gallerySerial===serial&&gallery.open)setGalleryAnalysis(saved);
+  }catch(_){}
+ }
+ async function runGalleryAnalysis(force=false){
+  if(galleryAnalyzing||!galleryItem)return;
+  const item=galleryItem,serial=gallerySerial,cloud=window.VintageCloud;
+  if(!cloud?.canEdit?.()){analysisError('כדי לנתח מצב צריך להתחבר ל־Google.');return;}
+  if(!force){
+   const cached=galleryAnalysisRecord||aiCache.get(aiCacheKey(item));
+   if(cached?.analysis){setGalleryAnalysis(cached);return;}
+   try{
+    const saved=await cloud.getConditionAnalysis(aiSource(item));
+    if(saved?.analysis){if(serial===gallerySerial)setGalleryAnalysis(saved);return;}
+   }catch(_){galleryStatus.textContent='לא הצלחנו לבדוק תוצאות שמורות ב־Firestore. ייתכן שיהיה צורך לעדכן את ההרשאות.';}
+  }
+  galleryAnalyzing=true;gallerySaveFailed=false;
+  const button=$('liveGalleryDemoButton'),panel=$('liveGalleryDemo');
+  button.disabled=true;button.textContent='✨ מנתח תמונות…';
+  panel.hidden=false;panel.innerHTML='<p>בודק פינות, קצוות, משטחים ופגמים בתמונות המוכר…</p>';
+  try{
+   const token=await cloud.getIdToken();
+   if(!token)throw Error('יש להתחבר לחשבון Google.');
+   const card=cardIndex().get(item.cardId);
+   const response=await fetch(state.endpoint+'/api/analyze-condition',{method:'POST',
+    headers:{'content-type':'application/json',authorization:'Bearer '+token},
+    body:JSON.stringify({source:aiSource(item),cardContext:card?{name:card.name,setName:card.setName}:null})
+   });
+   const data=await response.json();
+   if(!response.ok)throw Error(data.error==='AI_RATE_LIMITED'?'הגעת למגבלת Gemini החינמית, נסה שוב מאוחר יותר.':
+    data.error==='AI_AUTH_REQUIRED'?'אין הרשאה לניתוח AI בחשבון הזה.':
+    data.error==='AI_NO_USABLE_IMAGES'?'לא נמצאו תמונות קלף מתאימות לניתוח.':
+    data.error||'ניתוח התמונות נכשל.');
+   if(serial!==gallerySerial||!gallery.open)return;
+   const result={source:aiSource(item),analysis:{...data.analysis,imageCount:data.imageCount},
+    photoIndices:data.analyzedPhotoIndices||[],clientAnalyzedAt:Date.now()};
+   setGalleryAnalysis(result);
+   try{
+    const saved=await cloud.saveConditionAnalysis(result.source,result.analysis,result.photoIndices);
+    if(serial===gallerySerial){gallerySaveFailed=false;setGalleryAnalysis(saved);}
+   }catch(err){
+    if(serial===gallerySerial){gallerySaveFailed=true;renderGalleryAnalysis();}
+   }
+  }catch(err){
+   if(serial===gallerySerial&&gallery.open)analysisError(String(err.message||'ניתוח התמונות נכשל.'));
+  }finally{
+   galleryAnalyzing=false;
+   if(serial===gallerySerial&&gallery.open){
+    if(galleryAnalysisRecord?.analysis)renderGalleryAnalysis();
+    else{button.disabled=false;button.textContent='✨ נתח מצב ב־AI';}
+   }
+  }
+ }
+
  function showGalleryImage(){
   const img=$('liveGalleryImage'),count=galleryImages.length;
   img.hidden=!count;$('liveGalleryEmpty').hidden=!!count;
@@ -278,6 +457,7 @@
    btn.classList.toggle('selected',active);btn.setAttribute('aria-current',active?'true':'false');
    if(active)btn.scrollIntoView({block:'nearest',inline:'nearest'});
   });
+  drawGalleryDefects();
  }
  function setGalleryPhotos(images){
   galleryImages=images;galleryIndex=0;
@@ -298,13 +478,18 @@
   $('liveGalleryTitle').textContent=item.title||'מודעה ב־eBay';
   $('liveGalleryMeta').textContent=[item.marketplace,item.format==='AUCTION'?'מכרז':'קנייה מיידית'].filter(Boolean).join(' · ');
   $('liveGalleryEbay').href=item.url;
+  galleryAnalysisRecord=null;gallerySaveFailed=false;galleryHighlighted=-1;galleryFingerprint='';
   $('liveGalleryDemo').hidden=true;
+  $('liveGalleryDemo').replaceChildren();
+  $('liveGalleryDemoButton').disabled=false;
+  $('liveGalleryDemoButton').textContent='✨ נתח מצב ב־AI';
   $('liveGalleryDemoButton').setAttribute('aria-expanded','false');
   setGalleryPhotos(item.image&&imageUrl(item.image)?[item.image]:[]);
   galleryStatus.textContent='טוען את תמונות המודעה מ־eBay…';
   gallery.showModal();
+  void loadGalleryStored(item,serial);
   const cached=galleryCache.get(key);
-  if(cached){setGalleryPhotos(cached);galleryStatus.textContent='';return;}
+  if(cached){setGalleryPhotos(cached);void checkGalleryPhotoFingerprint(cached,serial);galleryStatus.textContent='';return;}
   const controller=new AbortController();galleryAbort=controller;
   try{
    const response=await fetch(state.endpoint+'/api/item-images',{
@@ -319,6 +504,7 @@
    const resolved=images.length?images:galleryImages;
    galleryCache.set(key,resolved);
    setGalleryPhotos(resolved);
+   if(images.length)void checkGalleryPhotoFingerprint(resolved,serial);
    galleryStatus.textContent=images.length?'':'לא התקבלו תמונות נוספות מ־eBay.';
   }catch(error){
    if(serial!==gallerySerial||!gallery.open)return;
@@ -327,7 +513,8 @@
  }
  gallery.addEventListener('close',()=>{
   gallerySerial++;galleryAbort?.abort();galleryAbort=null;
-  galleryItem=null;galleryImages=[];$('liveGalleryDemo').hidden=true;
+  galleryItem=null;galleryImages=[];galleryAnalysisRecord=null;gallerySaveFailed=false;
+  $('liveGalleryDemo').hidden=true;drawGalleryDefects();
  });
  gallery.addEventListener('click',e=>{
   if(e.target===gallery){gallery.close();return;}
@@ -336,10 +523,22 @@
   if(e.target.closest('#liveGalleryNext')){changeGalleryImage(1);return;}
   const thumb=e.target.closest('[data-gallery-index]');
   if(thumb){galleryIndex=Number(thumb.dataset.galleryIndex);showGalleryImage();return;}
-  if(e.target.closest('#liveGalleryDemoButton')){
-   const demo=$('liveGalleryDemo');demo.hidden=!demo.hidden;
-   $('liveGalleryDemoButton').setAttribute('aria-expanded',String(!demo.hidden));
+  const flaw=e.target.closest('[data-ai-finding]');
+  if(flaw){
+   const idx=Number(flaw.dataset.aiFinding),obs=galleryAnalysisRecord?.analysis?.observations?.[idx];
+   const loc=(Array.isArray(obs?.locations)?obs.locations:[]).find(x=>Number.isInteger(x.photoIndex)&&x.photoIndex>=1&&x.photoIndex<=galleryImages.length&&validBox(x.box2d));
+   if(loc){galleryIndex=loc.photoIndex-1;galleryHighlighted=idx;showGalleryImage();}
+   return;
   }
+  if(e.target.closest('#liveGalleryRetrySave')){
+   const item=galleryItem,record=galleryAnalysisRecord;
+   if(item&&record)void window.VintageCloud?.saveConditionAnalysis?.(aiSource(item),record.analysis,record.photoIndices).then(saved=>{
+    if(gallery.open&&galleryItem===item){gallerySaveFailed=false;setGalleryAnalysis(saved);}
+   }).catch(()=>{gallerySaveFailed=true;renderGalleryAnalysis();});
+   return;
+  }
+  if(e.target.closest('#liveGalleryReanalyze')){void runGalleryAnalysis(true);return;}
+  if(e.target.closest('#liveGalleryDemoButton')){void runGalleryAnalysis();return;}
  });
  gallery.addEventListener('keydown',e=>{
   if(e.key==='ArrowLeft'||e.key==='ArrowRight'){
@@ -348,6 +547,8 @@
  });
  let touchStart=null;
  const galleryStage=$('liveGalleryStage');
+ $('liveGalleryImage').addEventListener('load',drawGalleryDefects);
+ if(typeof ResizeObserver!=='undefined')new ResizeObserver(drawGalleryDefects).observe(galleryStage);
  galleryStage.addEventListener('touchstart',e=>{
   if(e.touches.length!==1){touchStart=null;return;}
   touchStart={x:e.touches[0].clientX,y:e.touches[0].clientY};

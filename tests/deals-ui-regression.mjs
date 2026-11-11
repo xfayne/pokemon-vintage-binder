@@ -55,8 +55,20 @@ try{
     window.VintageDealsDashboard={
       convertToUSD:(amount,currency)=>currency==='USD'?amount:null
     };
+    const saved=new Map();
+    window.VintageCloud={
+      canEdit:()=>true,getUserUid:()=> 'test-fixture-user',
+      conditionAnalysisKey:source=>'ebay-listing__'+source.marketplace+'__'+source.itemId,
+      getIdToken:async()=> 'fake-auth-test',
+      getConditionAnalysis:async source=>saved.get(source.marketplace+':'+source.itemId)||null,
+      saveConditionAnalysis:async (source,analysis,photoIndices)=>{
+       const value={analysis,photoIndices,source,clientAnalyzedAt:Date.now()};
+       saved.set(source.marketplace+':'+source.itemId,value);
+       return value;
+      }
+    };
   });
-  let galleryCalls=0;
+  let galleryCalls=0,analysisCalls=0;
   const requestedCardIds=[];
   const galleryPhotos=['https://i.ebayimg.com/fixture-primary.jpg',
     'https://i.ebayimg.com/fixture-back.jpg','https://i.ebayimg.com/fixture-corner.jpg'];
@@ -66,6 +78,21 @@ try{
   }));
   await context.route('https://pokemon-vintage-ebay-deals.xfayne.workers.dev/**',route=>{
     const requestUrl=route.request().url();
+    if(requestUrl.endsWith('/api/analyze-condition')){
+      analysisCalls++;
+      const requestBody=JSON.parse(route.request().postData()||'{}');
+      assert.equal(requestBody.source.type,'ebay-listing');
+      return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({
+        source:requestBody.source,imageCount:3,analyzedPhotoIndices:[1,2,3],
+        analysis:{
+          grade:'LP',confidencePercent:72,model:'gemini-3.8-flash',
+          gradePercentages:{NM:10,LP:72,MP:15,HP:3,DMG:0},
+          observations:[{area:'corners',finding:'White mark on back corner',severity:'minor',
+            locations:[{photoIndex:2,box2d:[100,100,280,310]}]}],
+          limitations:['Holo surface not shown at an angle']
+        }
+      })});
+    }
     if(requestUrl.endsWith('/api/item-images')){
       galleryCalls++;
       const body=JSON.parse(route.request().postData()||'{}');
@@ -127,15 +154,23 @@ try{
   assert.equal(await page.locator('#liveGalleryCounter').textContent(),'2 / 3',
     'Swipe left must navigate to next gallery photo');
   assert.equal(await page.locator('#liveGalleryDemo').isVisible(),false);
+  assert.equal(analysisCalls,0,'Opening a listing must not analyze images');
   await page.locator('#liveGalleryDemoButton').click();
-  assert.equal(await page.locator('#liveGalleryDemo').isVisible(),true);
-  assert.match(await page.locator('#liveGalleryDemo').innerText(),/הדגמה בלבד/,
-    'AI result must clearly state no real photo analysis occurred');
+  await page.waitForFunction(()=>document.querySelector('#liveGalleryDemo')?.textContent.includes('הערכת AI: LP'));
+  assert.equal(analysisCalls,1,'AI is called only after manual tap');
+  assert.match(await page.locator('#liveGalleryDemo').innerText(),/72% ביטחון/);
+  await page.locator('[data-ai-finding="0"]').click();
+  assert.equal(await page.locator('#liveGalleryCounter').textContent(),'2 / 3');
+  await page.waitForFunction(()=>document.querySelectorAll('#liveGalleryOverlay .live-gallery-defect-box').length>0);
+  assert.equal(await page.locator('#liveGalleryOverlay .live-gallery-defect-box').count(),1);
+  assert.equal(await page.locator('#liveListings article:has(select.live-item-grade[data-item-key="item-0"]) .live-single-grade').innerText().then(s=>s.includes('AI')),true);
   await page.locator('#liveGalleryClose').click();
   assert.equal(await page.locator('#liveGallery').evaluate(el=>el.open),false);
   await page.locator('.live-image-open[data-image-key="item-0"]').click();
   assert.equal(await page.locator('#liveGalleryCounter').textContent(),'1 / 3');
   assert.equal(galleryCalls,1,'Reopening the same listing should use cached gallery metadata');
+  await page.waitForFunction(()=>document.querySelector('#liveGalleryDemo')?.textContent.includes('הערכת AI: LP'));
+  assert.equal(analysisCalls,1,'Reopening cached analysis must not call Gemini again');
   await page.locator('#liveGalleryClose').click();
 
   const first=page.locator('#liveListings select.live-item-grade').first();
@@ -183,7 +218,7 @@ try{
     'Scoped Deals must offer return to original card details');
 
   assert.deepEqual(pageErrors,[],'No uncaught browser errors expected');
-  console.log('PASS Deals mobile gallery fetches photos only on open, navigates by buttons, thumbnails, keyboard and touch, previews AI demo without analysis, and preserves grade sorting');
+  console.log('PASS Deals mobile gallery fetches photos only on open, navigates by buttons, thumbnails, keyboard and touch, analyzes only on demand and reuses persisted results, and preserves grade sorting');
   await context.close();
 }finally{
   await browser.close();
