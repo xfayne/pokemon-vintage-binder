@@ -44,6 +44,34 @@
  }catch(_){}
  const GRADES=['NM','LP','MP','HP','DMG'];
  const gradeRank={NM:0,LP:1,MP:2,HP:3,DMG:4};
+ // Cached analyses are namespaced by signed-in Firebase user, not by Deals search scope.
+ const aiCache=new Map(),aiCacheRequested=new Set();
+ const aiSource=item=>({type:'ebay-listing',marketplace:item.marketplace,itemId:item.itemId});
+ const aiCacheKey=item=>{
+  const cloud=window.VintageCloud,uid=cloud?.getUserUid?.(),key=cloud?.conditionAnalysisKey?.(aiSource(item));
+  return uid&&key?uid+':'+key:null;
+ };
+ const aiFor=item=>{
+  const key=aiCacheKey(item);
+  return key?aiCache.get(key)?.analysis||null:null;
+ };
+ function warmCachedAnalyses(){
+  const cloud=window.VintageCloud;
+  if(!cloud?.canEdit?.())return;
+  const byKey=new Map(state.items.map(item=>[keyFor(item),item]));
+  for(const id of state.lastRenderedOrder.slice(0,Math.min(state.visibleCount,65))){
+   const item=byKey.get(id),key=item&&aiCacheKey(item);
+   if(!key||aiCacheRequested.has(key))continue;
+   aiCacheRequested.add(key);
+   cloud.getConditionAnalysis(aiSource(item)).then(saved=>{
+    if(saved?.analysis&&cloud.getUserUid()===key.split(':')[0]){
+     aiCache.set(key,saved);
+     if(state.items.some(x=>keyFor(x)===keyFor(item)))render();
+    }
+   }).catch(()=>{}); // Firestore rules may need a separate deployment.
+  }
+ }
+
  const isArtCase=title=>/\bart[\s_-]*cases?\b/i.test(String(title||''));
  const japaneseTitle=title=>/[\u3040-\u30ff\u3400-\u9fff]/u.test(String(title||''))||/\b(?:japanese|japanisch\w*|jpn|jap|japonais\w*|japon[eé]s\w*|japan\s+(?:edition|version|print|language|import|card))\b/i.test(String(title||''));
  const usdMoney=value=>typeof value==='number'&&Number.isFinite(value)?new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:2}).format(value):'—';
@@ -68,10 +96,11 @@
  const resolvedGrade=item=>{
   const key=keyFor(item),detail=state.conditionDetails.get(key);
   const declared=(detail&&detail.source==='seller'&&detail.grade)?detail.grade:null;
-  const grade=state.gradeOverrides.get(key)||declared||item.conditionGrade||'MP';
-  const source=declared?'seller':item.conditionSource||'unknown';
-  const label=detail?.label||item.conditionLabel||item.condition||'';
-  return {grade,source,label,overridden:state.gradeOverrides.has(key)};
+  const ai=aiFor(item),override=state.gradeOverrides.get(key);
+  const grade=override||ai?.grade||declared||item.conditionGrade||'MP';
+  const source=override?'user':ai?'ai':declared?'seller':item.conditionSource||'unknown';
+  const label=ai?'AI · '+ai.confidencePercent+'% ביטחון':detail?.label||item.conditionLabel||item.condition||'';
+  return {grade,source,label,confidence:ai?.confidencePercent??null,overridden:!!override};
  };
  function evaluation(item,card){
   const gradeInfo=resolvedGrade(item);
@@ -85,7 +114,7 @@
   const difference=market!==null&&comparable!==null?(market-comparable)/market:null;
   const discount=allIn!==null&&verification.status==='strong'?difference:null;
   const hours=item.format==='AUCTION'?(new Date(item.endTime).getTime()-Date.now())/3600000:null;
-  const reliable=verification.status==='strong'&&discount!==null&&verification.confidence>=70&&gradeInfo.source!=='unknown'&&!/\\b(?:damaged|creased|folded|poor condition)\\b/i.test(item.title||'')&&!/\\b(?:lot|bundle)\\b/i.test(item.title||'');
+  const reliable=verification.status==='strong'&&discount!==null&&verification.confidence>=70&&gradeInfo.source!=='unknown'&&(gradeInfo.source!=='ai'||gradeInfo.confidence>=75)&&!/\\b(?:damaged|creased|folded|poor condition)\\b/i.test(item.title||'')&&!/\\b(?:lot|bundle)\\b/i.test(item.title||'');
   let group=4;
   if(reliable&&discount>=0.20&&((item.format==='FIXED_PRICE')||(hours!==null&&hours>=0&&hours<=6)))group=0;
   else if(reliable&&discount>=0.15&&((item.format==='FIXED_PRICE')||(hours!==null&&hours>=0&&hours<=24)))group=1;
@@ -198,7 +227,7 @@
     score.difference>=0?(item.format==='AUCTION'?'ההצעה כרגע נמוכה ב־':'זול ב־')+pct+'%':(item.format==='AUCTION'?'ההצעה כרגע גבוהה ב־':'יקר ב־')+pct+'%';
    const tone=!verified?'unknown':score.provisional?'provisional':score.discount===null?'unknown':score.discount>=0?'cheaper':'pricier';
    const key=keyFor(item);
-   const conditionText=score.gradeInfo.source==='seller'?'על פי eBay':score.gradeInfo.source==='title'?'מזוהה בכותרת':'לא ידוע (MP כברירת מחדל)';
+   const conditionText=score.gradeInfo.source==='ai'?'ניתוח AI · '+score.gradeInfo.confidence+'% ביטחון':score.gradeInfo.source==='user'?'בחירה ידנית':score.gradeInfo.source==='seller'?'על פי eBay':score.gradeInfo.source==='title'?'מזוהה בכותרת':'לא ידוע (MP כברירת מחדל)';
    const selectedLabel=score.gradeInfo.overridden?' · שינית ידנית':'';
    const detail=state.conditionDetails.get(key);
    const showFetch=(!verified||score.gradeInfo.source!=='seller')&&!detail;
