@@ -168,7 +168,7 @@ async function saveConditionAnalysis(source,analysis,photoIndices){
  if(uid!==user?.uid||!ready)throw Error('SESSION_CHANGED');
  return documentData;
 }
-window.VintageCloud={getConditionAnalysis,saveConditionAnalysis,conditionAnalysisKey,canEdit:()=>Boolean(user&&ready),getIdToken:async()=>user&&ready?await sdk.getIdToken(user):null,onChange:({immediate=false}={})=>{
+window.VintageCloud={getConditionAnalysis,saveConditionAnalysis,conditionAnalysisKey,getUserUid:()=>user&&ready?user.uid:null,canEdit:()=>Boolean(user&&ready),getIdToken:async()=>user&&ready?await sdk.getIdToken(user):null,onChange:({immediate=false}={})=>{
  if(!user||!ready)return;
  changeSeq++;pending=true;setStatus('☁️ ממתין לשמירה…',user.email||'Google');
  clearTimeout(flushTimer);flushTimer=setTimeout(flush,immediate?0:350);
