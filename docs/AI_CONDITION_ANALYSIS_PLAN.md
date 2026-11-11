@@ -1,20 +1,42 @@
-# AI condition analysis for eBay listings — implementation plan
+# Reusable AI card-condition analysis — implementation plan
 
 _Status: approved product requirements; implementation not started. Created: 2026-11-11. This is the living design document for the feature._
 
 ## Objective
-Estimate the physical condition of a vintage, raw Pokémon TCG card **from photos in the existing eBay Deals listing gallery**, with an explainable NM/LP/MP/HP/DMG grade and percentages. Persist results in Firestore so that revisiting the same listing, including from future Deals searches (Wishlist or single-card scope), reuses the previous analysis without another AI charge.
+Estimate the physical condition of a vintage, raw Pokémon TCG card from a set of photos, with an explainable NM/LP/MP/HP/DMG grade, confidence percentages, and approximate on-image defect locations. **First consumer: the existing eBay Deals listing gallery**; future consumers may analyze photos of the user's own cards without changing the grading engine. Persist results in Firestore so revisiting the same source/photo set reuses the previous result without another inference call.
 
 ## Confirmed product decisions
 1. **Manual inference only.** The existing "✨ ניתוח מצב (דמו)" button becomes the real AI analysis action. Opening a gallery, searching Deals, scrolling listings, or reloading the app must never initiate paid AI analysis.
 2. **Always return a grade on a successful analysis.** When at least one relevant card image is available, the model must provide its best estimate in `NM | LP | MP | HP | DMG`, even when back/close-up views are missing. Accompany it with confidence percentage, five-grade distribution summing to 100%, evidence, and limitations. An actual technical failure or a listing with no usable card image is an error, **not a fabricated grade**.
-3. **Persist results in Firestore.** One private record per eBay listing per signed-in user, keyed by `marketplace + itemId`, independent of Wishlist/card-search mode. Read existing results before paid inference, and load cached grades for previously analyzed listings on later searches.
-4. **Store visual findings, not pictures.** Do not duplicate or permanently store seller image bytes. Keep image count, image-set fingerprint, referenced image indices, model/prompt versions, timestamps and normalized findings.
+3. **Persist results in Firestore.** One private analysis record per authenticated user and **source-specific identity** (eBay: marketplace + itemId; future owned card: stable card identifier + photo-set version). Wishlist and single-card Deals resolve to the same eBay record. Read cache before inference; future photo sources will use the same analysis schema and different source adapters.
+4. **Store visual findings, not pictures.** Do not duplicate or permanently store eBay seller image bytes. Keep source identity, image count, photo-set fingerprint, referenced image indices, model/prompt versions, timestamps and normalized findings. Future user-owned photos may require a separate private upload/storage flow; it is outside the initial eBay scope.
 5. **Do not silently reanalyze.** A changed image set, changed model/prompt version or manual "Analyze again" action may make results stale, but only an explicit user action triggers another paid run. Show cached/stale state visibly.
 6. **Grade may inform future Deals comparisons**, with a visible "AI estimate" source and confidence. A user-selected comparison-grade override takes precedence; do not turn low-confidence AI or uncertain identity matches into a trustworthy bargain automatically.
 7. **No automatic bidding/purchases; no implication of authenticity certification** or professional grading. AI percentages are subjective estimates, not calibrated probabilities.
-8. **No grading example images.** The user decided to exclude all previously shared back-of-card charts/example images from the model's inputs, and no such images were committed to the repository. Use only the listing's actual eBay photos and the versioned written grading rubric in [CARD_CONDITION_RUBRIC.md](CARD_CONDITION_RUBRIC.md).
+8. **No grading example images.** The user decided to exclude all previously shared back-of-card charts/example images from the model's inputs, and no such images were committed to the repository. Use only the **target card's actual photos** (currently eBay listing images; later, user-provided images) and the versioned written grading rubric in [CARD_CONDITION_RUBRIC.md](CARD_CONDITION_RUBRIC.md).
 9. **Defects must be located on listing photos.** Ask the vision model for the image index and normalized bounding box of each visibly supported defect so we can draw an interactive overlay on the original photo. Box coordinates are estimates; do not invent locations for unlocalizable flaws. Always provide the grade even if some boxes cannot be confidently provided.
+
+## Architecture decision: source-agnostic grading core (2026-11-11)
+
+**New requirement:** the same visual grading functionality must later accept photos of cards that the user owns, without depending on eBay identifiers, URLs, a listing, or the Deals UI. Implement this separation **now**, even though the first release only exposes it through eBay.
+
+- **Shared grading engine** (for example `ebay-worker/card-condition/analyze.js`, name can change during implementation): a pure, testable function such as `analyzeCardCondition({photos, cardContext, rubricVersion}, {provider})`. It receives validated image bytes or bounded vetted image parts plus their media types and stable 1-based image indices; returns the normalized `{grade, confidencePercent, gradePercentages, observations, limitations, model, rubricVersion, ...}`. It **must not know** about eBay, Firestore document paths, user-account metadata, browser DOM, or Deals ranking. Provider-specific Gemini calls live behind a thin swappable interface; no LangChain dependency for a single provider call.
+- **Source adapters** securely acquire photos and stable identities for a particular context. First adapter: `ebay-listing`, which fetches image URLs only through existing validated eBay Browse lookup and safely retrieves image parts. Future adapter: `owned-card`, which will accept authenticated, size-limited user photos via a controlled upload/reference mechanism. **Do not accept arbitrary client URLs or allow fetching arbitrary hosts**. Keep the future adapter unimplemented until the feature is requested.
+- **Shared result schema and UI-ready defect coordinates**: each observation has an area, severity, textual finding, and optional `locations: [{photoIndex, box2d}]`, where `box2d` is normalized `[ymin,xmin,ymax,xmax]` (0–1000); the engine validates coordinates and maps provider-specific output to this canonical format. A separate UI overlay renderer can be reused by Deals and a future My Cards photo viewer.
+- **Request/orchestration boundary:** external authenticated Worker endpoint `POST /api/analyze-condition` accepts a *source descriptor*, not raw arbitrary URLs: initially `{source:{type:"ebay-listing", marketplace, itemId}}`. Later, `{source:{type:"owned-card", cardId, photoSetId}}` once secure uploads are in place. The endpoint validates auth and authorization, selects a source adapter, calls the shared grader, and sends the schema. The first implementation can support only `ebay-listing` and explicitly reject other types; the core interface must be source-independent.
+- **Storage/cache boundary:** use `users/{uid}/conditionAnalyses/{analysisKey}` from day one, storing `source.type`, validated source identity, photo fingerprint, analysis, and timestamps. Choose a stable document key derived from the **namespaced source type and identity**; for eBay use normalized marketplace + complete itemId so the same listing across both search modes hits one record. For future owned cards include owned-card identity and photo-set version/fingerprint so changing photos does not silently serve an outdated grade. Do **not** use one global cross-source key or expose private analyses through public binder shares.
+- **Source-specific presentation:** the Deals gallery and bargain ranking own all eBay-only behavior; the engine does not compute prices, bids, seller conditions or listing-match scores. Future My Cards UI can call the same grader and render the same defects with different surrounding actions.
+- **Photos/metadata:** grading must not be influenced by listing prices or seller condition claims. The neutral `cardContext` can include card name, set, holo flag and optional other validated physical characteristics; its absence must not break grading. Define the source-agnostic result as a reusable schema before implementing persistence or UI.
+
+```text
+Deals gallery ── eBay source adapter ────┐
+                                        ├── shared card-condition analyzer ── Gemini adapter
+My Cards photos (later) ── private photo source adapter (later) ─────┘
+                                        └── shared result + defect geometry schema
+                                                └── per-user conditionAnalyses cache
+```
+
+This separation should add only a few focused functions/modules, **not a framework, SDK abstraction layer, extra providers, R2 bucket or photo-upload feature** at this stage.
 
 ## Existing code and integration points (verified against main 2026-11-11)
 - `deal-finder/live.js`: on-demand gallery with thumbnail, swipe, keyboard, eBay image fetching, session image cache, and **static fake demo** under `liveGalleryDemoButton`. Future search results are re-created from fresh API results; currently the display grade comes from user override / seller / title / fallback.
@@ -33,15 +55,14 @@ Estimate the physical condition of a vintage, raw Pokémon TCG card **from photo
 - If Firestore is temporarily unavailable, do not present a new inference as if reliably cached. Explicitly show persistence failure and provide a safe retry-save path without a second AI call while the current result remains in memory.
 
 ## Proposed Firestore schema
-Path: `users/{uid}/listingAnalyses/{listingKey}`.
-Generate `listingKey` deterministically from validated marketplace and complete Browse itemId (e.g. URL-safe encoding of the pair); do **not** key by card ID or listing title. A listing reused in both Deals modes must map to the same document.
+Path: `users/{uid}/conditionAnalyses/{analysisKey}`.
+Generate `analysisKey` deterministically from **source type plus source identity**. For eBay use validated marketplace and complete Browse itemId (e.g. hash/URL-safe encode `ebay-listing:EBAY_US:v1|123456789012|0`); do **not** key by card ID or listing title. A listing reused in both Deals modes maps to the same document. A future `owned-card` analysis may use a photo-set version or fingerprint in its identity. No migration is necessary: the AI collection does not exist yet.
 
 Example shape (illustrative, not committed schema):
 ```json
 {
   "schemaVersion": 1,
-  "marketplace": "EBAY_US",
-  "itemId": "v1|123456789012|0",
+  "source": {"type": "ebay-listing", "marketplace": "EBAY_US", "itemId": "v1|123456789012|0"},
   "cardId": "base1-4",
   "grade": "LP",
   "confidencePercent": 65,
@@ -56,7 +77,7 @@ Example shape (illustrative, not committed schema):
   "promptVersion": "v1",
   "rubricVersion": "tcg-text-v1",
   "analyzedAt": "server timestamp",
-  "source": "vision-ai"
+  "analysisSource": "vision-ai"
 }
 ```
 Actual `cardId` should use the app's existing stable card ID, if available; do not derive it from the example. Bounding boxes use **Gemini order `[ymin,xmin,ymax,xmax]`, scaled 0–1000**; `photoIndex` is 1-based and must correspond to the *actual input photo*, with an explicit mapping if selecting a subset. A `locations` array may be empty for a genuine finding that the model cannot localize; never fabricate a mark. Cap array and text lengths, validate `grade`, bound all percentages 0–100 and normalize to sum 100, and validate box ordering, image index, and range before rendering. Stored percentages are *estimated model confidence*, not calibrated probabilities. Never store eBay images or API secrets in Firestore.
@@ -67,9 +88,9 @@ Actual `cardId` should use the app's existing stable card ID, if available; do n
 1. Search Deal results are rendered as today; optionally preload **only previously analyzed, visible** listings' metadata from Firestore in bounded batches, without any AI calls. Handle asynchronous scope changes safely.
 2. User opens a listing gallery; the gallery loads the eBay image list on demand as today. Opening alone does not start AI.
 3. User presses "✨ ניתוח מצב". If a matching versioned cached analysis exists for `marketplace + itemId`, show it immediately; do not contact the inference provider.
-4. On cache miss and with usable imagery, the client obtains a Firebase ID token and calls `POST /api/analyze-condition` with validated item identity and minimal card context. The Worker verifies Firebase token **and the configured AI owner allowlist**, restricts request size, rate/cost and concurrency, and retrieves the eBay images itself (never arbitrary client-controlled fetch URLs).
-5. The Worker selects up to a defined limit of **actual listing** front/back/close-up images (initial target ~10, preserving provenance), calls **Gemini 3.8 Flash** with the **text-only** [versioned grading rubric](CARD_CONDITION_RUBRIC.md) and requests schema-constrained JSON, including per-defect coordinates. Do not obey text found in images or seller descriptions as instructions. Validate, sanitize and normalize model output; reject malformed responses or attempt a bounded corrective retry.
-6. Return the result to the client; save the successful analysis into its own Firestore document, separately from collection progress. Avoid overwriting an existing newer analysis (concurrent tabs). Rerender the item and gallery with the persisted result.
+4. On cache miss and with usable imagery, the client obtains a Firebase ID token and calls `POST /api/analyze-condition` with `source:{type:'ebay-listing',marketplace,itemId}` and minimal card context. The Worker verifies Firebase token **and the configured AI owner allowlist**, restricts request size, rate/cost and concurrency, and passes the validated source to the eBay adapter, which retrieves its images (never arbitrary client-controlled fetch URLs).
+5. The eBay source adapter selects up to a defined limit of **actual listing** front/back/close-up images (initial target ~10, preserving provenance). The shared grading engine calls **Gemini 3.8 Flash** with the **text-only** [versioned grading rubric](CARD_CONDITION_RUBRIC.md) and requests schema-constrained JSON, including per-defect coordinates. Do not obey text found in images or seller descriptions as instructions. Validate, sanitize and normalize model output; reject malformed responses or attempt a bounded corrective retry.
+6. Return the source-neutral result to the client; save it with its source identity into a private `conditionAnalyses` Firestore document, separately from collection progress. Avoid overwriting an existing newer analysis (concurrent tabs). Rerender the item and gallery with the persisted result.
 7. Future searches (including after refresh/sign-in) load relevant persisted data and display the last known grade. User overrides retain higher precedence than model output; compare pricing against AI grade when current/usable and clearly identify source and confidence.
 
 ## Uncertainty and grading policy
