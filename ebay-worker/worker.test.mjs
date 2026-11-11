@@ -232,3 +232,49 @@ test('item details upgrade a review listing only with corroborating structured f
   assert.equal((await inspect()).verificationStatus,'review');
  }finally{globalThis.fetch=original}
 });
+
+test('gallery photos are fetched on demand from Browse item detail and validated',async()=>{
+ const original=globalThis.fetch;const calls=[];
+ globalThis.fetch=async (url,options={})=>{
+  const target=String(url);calls.push({target,headers:options.headers});
+  if(target.includes('/oauth2/token'))return Response.json({access_token:'test-gallery',expires_in:3600});
+  if(target.includes('/buy/browse/v1/item/')){
+   return Response.json({
+    image:{imageUrl:'https://i.ebayimg.com/images/g/abc/s-l1600.jpg'},
+    additionalImages:[
+     {imageUrl:'https://i.ebayimg.com/images/g/def/s-l1600.jpg'},
+     {imageUrl:'https://i.ebayimg.com/images/g/abc/s-l1600.jpg'},
+     {imageUrl:'javascript:alert(1)'},
+     {imageUrl:'http://not-secure.example/img.jpg'},
+     {imageUrl:null}
+    ]
+   });
+  }
+  throw Error('Unexpected eBay request '+target);
+ };
+ try{
+  const response=await worker.fetch(new Request('https://worker.example/api/item-images',{
+   method:'POST',headers:{origin:allowed,'content-type':'application/json'},
+   body:JSON.stringify({itemId:'v1|123|0',marketplace:'EBAY_GB'})
+  }),env);
+  assert.equal(response.status,200);
+  assert.deepEqual((await response.json()).images,[
+   'https://i.ebayimg.com/images/g/abc/s-l1600.jpg',
+   'https://i.ebayimg.com/images/g/def/s-l1600.jpg'
+  ]);
+  const getItemCalls=calls.filter(x=>x.target.includes('/buy/browse/v1/item/'));
+  assert.equal(getItemCalls.length,1);
+  assert.equal(getItemCalls[0].headers['X-EBAY-C-MARKETPLACE-ID'],'EBAY_GB');
+  assert.equal(getItemCalls[0].headers.authorization,'Bearer test-gallery');
+ }finally{globalThis.fetch=original}
+});
+
+test('item-images rejects invalid IDs, unsupported marketplaces and unauthorized origins',async()=>{
+ const make=(itemId,marketplace,origin=allowed)=>worker.fetch(new Request('https://worker.example/api/item-images',{
+  method:'POST',headers:{origin,'content-type':'application/json'},
+  body:JSON.stringify({itemId,marketplace})
+ }),env);
+ assert.equal((await make('arbitrary url','EBAY_GB')).status,400);
+ assert.equal((await make('v1|123|0','EBAY_JP')).status,400);
+ assert.equal((await make('v1|123|0','EBAY_GB','https://untrusted.example')).status,403);
+});
