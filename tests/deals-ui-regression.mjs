@@ -163,7 +163,7 @@ try{
   assert.equal(await page.locator('#liveGalleryCounter').textContent(),'2 / 3');
   await page.waitForFunction(()=>document.querySelectorAll('#liveGalleryOverlay .live-gallery-defect-box').length>0);
   assert.equal(await page.locator('#liveGalleryOverlay .live-gallery-defect-box').count(),1);
-  assert.equal(await page.locator('#liveListings .live-single-grade').first().innerText().then(s=>s.includes('AI')),true);
+  assert.equal(await page.locator('#liveListings article:has(select.live-item-grade[data-item-key="item-0"]) .live-single-grade').innerText().then(s=>s.includes('AI')),true);
   await page.locator('#liveGalleryClose').click();
   assert.equal(await page.locator('#liveGallery').evaluate(el=>el.open),false);
   await page.locator('.live-image-open[data-image-key="item-0"]').click();
