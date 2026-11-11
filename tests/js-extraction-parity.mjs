@@ -238,7 +238,7 @@ if(updated.includes('js/card-details.js')){
   const modal=readFileSync('js/card-details.js','utf8');
   const start=originalBinder.indexOf('function showModal(id){');
   const end=originalBinder.indexOf('function download(content',start);
-  const call='const {showModal}=window.VintageCardDetails.create({state,MAP,$,esc,cardNumber,rarityHtml,dealAuctionUrl,toggleOwned,toggleWish,ensureCloudEdit,openMovePicker,save,renderCards,updatePurchasePrice});\n';
+  const call='const {showModal}=window.VintageCardDetails.create({state,MAP,$,esc,cardNumber,rarityHtml,dealAuctionUrl,openDealsForCard,toggleOwned,toggleWish,ensureCloudEdit,openMovePicker,save,renderCards,updatePurchasePrice});\n';
   if(originalBinder.includes(call)){
     assert.ok(modal.includes('id="modalDeals"')&&modal.includes('openDealsForCard(c.id)'),
       'Card details must expose scoped Deals navigation');
@@ -248,7 +248,7 @@ if(updated.includes('js/card-details.js')){
     assert.equal(candidate,originalBinder.slice(0,start)+call+originalBinder.slice(end),
       'Details extraction unexpectedly modified binder code');
     const expected="(()=>{'use strict';\n"+
-      'window.VintageCardDetails={create({state,MAP,$,esc,cardNumber,rarityHtml,dealAuctionUrl,toggleOwned,toggleWish,ensureCloudEdit,openMovePicker,save,renderCards,updatePurchasePrice}){\n'+
+      'window.VintageCardDetails={create({state,MAP,$,esc,cardNumber,rarityHtml,dealAuctionUrl,openDealsForCard,toggleOwned,toggleWish,ensureCloudEdit,openMovePicker,save,renderCards,updatePurchasePrice}){\n'+
       code+'\nreturn {showModal};\n}};\n})();\n';
     assert.equal(modal,expected,'Card details dialog markup or handlers changed');
   }
@@ -759,7 +759,7 @@ async function exercise(version, viewport) {
     };
   });
   assert.equal(detailState.opening.open,true,'Details modal failed to open');
-  assert.equal(detailState.opening.dealsButton,version==='updated','Scoped Deals button should only exist in updated UI');
+  assert.equal(detailState.opening.dealsButton,true,'Scoped Deals button must exist in both the existing main UI and PR UI');
   delete detailState.opening.dealsButton;
   assert.equal(detailState.opening.purchaseFieldVisible,true,'Owned purchase input hidden');
   assert.equal(detailState.condition,'LP','Condition edit did not persist');
