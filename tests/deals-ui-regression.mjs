@@ -172,10 +172,10 @@ try{
     'Scoped search must request only the selected catalog card');
   assert.equal(await page.locator('#liveReload').textContent(),'↻ סרוק מחדש את הקלף');
   await page.locator('#liveAllWishlist').click();
-  await page.waitForFunction(()=>document.querySelectorAll('#liveListings article').length===40);
+  await page.waitForFunction(()=>document.querySelectorAll('#liveListings article').length===52);
   assert.equal(await page.locator('#liveScopeActions').isVisible(),false);
-  assert.equal(await page.locator('#liveListings select.live-item-grade').count(),40,
-    'Returning to Wishlist must restore its previous results without scoped listings');
+  assert.equal(await page.locator('#liveListings select.live-item-grade').count(),52,
+    'Returning to Wishlist must restore the previously expanded result set without scoped listings');
   await page.evaluate(()=>window.VintageEbayLive.openCard('base1-3'));
   await page.waitForFunction(()=>document.querySelectorAll('#liveListings article').length===1);
   await page.locator('#liveBackToCard').click();
