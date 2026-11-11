@@ -1,3 +1,4 @@
+import {analyzeCardCondition} from './card-condition.js';
 /**
  * Cloudflare Worker /api/search: trusted eBay API proxy.
  * Secrets: EBAY_CLIENT_ID, EBAY_CLIENT_SECRET.
@@ -254,6 +255,72 @@ async function getItemImages(itemId,market,env){
  return {images};
 }
 
+/** Fetch only vetted first-party eBay CDN images and cap actual bytes. */
+function isEbayImage(src){
+ try{
+  const url=new URL(src);
+  return url.protocol==='https:'&&url.hostname==='i.ebayimg.com'&&!url.username&&!url.password;
+ }catch{return false}
+}
+async function imageBytes(url){
+ const response=await fetch(url,{redirect:'error',headers:{accept:'image/jpeg,image/png,image/webp'}});
+ if(!response.ok)throw Error('AI_IMAGE_FETCH_FAILED');
+ const contentType=String(response.headers.get('content-type')||'').split(';')[0].toLowerCase();
+ if(!['image/jpeg','image/png','image/webp'].includes(contentType))throw Error('AI_UNSUPPORTED_IMAGE');
+ if(Number(response.headers.get('content-length')||0)>2200000)throw Error('AI_IMAGE_TOO_LARGE');
+ const chunks=[];let length=0;
+ if(!response.body)throw Error('AI_IMAGE_FETCH_FAILED');
+ const reader=response.body.getReader();
+ try{
+  for(;;){
+   const {done,value}=await reader.read();if(done)break;
+   length+=value.length;
+   if(length>2200000)throw Error('AI_IMAGE_TOO_LARGE');
+   chunks.push(value);
+  }
+ }finally{await reader.cancel().catch(()=>{});}
+ const bytes=new Uint8Array(length);
+ let offset=0;for(const part of chunks){bytes.set(part,offset);offset+=part.length;}
+ if(length<100)throw Error('AI_INVALID_IMAGE');
+ return {mimeType:contentType,bytes};
+}
+const analysisCooldown=new Map();
+/* Private inference endpoint; future photo sources can call analyzeCardCondition without eBay. */
+async function analyzeConditionApi(request,env,headers){
+ if(!env.GEMINI_API_KEY)return reply({error:'AI_NOT_CONFIGURED'},503,headers);
+ if(Number(request.headers.get('content-length')||0)>1800)return reply({error:'Payload too large'},413,headers);
+ const ownerEmail=env.AI_OWNER_EMAIL||env.TRACK17_OWNER_EMAIL;
+ if(!(await verifyFirebaseBearer(request,env,ownerEmail)))return reply({error:'AI_AUTH_REQUIRED'},403,headers);
+ let body;try{body=await request.json()}catch{return reply({error:'Invalid JSON'},400,headers)}
+ const source=body?.source;
+ if(source?.type!=='ebay-listing')return reply({error:'AI_SOURCE_NOT_SUPPORTED'},400,headers);
+ const itemId=String(source.itemId||''),marketplace=String(source.marketplace||'');
+ if(!/^v\d\|\d{3,20}\|\d{1,6}$/.test(itemId)||!MARKETS.includes(marketplace))
+  return reply({error:'Invalid item'},400,headers);
+ const name=String(body?.cardContext?.name||'').slice(0,75);
+ const setName=String(body?.cardContext?.setName||'').slice(0,75);
+ const scope=marketplace+':'+itemId;
+ const last=analysisCooldown.get(scope)||0;
+ if(Date.now()-last<10000)return reply({error:'AI_WAIT_BEFORE_RETRY'},429,headers);
+ analysisCooldown.set(scope,Date.now());
+ if(analysisCooldown.size>200)for(const [k,when] of analysisCooldown){if(Date.now()-when>60000)analysisCooldown.delete(k)}
+ try{
+  const listing=await getItemImages(itemId,marketplace,env);
+  const candidates=listing.images.map((url,i)=>({url,index:i+1})).filter(x=>isEbayImage(x.url)).slice(0,8);
+  if(!candidates.length)return reply({error:'AI_NO_USABLE_IMAGES'},422,headers);
+  // A failed photo should not hide the other usable photos.
+  const fetched=await Promise.allSettled(candidates.map(async x=>({...await imageBytes(x.url),index:x.index})));
+  const photos=fetched.filter(x=>x.status==='fulfilled').map(x=>x.value);
+  if(!photos.length)return reply({error:'AI_NO_USABLE_IMAGES'},422,headers);
+  const analysis=await analyzeCardCondition({photos,cardContext:{name,setName}},{apiKey:env.GEMINI_API_KEY});
+  return reply({analysis,source:{type:'ebay-listing',marketplace,itemId},imageCount:listing.images.length,analyzedPhotoIndices:photos.map(x=>x.index)},200,headers);
+ }catch(e){
+  const msg=String(e?.message||'AI_UNAVAILABLE');
+  const status=msg==='AI_RATE_LIMITED'?429:503;
+  return reply({error:/^AI_[A-Z0-9_]+$/.test(msg)?msg:'AI_UNAVAILABLE'},status,headers);
+ }
+}
+
 /* SHIPMENT_API: 17TRACK V2.4 integration.
    Keep the 17TRACK key server-side. Verify Firebase ID tokens (not just Origin)
    and restrict the account email so public sign-ups cannot exhaust credits. */
@@ -267,7 +334,7 @@ function base64urlBytes(str){
  return Uint8Array.from(raw,c=>c.charCodeAt(0));
 }
 function decodeJwtPart(str){return JSON.parse(new TextDecoder().decode(base64urlBytes(str)));}
-async function verifyFirebaseBearer(request,env){
+async function verifyFirebaseBearer(request,env,ownerEmail=env.TRACK17_OWNER_EMAIL){
  const auth=request.headers.get('authorization')||'';
  if(!/^Bearer [A-Za-z0-9_.-]+$/.test(auth))return false;
  const parts=auth.slice(7).split('.');
@@ -281,7 +348,7 @@ async function verifyFirebaseBearer(request,env){
     claims.auth_time>now+60)return false;
  // 17TRACK credits are private. A public Firebase project permits new Google sign-ins,
  // so enforce a configured owner-email allowlist in addition to the signed token.
- if(!env.TRACK17_OWNER_EMAIL||String(claims.email||'').toLowerCase()!==String(env.TRACK17_OWNER_EMAIL).trim().toLowerCase()||claims.email_verified!==true)return false;
+ if(!ownerEmail||String(claims.email||'').toLowerCase()!==String(ownerEmail).trim().toLowerCase()||claims.email_verified!==true)return false;
  if(!firebaseKeys||Date.now()>firebaseKeysUntil){
   const r=await fetch(FIREBASE_JWKS);
   if(!r.ok)throw Error('FIREBASE_KEYS_UNAVAILABLE');
@@ -366,7 +433,8 @@ export default {
   if(request.method==='OPTIONS')return new Response(null,{status:204,headers});
   if(!allowedOrigin(origin,env))return reply({error:'Origin not allowed'},403,headers);
   if(u.pathname.startsWith('/api/shipments/'))return shipmentsApi(request,env,headers,u);
-  if(request.method==='GET'&&u.pathname==='/health')return reply({ready:!!(env.EBAY_CLIENT_ID&&env.EBAY_CLIENT_SECRET),provider:'eBay Browse API',shippingDestinationConfigured:/^[0-9]{5,10}$/.test(String(env.EBAY_DELIVERY_POSTAL_CODE||'').trim())},200,headers);
+  if(request.method==='POST'&&u.pathname==='/api/analyze-condition')return analyzeConditionApi(request,env,headers);
+  if(request.method==='GET'&&u.pathname==='/health')return reply({ready:!!(env.EBAY_CLIENT_ID&&env.EBAY_CLIENT_SECRET),provider:'eBay Browse API',shippingDestinationConfigured:/^[0-9]{5,10}$/.test(String(env.EBAY_DELIVERY_POSTAL_CODE||'').trim()),aiConfigured:Boolean(env.GEMINI_API_KEY)},200,headers);
   if(request.method==='POST'&&u.pathname==='/api/item-images'){
    if(Number(request.headers.get('content-length')||0)>1200)return reply({error:'Payload too large'},413,headers);
    let body;try{body=await request.json()}catch{return reply({error:'Invalid JSON'},400,headers)}
