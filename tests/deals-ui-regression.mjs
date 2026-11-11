@@ -106,7 +106,7 @@ try{
   assert.equal(await page.locator('#liveGalleryCounter').textContent(),'2 / 3');
   await page.locator('#liveGalleryThumbs [data-gallery-index="2"]').click();
   assert.equal(await page.locator('#liveGalleryCounter').textContent(),'3 / 3');
-  await page.locator('#liveGallery').press('ArrowLeft');
+  await page.locator('#liveGallery').press('ArrowRight');
   assert.equal(await page.locator('#liveGalleryCounter').textContent(),'1 / 3',
     'Keyboard navigation must wrap from last to first');
   await page.evaluate(()=>{
