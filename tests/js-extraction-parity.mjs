@@ -84,7 +84,7 @@ if (updated.includes('js/shipments.js')) {
       'Shipment extraction changed any other binder behavior');
   }
   const shipmentsTag = '<script src="js/shipments.js?v=20261109-ship1"></script>';
-  const binderTag = '<script src="js/binder.js?v=20261111-search1"></script>';
+  const binderTag = '<script src="js/binder.js?v=20261111-wishsort1"></script>';
   assert.ok(updated.indexOf(shipmentsTag) > 0 && updated.indexOf(shipmentsTag) < updated.indexOf(binderTag),
     'Shipment controller must be loaded before binder.js');
 }
@@ -118,8 +118,8 @@ if (updated.includes('js/collection-views.js')) {
     assert.equal(newBinder.replace(call,()=>extracted),oldBinder,
       'The extracted collection renderer differs from old binder code');
   }
-  const viewScript='<script src="js/collection-views.js?v=20261111-search1"></script>';
-  const binderScript='<script src="js/binder.js?v=20261111-search1"></script>';
+  const viewScript='<script src="js/collection-views.js?v=20261111-wishsort1"></script>';
+  const binderScript='<script src="js/binder.js?v=20261111-wishsort1"></script>';
   assert.ok(updated.indexOf(viewScript)>0 && updated.indexOf(viewScript)<updated.indexOf(binderScript),
     'View renderer script must load before binder');
 }
@@ -142,7 +142,7 @@ if (updated.includes('js/owned-cards.js')) {
       'Owned-cards extraction changed binder logic beyond this exact block');
   }
   const ownedTag='<script src="js/owned-cards.js?v=20261109-owned1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261111-search1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261111-wishsort1"></script>';
   assert.ok(updated.indexOf(ownedTag)>0&&updated.indexOf(ownedTag)<updated.indexOf(binderTag),
     'Owned cards controller must load before binder');
 }
@@ -165,7 +165,7 @@ if (updated.includes('js/collection-drag.js')) {
       'Drag extraction modified unrelated collection logic or listeners');
   }
   const dragTag='<script src="js/collection-drag.js?v=20261109-drag1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261111-search1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261111-wishsort1"></script>';
   assert.ok(updated.indexOf(dragTag)>0&&updated.indexOf(dragTag)<updated.indexOf(binderTag),
     'Drag module must be available before the binder controller');
 }
@@ -199,7 +199,7 @@ if (updated.includes('js/collection-ordering.js')) {
     assert.equal(ordering,module,'Collection order implementation was changed during extraction');
   }
   const tag='<script src="js/collection-ordering.js?v=20261109-order1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261111-search1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261111-wishsort1"></script>';
   assert.ok(updated.indexOf(tag)>0&&updated.indexOf(tag)<updated.indexOf(binderTag),
     'Collection order module must load before binder');
 }
@@ -227,7 +227,7 @@ if(updated.includes('js/card-actions.js')){
       'Extracted card action function bodies changed unexpectedly');
   }
   const actionTag='<script src="js/card-actions.js?v=20261110-actions1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261111-search1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261111-wishsort1"></script>';
   assert.ok(updated.indexOf(actionTag)>0&&updated.indexOf(actionTag)<updated.indexOf(binderTag),
     'Card actions script must load before binder');
 }
@@ -253,7 +253,7 @@ if(updated.includes('js/card-details.js')){
     assert.equal(modal,expected,'Card details dialog markup or handlers changed');
   }
   const modalTag='<script src="js/card-details.js?v=20261110-details1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261111-search1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261111-wishsort1"></script>';
   assert.ok(updated.indexOf(modalTag)>0&&updated.indexOf(modalTag)<updated.indexOf(binderTag),
     'Details module must load before binder');
 }
@@ -280,7 +280,7 @@ if(updated.includes('js/catalog-ui.js')){
     assert.equal(movedModule,expected,'Catalog UI function bodies changed');
   }
   const uiTag='<script src="js/catalog-ui.js?v=20261110-catui1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261111-search1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261111-wishsort1"></script>';
   assert.ok(updated.indexOf(uiTag)>0&&updated.indexOf(uiTag)<updated.indexOf(binderTag),
     'Catalog UI must load before binder app');
 }
@@ -311,7 +311,7 @@ if(updated.includes('js/catalog-loader.js')){
     assert.equal(loader,expectedModule,'Offline dataset decoder or bootstrap logic changed');
   }
   const loaderTag='<script src="js/catalog-loader.js?v=20261110-loader1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261111-search1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261111-wishsort1"></script>';
   assert.ok(updated.indexOf(loaderTag)>0&&updated.indexOf(loaderTag)<updated.indexOf(binderTag),
     'Catalog loader must load before binder entrypoint');
 }
@@ -320,7 +320,7 @@ if(updated.includes('js/collection-state.js')){
   const module=readFileSync('js/collection-state.js','utf8');
   assert.ok(module.includes('window.VintageCollectionState={create('),'Missing collection-state factory');
   const stateTag='<script src="js/collection-state.js?v=20261110-state1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261111-search1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261111-wishsort1"></script>';
   assert.ok(updated.indexOf(stateTag)>0 && updated.indexOf(stateTag)<updated.indexOf(binderTag),
     'Collection state must load before binder');
   assert.ok(readFileSync('js/binder.js','utf8').includes('window.VintageCollectionState.create('),
@@ -355,7 +355,7 @@ if(updated.includes('js/collection-backup.js')){
   const factory='const {backup,copyWishlist,exportCSV,importBackup}=window.VintageCollectionBackup.create({state,MAP,cardNumber,toast,getProgress,normalizeOrders:()=>normalizeOrders(),sortedOwnedCards:()=>sortedOwnedCards(),ensureCloudEdit,save,renderAll,normalizeShipment});\n';
   const start=before.indexOf('function download(content,type,filename){');
   const backupTag='<script src="js/collection-backup.js?v=20261110-backup1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261111-search1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261111-wishsort1"></script>';
   assert.ok(updated.indexOf(backupTag)>0&&updated.indexOf(backupTag)<updated.indexOf(binderTag),
     'Backup controller must be loaded before binder');
   assert.ok(after.includes(factory),'Binder backup factory is not wired');
@@ -1043,6 +1043,58 @@ async function exercise(version, viewport) {
       assert.ok(fetched.some(item => item.file === file.split('/').at(-1) && item.status === 200),
         'Script did not load with 200: '+file);
     }
+  }
+  // Wishlist price sorting is presentation-only. Keep Firestore order intact and
+  // completely remove drag affordances outside custom priority mode.
+  if(version==='updated'){
+    const wishSortState=await page.evaluate(()=>{
+      window.VintageCloud={canEdit:()=>true,onChange:()=>{}};
+      window.VintageBinder.adoptProgress({
+        owned:{},
+        wish:{'base1-1':true,'base2-3':true,'base2-4':true},
+        wishOrder:['base1-1','base2-3','base2-4'],
+        conditions:{'base1-1':'NM','base2-3':'LP'}
+      });
+      window.VintageMarketPrices.getOwnedPrice=c=>({'base1-1':130,'base2-3':25})[c.id]??null;
+      document.querySelector('[data-view-btn="wishlist"]').click();
+      const find=document.querySelector('#wishFind');
+      find.value='';find.dispatchEvent(new Event('input',{bubbles:true}));
+      const sorter=document.querySelector('#wishSort'),list=document.querySelector('#wishlistItems');
+      const rows=()=>[...list.querySelectorAll('.wish-item')].map(el=>({
+        id:el.dataset.openWish,rank:Number(el.querySelector('.wish-rank').textContent),
+        drag:el.hasAttribute('data-drag-kind'),
+        kind:el.hasAttribute('data-order-kind'),
+        imageDrag:el.querySelector('img').hasAttribute('data-drag-kind'),
+        moveDisabled:el.querySelector('.wish-move-action').disabled
+      }));
+      const initial=rows();
+      const set=value=>{sorter.value=value;sorter.dispatchEvent(new Event('change',{bubbles:true}));};
+      const computed=getComputedStyle(find),alignment={direction:computed.direction,textAlign:computed.textAlign};
+      set('price-asc');const ascending=rows(),ascendingMode=list.dataset.sortMode;
+      document.querySelector('.wish-move-action').click();
+      const immutable=window.VintageBinder.getProgress().wishOrder;
+      set('price-desc');const descending=rows();
+      find.value='Base';find.dispatchEvent(new Event('input',{bubbles:true}));
+      const filtered=rows();find.value='';find.dispatchEvent(new Event('input',{bubbles:true}));
+      set('priority');const restored=rows();
+      window.VintageCloud={canEdit:()=>false,onChange:()=>{}};
+      return {initial,ascending,ascendingMode,descending,filtered,immutable,restored,alignment};
+    });
+    const ids=arr=>arr.map(row=>row.id);
+    assert.deepEqual(ids(wishSortState.initial),['base1-1','base2-3','base2-4']);
+    assert.equal(wishSortState.alignment.direction,'rtl','Wishlist search must use RTL text direction');
+    assert.equal(wishSortState.alignment.textAlign,'right','Wishlist search placeholder not right-aligned');
+    assert.deepEqual(ids(wishSortState.ascending),['base2-3','base1-1','base2-4']);
+    assert.deepEqual(ids(wishSortState.descending),['base1-1','base2-3','base2-4']);
+    assert.equal(wishSortState.ascendingMode,'price-asc','Sort mode not propagated');
+    assert.ok(wishSortState.ascending.every(x=>!x.drag&&!x.kind&&!x.imageDrag&&x.moveDisabled),
+      'Reordering must be disabled while sorting by price');
+    assert.deepEqual(ids(wishSortState.filtered),['base1-1'],'Search+sort regression');
+    assert.deepEqual(wishSortState.immutable,['base1-1','base2-3','base2-4'],
+      'Price sort changed saved wishlist priority');
+    assert.deepEqual(ids(wishSortState.restored),['base1-1','base2-3','base2-4']);
+    assert.ok(wishSortState.restored.every(x=>x.drag&&x.kind&&x.imageDrag&&!x.moveDisabled),
+      'Priority sort must restore drag and move interactions');
   }
   await context.close();
   return {initial,catalogSamples,states,filtered,catalogState,cardActionState,detailState,ownedState,collectionState,dragState,normalized,shipmentState,errors};
