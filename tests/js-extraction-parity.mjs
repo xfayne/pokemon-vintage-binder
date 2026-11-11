@@ -878,6 +878,7 @@ async function exercise(version, viewport) {
       window.VintageCloud={canEdit:()=>true,onChange:()=>{}};
       document.querySelector('[data-view-btn="wishlist"]').click();
       const input=document.querySelector('#wishFind');
+      input.focus();
       const show=()=>[...document.querySelectorAll('#wishlistItems .wish-item')].map(el=>({
         id:el.dataset.openWish,
         position:Number(el.dataset.orderIndex),
