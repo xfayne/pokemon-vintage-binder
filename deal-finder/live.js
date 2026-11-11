@@ -292,6 +292,137 @@
  let galleryImages=[],galleryIndex=0,galleryItem=null,gallerySerial=0,galleryAbort=null;
  const galleryStatus=$('liveGalleryStatus');
  const imageUrl=src=>{try{return typeof src==='string'&&new URL(src).protocol==='https:'}catch{return false}};
+
+ // The analysis schema and box coordinates are photo-source independent.
+ // The gallery is the eBay-specific presentation and cache consumer.
+ let galleryAnalysisRecord=null,gallerySaveFailed=false,galleryAnalyzing=false,galleryHighlighted=-1;
+ function validBox(box){
+  return Array.isArray(box)&&box.length===4&&box.every(n=>Number.isInteger(n)&&n>=0&&n<=1000)&&box[0]<box[2]&&box[1]<box[3];
+ }
+ function drawGalleryDefects(){
+  const overlay=$('liveGalleryOverlay'),img=$('liveGalleryImage'),stage=$('liveGalleryStage');
+  overlay.replaceChildren();
+  const observations=galleryAnalysisRecord?.analysis?.observations||[];
+  if(!Array.isArray(observations)||!img.complete||!img.naturalWidth||!img.naturalHeight||!galleryImages.length)return;
+  const width=stage.clientWidth,height=stage.clientHeight;
+  const scale=Math.min(width/img.naturalWidth,height/img.naturalHeight);
+  const drawnWidth=img.naturalWidth*scale,drawnHeight=img.naturalHeight*scale;
+  const offsetX=(width-drawnWidth)/2,offsetY=(height-drawnHeight)/2;
+  observations.slice(0,24).forEach((obs,index)=>{
+   for(const loc of (Array.isArray(obs.locations)?obs.locations:[])){
+    if(loc?.photoIndex!==galleryIndex+1||!validBox(loc.box2d))continue;
+    const [ymin,xmin,ymax,xmax]=loc.box2d;
+    const mark=document.createElement('span');
+    mark.className='live-gallery-defect-box'+(galleryHighlighted===index?' highlighted':'');
+    mark.style.left=(offsetX+xmin*drawnWidth/1000)+'px';
+    mark.style.top=(offsetY+ymin*drawnHeight/1000)+'px';
+    mark.style.width=((xmax-xmin)*drawnWidth/1000)+'px';
+    mark.style.height=((ymax-ymin)*drawnHeight/1000)+'px';
+    mark.title=String(obs.finding||'פגם אפשרי');
+    overlay.appendChild(mark);
+   }
+  });
+ }
+ function renderGalleryAnalysis(){
+  const panel=$('liveGalleryDemo'),button=$('liveGalleryDemoButton'),record=galleryAnalysisRecord,analysis=record?.analysis;
+  if(!analysis){
+   if(!galleryAnalyzing){panel.hidden=true;button.disabled=false;button.textContent='✨ נתח מצב ב־AI';button.setAttribute('aria-expanded','false');}
+   drawGalleryDefects();return;
+  }
+  const confidence=Math.round(Number(analysis.confidencePercent)||0);
+  const distribution=GRADES.map(g=>'<span>'+g+': '+Number(analysis.gradePercentages?.[g]||0)+'%</span>').join('');
+  const observations=(Array.isArray(analysis.observations)?analysis.observations:[]).slice(0,24);
+  const findings=observations.length?observations.map((obs,i)=>{
+   const loc=(Array.isArray(obs.locations)?obs.locations:[]).find(x=>Number.isInteger(x.photoIndex)&&x.photoIndex>=1&&x.photoIndex<=galleryImages.length&&validBox(x.box2d));
+   return '<button type="button" class="live-ai-finding" data-ai-finding="'+i+'"><span>'+escape(obs.area||'פגם')+'</span><strong>'+escape(obs.finding||'')+'</strong>'+
+     (loc?'<small>תמונה '+loc.photoIndex+' · הצג פגם</small>':'<small>ללא סימון מדויק</small>')+'</button>';
+  }).join(''):'<p>לא זוהו פגמים שניתן לתאר בביטחון מתוך התמונות שסופקו.</p>';
+  const limits=(Array.isArray(analysis.limitations)?analysis.limitations:[]).slice(0,8).map(x=>'<li>'+escape(x)+'</li>').join('');
+  panel.innerHTML='<strong>הערכת AI: '+escape(analysis.grade)+' · '+confidence+'% ביטחון</strong>'+
+    '<p>הערכה לפי התמונות בלבד, אינה דירוג מקצועי. המסגרות מצביעות על פגמים אפשריים.</p>'+
+    '<div class="live-ai-distribution">'+distribution+'</div>'+
+    '<div class="live-ai-findings">'+findings+'</div>'+
+    (limits?'<ul class="live-ai-limitations">'+limits+'</ul>':'')+
+    (gallerySaveFailed?'<p class="live-ai-warning">⚠️ הניתוח לא נשמר ב־Firestore. בדוק הרשאות ונסה לשמור שוב.</p><button type="button" id="liveGalleryRetrySave" class="live-ai-secondary">נסה לשמור בלי לנתח מחדש</button>':'')+
+    '<button type="button" id="liveGalleryReanalyze" class="live-ai-secondary">↻ נתח מחדש (בקשת AI נוספת)</button>';
+  panel.hidden=false;button.disabled=false;button.textContent='✨ '+escape(analysis.grade)+' · '+confidence+'%';button.setAttribute('aria-expanded','true');
+  drawGalleryDefects();
+ }
+ function setGalleryAnalysis(record){
+  if(!record?.analysis||!GRADES.includes(record.analysis.grade))return;
+  galleryAnalysisRecord=record;galleryHighlighted=-1;renderGalleryAnalysis();
+  const key=galleryItem&&aiCacheKey(galleryItem);
+  if(key){aiCache.set(key,record);render();}
+ }
+ function analysisError(message){
+  const panel=$('liveGalleryDemo');panel.hidden=false;
+  panel.innerHTML='<p class="live-ai-warning">'+escape(message)+'</p>';
+  $('liveGalleryDemoButton').disabled=false;
+  $('liveGalleryDemoButton').setAttribute('aria-expanded','true');
+ }
+ async function loadGalleryStored(item,serial){
+  const cloud=window.VintageCloud;
+  if(!cloud?.canEdit?.())return;
+  const key=aiCacheKey(item);
+  if(key&&aiCache.has(key)){
+   if(gallerySerial===serial&&gallery.open)setGalleryAnalysis(aiCache.get(key));
+   return;
+  }
+  try{
+   const saved=await cloud.getConditionAnalysis(aiSource(item));
+   if(saved?.analysis&&gallerySerial===serial&&gallery.open)setGalleryAnalysis(saved);
+  }catch(_){}
+ }
+ async function runGalleryAnalysis(force=false){
+  if(galleryAnalyzing||!galleryItem)return;
+  const item=galleryItem,serial=gallerySerial,cloud=window.VintageCloud;
+  if(!cloud?.canEdit?.()){analysisError('כדי לנתח מצב צריך להתחבר ל־Google.');return;}
+  if(!force){
+   const cached=galleryAnalysisRecord||aiCache.get(aiCacheKey(item));
+   if(cached?.analysis){setGalleryAnalysis(cached);return;}
+   try{
+    const saved=await cloud.getConditionAnalysis(aiSource(item));
+    if(saved?.analysis){if(serial===gallerySerial)setGalleryAnalysis(saved);return;}
+   }catch(_){galleryStatus.textContent='לא הצלחנו לבדוק תוצאות שמורות ב־Firestore. ייתכן שיהיה צורך לעדכן את ההרשאות.';}
+  }
+  galleryAnalyzing=true;gallerySaveFailed=false;
+  const button=$('liveGalleryDemoButton'),panel=$('liveGalleryDemo');
+  button.disabled=true;button.textContent='✨ מנתח תמונות…';
+  panel.hidden=false;panel.innerHTML='<p>בודק פינות, קצוות, משטחים ופגמים בתמונות המוכר…</p>';
+  try{
+   const token=await cloud.getIdToken();
+   if(!token)throw Error('יש להתחבר לחשבון Google.');
+   const card=cardIndex().get(item.cardId);
+   const response=await fetch(state.endpoint+'/api/analyze-condition',{method:'POST',
+    headers:{'content-type':'application/json',authorization:'Bearer '+token},
+    body:JSON.stringify({source:aiSource(item),cardContext:card?{name:card.name,setName:card.setName}:null})
+   });
+   const data=await response.json();
+   if(!response.ok)throw Error(data.error==='AI_RATE_LIMITED'?'הגעת למגבלת Gemini החינמית, נסה שוב מאוחר יותר.':
+    data.error==='AI_AUTH_REQUIRED'?'אין הרשאה לניתוח AI בחשבון הזה.':
+    data.error==='AI_NO_USABLE_IMAGES'?'לא נמצאו תמונות קלף מתאימות לניתוח.':
+    data.error||'ניתוח התמונות נכשל.');
+   if(serial!==gallerySerial||!gallery.open)return;
+   const result={source:aiSource(item),analysis:{...data.analysis,imageCount:data.imageCount},
+    photoIndices:data.analyzedPhotoIndices||[],clientAnalyzedAt:Date.now()};
+   setGalleryAnalysis(result);
+   try{
+    const saved=await cloud.saveConditionAnalysis(result.source,result.analysis,result.photoIndices);
+    if(serial===gallerySerial){gallerySaveFailed=false;setGalleryAnalysis(saved);}
+   }catch(err){
+    if(serial===gallerySerial){gallerySaveFailed=true;renderGalleryAnalysis();}
+   }
+  }catch(err){
+   if(serial===gallerySerial&&gallery.open)analysisError(String(err.message||'ניתוח התמונות נכשל.'));
+  }finally{
+   galleryAnalyzing=false;
+   if(serial===gallerySerial&&gallery.open){
+    if(galleryAnalysisRecord?.analysis)renderGalleryAnalysis();
+    else{button.disabled=false;button.textContent='✨ נתח מצב ב־AI';}
+   }
+  }
+ }
+
  function showGalleryImage(){
   const img=$('liveGalleryImage'),count=galleryImages.length;
   img.hidden=!count;$('liveGalleryEmpty').hidden=!!count;
