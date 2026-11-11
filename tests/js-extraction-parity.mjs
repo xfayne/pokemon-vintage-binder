@@ -1074,7 +1074,7 @@ async function exercise(version, viewport) {
       document.querySelector('.wish-move-action').click();
       const immutable=window.VintageBinder.getProgress().wishOrder;
       set('price-desc');const descending=rows();
-      find.value='Base';find.dispatchEvent(new Event('input',{bubbles:true}));
+      find.value='1/102';find.dispatchEvent(new Event('input',{bubbles:true}));
       const filtered=rows();find.value='';find.dispatchEvent(new Event('input',{bubbles:true}));
       set('priority');const restored=rows();
       window.VintageCloud={canEdit:()=>false,onChange:()=>{}};
