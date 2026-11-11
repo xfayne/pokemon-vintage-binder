@@ -1,6 +1,6 @@
-# 🔎 מציאות — Live eBay auction discovery
+# 🔎 מציאות — Live eBay deal discovery
 
-The Deals tab intentionally displays **only live eBay auction search** and its results.
+The Deals tab displays **live eBay auctions and Buy It Now listings**, without a fake/sample auction feed.
 
 ## Visible UI
 
@@ -8,6 +8,8 @@ The Deals tab intentionally displays **only live eBay auction search** and its r
 - Once connected: opening the Deals tab automatically scans the entire authenticated user's Firebase Wishlist in sequential 4-card batches, with a short pause between batches. A progress bar reports scanned/total cards, and results appear as each batch completes. The scan can be paused/resumed and restarted manually. Completed results are reused on revisits for 30 minutes while the page stays open; the scan is not a scheduled background job.
 - Show auctions AND Buy It Now listings from US/UK/Germany, including bids, ending times, shipping to Israel when known, seller feedback, optional Best Offer, and the eBay listing link.
 - Default sort is **recommended opportunities**: near-ending auctions and fixed-price discounts rank higher than distant auctions with very low opening bids. Manual sorts remain available. Advanced filters cover listing type, auction ending horizon, max shipping, all-in price, discount threshold, and condition; reset shows the complete set of collected results. Each listing uses one NM/LP/MP/HP/DMG price comparison, using an eBay-provided condition when available, otherwise a clearly labeled title guess or MP fallback. Users can override grade per listing. Top candidates receive a limited on-demand detailed-condition lookup. Unknown shipping is provisional, never free. Results render 40 at a time to keep mobile scrolling responsive.
+- Tapping an actual listing photo opens a mobile gallery showing primary and additional images **only after opening**: thumbnails, previous/next buttons, keyboard arrows, swipe navigation, and a direct link to the original eBay listing. Opening the same item again reuses photo metadata in the current browser session. Unavailable photos do not trigger fabricated images.
+- A clearly labeled **AI condition analysis (demo)** button expands static example findings only; it does not call an AI provider or evaluate the photos.
 - The app's card-details modal retains a quick eBay auction-search link for one-off manual searches.
 
 ## Backend
@@ -21,7 +23,7 @@ Credentials are **not** stored in the GitHub Pages source. Put approved eBay Pro
 - `EBAY_CLIENT_ID`
 - `EBAY_CLIENT_SECRET`
 
-The worker's `GET /health` reports whether those secrets are configured and `POST /api/search` searches live US and German eBay marketplaces for auction listings shipping to Israel.
+The worker's `GET /health` reports whether those secrets are configured, `POST /api/search` returns live US/UK/German auctions and fixed-price listings, `POST /api/item-condition` checks detailed seller condition, and `POST /api/item-images` fetches listing photo URLs on demand from eBay Browse `getItem`. Gallery requests are separate from search/enrichment, so regular scans do not request additional images.
 
 ## Card-identity verification (three layers)
 
@@ -45,3 +47,4 @@ The worker's `GET /health` reports whether those secrets are configured and `POS
 - Add keys and confirm scanning proceeds automatically through all Wishlist cards (in four-card batches), updating progress, preserving earlier results, and allowing pause/resume, manual restart and 'show more' results. Test filters and resets, fixed vs auction types, seller-grade overrides and unknown shipping.
 - Confirm Wishlist drag-and-drop, Firestore collection updates and all other tabs are unchanged.
 - Worker integration tests: `node --test ebay-worker/worker.test.mjs`.
+- Playwright Deals tests: `node tests/deals-ui-regression.mjs`; these mock eBay and verify gallery lazy loading, thumbnails, navigation, caching, and clearly fake AI demo.
