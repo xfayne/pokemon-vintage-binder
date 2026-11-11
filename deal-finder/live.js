@@ -352,7 +352,7 @@
   if(!record?.analysis||!GRADES.includes(record.analysis.grade))return;
   galleryAnalysisRecord=record;galleryHighlighted=-1;renderGalleryAnalysis();
   const key=galleryItem&&aiCacheKey(galleryItem);
-  if(key){aiCache.set(key,record);render();}
+  if(key){state.preserveGradeOrder=true;aiCache.set(key,record);render();}
  }
  function analysisError(message){
   const panel=$('liveGalleryDemo');panel.hidden=false;
