@@ -759,7 +759,8 @@ async function exercise(version, viewport) {
     };
   });
   assert.equal(detailState.opening.open,true,'Details modal failed to open');
-  assert.equal(detailState.opening.dealsButton,true,'Card details must offer scoped Deals search');
+  assert.equal(detailState.opening.dealsButton,version==='updated','Scoped Deals button should only exist in updated UI');
+  delete detailState.opening.dealsButton;
   assert.equal(detailState.opening.purchaseFieldVisible,true,'Owned purchase input hidden');
   assert.equal(detailState.condition,'LP','Condition edit did not persist');
   assert.equal(detailState.firstEdition,true,'First Edition flag did not persist');
