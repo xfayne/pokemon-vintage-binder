@@ -1,6 +1,6 @@
 # Pokémon Vintage Binder — Project Context
 
-_Last reviewed: 2026-11-10. This document distinguishes repository-verified facts from conversation history and planned work._
+_Last reviewed: 2026-11-11. This document distinguishes repository-verified facts from conversation history and planned work._
 
 ## Purpose and collection preferences
 Personal web app for collecting vintage Pokémon TCG cards (Base, Jungle, Fossil through Neo): catalog, owned cards, wishlist, visual binder, market values, deal discovery, and shipment tracking.
@@ -24,9 +24,9 @@ Collector preference: English vintage Unlimited, ungraded/raw cards; prioritize 
 1. Catalog: vintage card coverage through Neo, external card art.
 2. My Cards: owned collection, condition, paid price, market value, count/holo totals, sorting and Excel export.
 3. My Binder: 3x3 pages, rearrangement, wishlist overlay, read-only share view, landscape two-page layout except cover.
-4. Wishlist: reorder by dragging the whole row/card, move to top, add/remove, condition-specific price where known.
+4. Wishlist: reorder by dragging the whole row/card, move to top, add/remove, condition-specific price where known. Live RTL search by name/set/number; sorting by persistent user priority (default) or condition-specific market price (ascending/descending); drag and move disabled while price-sorted. No sort/search persistence to Firestore.
 5. Card details: condition and market price, Unlimited default, compact 1st Edition toggle, paid amount, mutually exclusive owned/wishlist actions, remove/move actions.
-6. Deals: eBay search with condition-aware comparisons and ranked opportunities.
+6. Deals: eBay search with condition-aware comparisons and ranked opportunities. Tapping a listing thumbnail opens a gallery with on-demand eBay photos, large viewer, thumbnails, buttons, keyboard/touch swipe and eBay link. The gallery AI button displays **explicitly fake sample results only**; no AI calls, image interpretation or grading.
 7. Shipments: 17TRACK-backed shipment status and recent update/date, up to six associated cards per shipment, Cloudflare Worker/KV integration discussed in prior work.
 8. User menu: Google sign-in, backup/import.
 
@@ -39,7 +39,7 @@ Collector preference: English vintage Unlimited, ungraded/raw cards; prioritize 
 - Three-layer identity checks: obvious junk rejected; strong matches vs needs-review; additional item-detail lookup for limited top candidates. Review-needed items are not shown as reliable discounts.
 - Seller-provided listing text/aspects are untrusted. No image-based authentication or condition grading; no auto bidding/purchasing.
 - Unknown shipping is not free. No fake sample auctions.
-- Worker `GET /health` and `POST /api/search`; secrets `EBAY_CLIENT_ID`, `EBAY_CLIENT_SECRET`.
+- Worker `GET /health`, `POST /api/search`, `POST /api/item-condition`, and `POST /api/item-images`; secrets `EBAY_CLIENT_ID`, `EBAY_CLIENT_SECRET`. The images endpoint validates the eBay item ID and marketplace, requests Browse `GET /item/{id}` only when the gallery is opened, returns primary + additional HTTPS photo URLs, and never adds photo arrays to search results. The browser caches per-listing image arrays only for the lifetime of the page; missing or failed galleries fall back to the known listing thumbnail without invented images.
 - Tests: `node --test ebay-worker/worker.test.mjs`.
 
 ## UI decisions from prior conversations
@@ -54,7 +54,7 @@ Collector preference: English vintage Unlimited, ungraded/raw cards; prioritize 
 ## Open questions / backlog
 - The remaining `js/binder.js` IIFE coordinates UI modules; state/hydration, cloud-save notification, JSON backup/import, CSV and clipboard export have moved into `js/collection-state.js` and `js/collection-backup.js`; Firestore schema, Google login and persistence continue to live in `js/firebase-cloud.js`. Further decomposition should keep these interfaces stable and remain test-driven.
 
-- Confirm deployed UI and actual live API/Worker behavior against main branch, especially whether eBay Production credentials are enabled.
+- Check live eBay API data and images on specific listings under real eBay Production credentials when available; browser/Worker CI use deterministic fixtures without production eBay requests. Cloudflare Workers Builds successfully deployed main commit `c76f58d` on 2026-11-11; individual real listing photo availability remains dependent on eBay.
 - Confirm shipment unread-update indicator is implemented and persisted; prior discussion requested it.
 - Historical price chart without storing long-term time-series in Firestore: design/data source not finalized.
 - Review documentation drift: `ebay-worker/README.md` describes some older manual connection and auction-only flows, while `deal-finder/README.md` describes automatic Wishlist scanning and Buy It Now. Prefer current implementation over either document if they disagree.
