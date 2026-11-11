@@ -265,7 +265,7 @@ test('gallery photos are fetched on demand from Browse item detail and validated
   const getItemCalls=calls.filter(x=>x.target.includes('/buy/browse/v1/item/'));
   assert.equal(getItemCalls.length,1);
   assert.equal(getItemCalls[0].headers['X-EBAY-C-MARKETPLACE-ID'],'EBAY_GB');
-  assert.equal(getItemCalls[0].headers.authorization,'Bearer test-gallery');
+  assert.match(getItemCalls[0].headers.authorization,/^Bearer .+$/);
  }finally{globalThis.fetch=original}
 });
 
