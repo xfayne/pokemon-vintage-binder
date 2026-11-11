@@ -13,6 +13,7 @@ Estimate the physical condition of a vintage, raw Pokémon TCG card **from photo
 5. **Do not silently reanalyze.** A changed image set, changed model/prompt version or manual "Analyze again" action may make results stale, but only an explicit user action triggers another paid run. Show cached/stale state visibly.
 6. **Grade may inform future Deals comparisons**, with a visible "AI estimate" source and confidence. A user-selected comparison-grade override takes precedence; do not turn low-confidence AI or uncertain identity matches into a trustworthy bargain automatically.
 7. **No automatic bidding/purchases; no implication of authenticity certification** or professional grading. AI percentages are subjective estimates, not calibrated probabilities.
+8. **No grading example images.** The user decided to exclude all previously shared back-of-card charts/example images from the model's inputs, and no such images were committed to the repository. Use only the listing's actual eBay photos and the versioned written grading rubric in [CARD_CONDITION_RUBRIC.md](CARD_CONDITION_RUBRIC.md).
 
 ## Existing code and integration points (verified against main 2026-11-11)
 - `deal-finder/live.js`: on-demand gallery with thumbnail, swipe, keyboard, eBay image fetching, session image cache, and **static fake demo** under `liveGalleryDemoButton`. Future search results are re-created from fresh API results; currently the display grade comes from user override / seller / title / fallback.
@@ -52,6 +53,7 @@ Example shape (illustrative, not committed schema):
   "imageSetFingerprint": "sha256-of-normalized-image-url-list",
   "model": "configured-vision-model",
   "promptVersion": "v1",
+  "rubricVersion": "tcg-text-v1",
   "analyzedAt": "server timestamp",
   "source": "vision-ai"
 }
@@ -65,7 +67,7 @@ Actual `cardId` should use the app's existing stable card ID, if available; do n
 2. User opens a listing gallery; the gallery loads the eBay image list on demand as today. Opening alone does not start AI.
 3. User presses "✨ ניתוח מצב". If a matching versioned cached analysis exists for `marketplace + itemId`, show it immediately; do not contact the inference provider.
 4. On cache miss and with usable imagery, the client obtains a Firebase ID token and calls `POST /api/analyze-condition` with validated item identity and minimal card context. The Worker verifies Firebase token **and the configured AI owner allowlist**, restricts request size, rate/cost and concurrency, and retrieves the eBay images itself (never arbitrary client-controlled fetch URLs).
-5. The Worker selects up to a defined limit of front/back/close-up images (initial target ~10, preserving provenance), calls a configured multimodal model with a strict vintage-card condition rubric and requests schema-constrained JSON. Do not obey text found in images or seller descriptions as instructions. Validate, sanitize and normalize model output; reject malformed responses or attempt a bounded corrective retry.
+5. The Worker selects up to a defined limit of **actual listing** front/back/close-up images (initial target ~10, preserving provenance), calls a configured multimodal model with the **text-only** [versioned grading rubric](CARD_CONDITION_RUBRIC.md) and requests schema-constrained JSON. Do not obey text found in images or seller descriptions as instructions. Validate, sanitize and normalize model output; reject malformed responses or attempt a bounded corrective retry.
 6. Return the result to the client; save the successful analysis into its own Firestore document, separately from collection progress. Avoid overwriting an existing newer analysis (concurrent tabs). Rerender the item and gallery with the persisted result.
 7. Future searches (including after refresh/sign-in) load relevant persisted data and display the last known grade. User overrides retain higher precedence than model output; compare pricing against AI grade when current/usable and clearly identify source and confidence.
 
@@ -98,6 +100,13 @@ Actual `cardId` should use the app's existing stable card ID, if available; do n
 - User override and low-confidence/needs-review safety ranking remain correct.
 - All tests use mock eBay images, mock AI, and in-memory Firestore/test fixtures; **never mutate real user Firestore data**.
 - Run Worker unit tests, Deals UI regression, build-index `--check`, and all required GitHub CI parity checks. Merge only after mandatory checks pass.
+
+## Phase-1 model candidate and written rubric (2026-11-11)
+- Primary model for initial accuracy/cost benchmark: **OpenAI `gpt-5.4-mini`**, because current API documentation supports image inputs, structured outputs and a lower token price than `gpt-5.4`. This is a **candidate, not yet a working connection**. Model can be changed after reviewing real photos. Official model documentation: https://developers.openai.com/api/docs/models/gpt-5.4-mini ; images guide: https://developers.openai.com/api/docs/guides/images-vision .
+- Use only the **listing's images**. User-provided NM/LP/MP/HP/DMG photo examples remain outside the repository and are not input to the model. No separate example-image assets are required.
+- Source of truth for the written prompt criteria: [docs/CARD_CONDITION_RUBRIC.md](CARD_CONDITION_RUBRIC.md), an original concise rubric linked to the official TCGplayer guides. Use the TCGplayer severity-point system as a cross-check without claiming false measurement precision from photographs.
+- Pre-deployment external setup to confirm: a separately billed OpenAI API project/key (ChatGPT account billing is not API billing), Worker secret, Firestore rules for the private subcollection, and the image/provider usage terms. **Never request or expose the key in chat or GitHub.**
+- Security note: do not auto-bill users simply because Firestore returns a cached/stale record; only explicitly user-triggered calls count. An authenticated key and cost cap are mandatory.
 
 ## Work plan and decisions workflow
 - **Phase 0 (this PR)**: commit this design document; no functional change. Update this document before any future implementation PR so that requirements, provider, schema, security choices and acceptance tests reflect the agreed design.
