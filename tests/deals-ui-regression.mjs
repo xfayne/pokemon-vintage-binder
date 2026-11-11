@@ -6,7 +6,7 @@ import { chromium } from 'playwright';
 // This exercises the real Deals UI, including its rerenders, in a mobile browser.
 // eBay network calls are replaced with deterministic item fixtures, never real bids.
 const fixtureHtml = '<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"></head><body>'+
-  '<section id="dealsPage"><div class="collection-panel"><div class="collection-heading">Deals</div></div></section>'+
+  '<section id="dealsPage"><div class="collection-panel"><div class="collection-heading"><div><h2>🔎 מציאות</h2><div class="subtle">Wishlist deals</div></div></div></div></section>'+
   '<script src="/deal-finder/live.js"></script></body></html>';
 const liveScript=readFileSync('deal-finder/live.js','utf8');
 const server=createServer((request,response)=>{
@@ -48,6 +48,8 @@ try{
     window.VintageDealBridge={
       getWishlistCards:()=>[{id:'neo1-14',name:'Slowking',setName:'Neo Genesis',
         number:'14/111',finish:'holo',firstEdition:false}],
+      getCardForDeals:id=>id==='base1-3'?{id,name:'Chansey',setName:'Base Set',number:'3/102',finish:'holo',firstEdition:false}:null,
+      returnToCardDetails:id=>{window.__returnedToCard=id;},
       getMarketPrice:(_id,grade)=>({NM:100,LP:60,MP:30,HP:15,DMG:5})[grade]
     };
     window.VintageDealsDashboard={
@@ -55,6 +57,7 @@ try{
     };
   });
   let galleryCalls=0;
+  const requestedCardIds=[];
   const galleryPhotos=['https://i.ebayimg.com/fixture-primary.jpg',
     'https://i.ebayimg.com/fixture-back.jpg','https://i.ebayimg.com/fixture-corner.jpg'];
   await context.route('https://i.ebayimg.com/**',route=>route.fulfill({
@@ -71,9 +74,12 @@ try{
       return route.fulfill({status:200,contentType:'application/json',
         body:JSON.stringify({images:galleryPhotos})});
     }
+    const requestBody=requestUrl.endsWith('/api/search')?JSON.parse(route.request().postData()||'{}'):null;
+    if(requestBody)requestedCardIds.push(requestBody.cards?.map(card=>card.id)||[]);
+    const forChansey=requestBody?.cards?.[0]?.id==='base1-3';
     const response=requestUrl.endsWith('/health')
       ?{ready:true}:requestUrl.endsWith('/api/search')
-        ?{items:[...cards,...accessories],fetchedAt:new Date().toISOString(),errors:[]}
+        ?{items:forChansey?[{...single('chansey-deal','Chansey 3/102 Base Set Holo Unlimited Pokemon Card',12),cardId:'base1-3'}]:[...cards,...accessories],fetchedAt:new Date().toISOString(),errors:[]}
         :{error:'Unexpected fixture endpoint'};
     return route.fulfill({status:200,contentType:'application/json',
       body:JSON.stringify(response)});
@@ -156,6 +162,25 @@ try{
   await page.locator('#liveShowMore').click();
   assert.equal(await page.locator('#liveListings select[data-item-key="item-0"]').inputValue(),'DMG',
     'Manual comparison grade should survive a deliberate sort and show more');
+
+  // A card outside the Wishlist uses the same Worker pipeline, filters, and ranking.
+  await page.evaluate(()=>window.VintageEbayLive.openCard('base1-3'));
+  await page.waitForFunction(()=>document.querySelectorAll('#liveListings article').length===1);
+  assert.equal(await page.locator('#liveListings article .live-card-text small').textContent(),'Chansey · Base Set');
+  assert.match(await page.locator('.collection-heading h2').textContent(),/Chansey/);
+  assert.ok(requestedCardIds.some(ids=>ids.length===1&&ids[0]==='base1-3'),
+    'Scoped search must request only the selected catalog card');
+  assert.equal(await page.locator('#liveReload').textContent(),'↻ סרוק מחדש את הקלף');
+  await page.locator('#liveAllWishlist').click();
+  await page.waitForFunction(()=>document.querySelectorAll('#liveListings article').length===40);
+  assert.equal(await page.locator('#liveScopeActions').isVisible(),false);
+  assert.equal(await page.locator('#liveListings select.live-item-grade').count(),40,
+    'Returning to Wishlist must restore its previous results without scoped listings');
+  await page.evaluate(()=>window.VintageEbayLive.openCard('base1-3'));
+  await page.waitForFunction(()=>document.querySelectorAll('#liveListings article').length===1);
+  await page.locator('#liveBackToCard').click();
+  assert.equal(await page.evaluate(()=>window.__returnedToCard),'base1-3',
+    'Scoped Deals must offer return to original card details');
 
   assert.deepEqual(pageErrors,[],'No uncaught browser errors expected');
   console.log('PASS Deals mobile gallery fetches photos only on open, navigates by buttons, thumbnails, keyboard and touch, previews AI demo without analysis, and preserves grade sorting');
