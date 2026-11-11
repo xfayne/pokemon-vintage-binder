@@ -96,11 +96,11 @@
  const resolvedGrade=item=>{
   const key=keyFor(item),detail=state.conditionDetails.get(key);
   const declared=(detail&&detail.source==='seller'&&detail.grade)?detail.grade:null;
-  const ai=aiFor(item),override=state.gradeOverrides.get(key);
+  const ai=aiFor(item),override=state.gradeOverrides.get(key),cached=aiCache.get(aiCacheKey(item));
   const grade=override||ai?.grade||declared||item.conditionGrade||'MP';
   const source=override?'user':ai?'ai':declared?'seller':item.conditionSource||'unknown';
-  const label=ai?'AI · '+ai.confidencePercent+'% ביטחון':detail?.label||item.conditionLabel||item.condition||'';
-  return {grade,source,label,confidence:ai?.confidencePercent??null,overridden:!!override};
+  const label=ai?(cached?.stale?'תמונות השתנו · ניתוח AI ישן':'AI · '+ai.confidencePercent+'% ביטחון'):detail?.label||item.conditionLabel||item.condition||'';
+  return {grade,source,label,confidence:cached?.stale?0:ai?.confidencePercent??null,stale:!!cached?.stale,overridden:!!override};
  };
  function evaluation(item,card){
   const gradeInfo=resolvedGrade(item);
@@ -296,6 +296,7 @@
  // The analysis schema and box coordinates are photo-source independent.
  // The gallery is the eBay-specific presentation and cache consumer.
  let galleryAnalysisRecord=null,gallerySaveFailed=false,galleryAnalyzing=false,galleryHighlighted=-1;
+ let galleryFingerprint='';
  function validBox(box){
   return Array.isArray(box)&&box.length===4&&box.every(n=>Number.isInteger(n)&&n>=0&&n<=1000)&&box[0]<box[2]&&box[1]<box[3];
  }
@@ -323,6 +324,25 @@
    }
   });
  }
+ async function checkGalleryPhotoFingerprint(images,serial){
+  if(!globalThis.crypto?.subtle||!Array.isArray(images)||!images.length)return;
+  try{
+   const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(images.join('\n')));
+   if(serial!==gallerySerial||!gallery.open)return;
+   galleryFingerprint=Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('');
+   const record=galleryAnalysisRecord;
+   if(record?.analysis?.imageSetFingerprint){
+    const stale=record.analysis.imageSetFingerprint!==galleryFingerprint;
+    if(record.stale!==stale){
+     record.stale=stale;
+     const key=galleryItem&&aiCacheKey(galleryItem);
+     if(key)aiCache.set(key,record);
+     render();
+    }
+    renderGalleryAnalysis();
+   }
+  }catch(_){}
+ }
  function renderGalleryAnalysis(){
   const panel=$('liveGalleryDemo'),button=$('liveGalleryDemoButton'),record=galleryAnalysisRecord,analysis=record?.analysis;
   if(!analysis){
@@ -338,7 +358,7 @@
      (loc?'<small>תמונה '+loc.photoIndex+' · הצג פגם</small>':'<small>ללא סימון מדויק</small>')+'</button>';
   }).join(''):'<p>לא זוהו פגמים שניתן לתאר בביטחון מתוך התמונות שסופקו.</p>';
   const limits=(Array.isArray(analysis.limitations)?analysis.limitations:[]).slice(0,8).map(x=>'<li>'+escape(x)+'</li>').join('');
-  panel.innerHTML='<strong>הערכת AI: '+escape(analysis.grade)+' · '+confidence+'% ביטחון</strong>'+
+  panel.innerHTML='<strong>הערכת AI: '+escape(analysis.grade)+' · '+confidence+'% ביטחון</strong>'+    (record.stale?'<p class="live-ai-warning">⚠️ תמונות המודעה השתנו מאז הניתוח. אפשר לנתח מחדש ידנית.</p>':'')+
     '<p>הערכה לפי התמונות בלבד, אינה דירוג מקצועי. המסגרות מצביעות על פגמים אפשריים.</p>'+
     '<div class="live-ai-distribution">'+distribution+'</div>'+
     '<div class="live-ai-findings">'+findings+'</div>'+
@@ -350,7 +370,9 @@
  }
  function setGalleryAnalysis(record){
   if(!record?.analysis||!GRADES.includes(record.analysis.grade))return;
-  galleryAnalysisRecord=record;galleryHighlighted=-1;renderGalleryAnalysis();
+  galleryAnalysisRecord=record;galleryHighlighted=-1;
+  if(record.analysis.imageSetFingerprint&&galleryFingerprint)record.stale=record.analysis.imageSetFingerprint!==galleryFingerprint;
+  renderGalleryAnalysis();
   const key=galleryItem&&aiCacheKey(galleryItem);
   if(key){state.preserveGradeOrder=true;aiCache.set(key,record);render();}
  }
@@ -456,7 +478,7 @@
   $('liveGalleryTitle').textContent=item.title||'מודעה ב־eBay';
   $('liveGalleryMeta').textContent=[item.marketplace,item.format==='AUCTION'?'מכרז':'קנייה מיידית'].filter(Boolean).join(' · ');
   $('liveGalleryEbay').href=item.url;
-  galleryAnalysisRecord=null;gallerySaveFailed=false;galleryHighlighted=-1;
+  galleryAnalysisRecord=null;gallerySaveFailed=false;galleryHighlighted=-1;galleryFingerprint='';
   $('liveGalleryDemo').hidden=true;
   $('liveGalleryDemo').replaceChildren();
   $('liveGalleryDemoButton').disabled=false;
@@ -467,7 +489,7 @@
   gallery.showModal();
   void loadGalleryStored(item,serial);
   const cached=galleryCache.get(key);
-  if(cached){setGalleryPhotos(cached);galleryStatus.textContent='';return;}
+  if(cached){setGalleryPhotos(cached);void checkGalleryPhotoFingerprint(cached,serial);galleryStatus.textContent='';return;}
   const controller=new AbortController();galleryAbort=controller;
   try{
    const response=await fetch(state.endpoint+'/api/item-images',{
@@ -482,6 +504,7 @@
    const resolved=images.length?images:galleryImages;
    galleryCache.set(key,resolved);
    setGalleryPhotos(resolved);
+   if(images.length)void checkGalleryPhotoFingerprint(resolved,serial);
    galleryStatus.textContent=images.length?'':'לא התקבלו תמונות נוספות מ־eBay.';
   }catch(error){
    if(serial!==gallerySerial||!gallery.open)return;
