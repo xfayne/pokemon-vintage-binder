@@ -759,7 +759,7 @@ async function exercise(version, viewport) {
     };
   });
   assert.equal(detailState.opening.open,true,'Details modal failed to open');
-  assert.equal(detailState.opening.dealsButton,version==='updated','Scoped Deals button should only exist in updated UI');
+  assert.equal(detailState.opening.dealsButton,true,'Scoped Deals button must exist in both the existing main UI and PR UI');
   delete detailState.opening.dealsButton;
   assert.equal(detailState.opening.purchaseFieldVisible,true,'Owned purchase input hidden');
   assert.equal(detailState.condition,'LP','Condition edit did not persist');
