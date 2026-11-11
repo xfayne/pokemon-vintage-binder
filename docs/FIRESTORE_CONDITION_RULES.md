@@ -30,8 +30,7 @@ match /users/{uid}/conditionAnalyses/{analysisKey} {
     && request.resource.data.imageCount >= 0
     && request.resource.data.imageCount <= 25
     && request.resource.data.analyzedAt == request.time
-    && request.resource.data.clientAnalyzedAt is int
-    && request.resource.size() < 300000;
+    && request.resource.data.clientAnalyzedAt is int;
 
   allow delete: if false;
 }
