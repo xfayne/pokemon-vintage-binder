@@ -21,27 +21,44 @@ function renderCollections(){if(!state.ready)return;normalizeOrders();renderShip
  $('binderPageLabel').textContent='עמוד '+(state.binderPage+1)+' מתוך '+pageCount;
  $('binderPrev').disabled=state.binderPage===0;$('binderNext').disabled=state.binderPage>=pageCount-1;
  const wishQuery=$('wishFind').value.trim().toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'');
+ const wishSort=$('wishSort').value;
+ const priorityOrder=wishSort==='priority';
+ $('wishSortNote').hidden=priorityOrder;
+ $('wishlistItems').dataset.sortMode=wishSort;
  const wishMatches=state.wishOrder.map((id,i)=>({id,i})).filter(({id})=>{
   if(!wishQuery)return true;
   const card=cardLookup.get(id);
   const searchable=card && [card.name,MAP.get(card.set)?.name||'',cardNumber(card),id].join(' ');
   return searchable && searchable.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').includes(wishQuery);
  });
+ if(!priorityOrder){
+  const prices=new Map(wishMatches.map(({id})=>{
+   const c=cardLookup.get(id),condition=state.conditions[id];
+   const value=c&&condition?window.VintageMarketPrices?.getOwnedPrice?.(c,MAP.get(c.set)?.name||'',condition,!!state.firstEdition[id]):null;
+   return [id,typeof value==='number'&&Number.isFinite(value)?value:null];
+  }));
+  wishMatches.sort((a,b)=>{
+   const av=prices.get(a.id),bv=prices.get(b.id);
+   if(av===null)return bv===null?a.i-b.i:1;
+   if(bv===null)return -1;
+   return (wishSort==='price-desc'?bv-av:av-bv)||a.i-b.i;
+  });
+ }
  $('wishlistItems').innerHTML=state.wishOrder.length ? wishMatches.length ? wishMatches.map(({id,i})=>{
   const c=cardLookup.get(id);if(!c)return '';
   const condition=state.conditions[id]||'';
   const market=condition?window.VintageMarketPrices?.getOwnedPrice?.(c,MAP.get(c.set)?.name||'',condition,!!state.firstEdition[id]):null;
   const amount=typeof market==='number'?new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(market):'';
-  return `<article class="wish-item" role="listitem" data-order-kind="wishlist" data-order-index="${i}" data-drag-kind="wishlist" data-drag-index="${i}" data-open-wish="${esc(id)}" tabindex="0" aria-label="פרטים על ${esc(c.name)}">
-   <span class="wish-rank" data-drag-kind="wishlist" data-drag-index="${i}" title="גרור כדי לשנות את הסדר" aria-label="גרור כדי לשנות את הסדר">${i+1}</span>
-   <img loading="lazy" decoding="async" src="${esc(c.image)}" alt="${esc(c.name)}" data-drag-kind="wishlist" data-drag-index="${i}" title="גרור לשינוי הסדר · הקש לפתיחת פרטים" draggable="false">
+  return `<article class="wish-item" role="listitem" ${priorityOrder?'data-order-kind="wishlist" data-drag-kind="wishlist" data-drag-index="'+i+'"':''} data-order-index="${i}" data-open-wish="${esc(id)}" tabindex="0" aria-label="פרטים על ${esc(c.name)}">
+   <span class="wish-rank" ${priorityOrder?'data-drag-kind="wishlist" data-drag-index="'+i+'" title="גרור כדי לשנות את הסדר"':''} aria-label="עדיפות ${i+1}">${i+1}</span>
+   <img loading="lazy" decoding="async" src="${esc(c.image)}" alt="${esc(c.name)}" ${priorityOrder?'data-drag-kind="wishlist" data-drag-index="'+i+'"':''} title="${priorityOrder?'גרור לשינוי הסדר · הקש לפתיחת פרטים':'הקש לפתיחת פרטים'}" draggable="false">
    <div class="wish-copy"><strong>${esc(c.name)}</strong><small>${esc(MAP.get(c.set)?.name||'')} · #${esc(cardNumber(c))}</small></div>
    <div class="wish-side">
     ${condition?`<div class="wish-market">
      ${amount?`<span class="owned-price">${esc(amount)}</span>`:market===undefined?'<span class="owned-price pending">טוען…</span>':''}
      <span class="owned-condition">${esc(condition)}${state.firstEdition[id]?' · 1st':''}</span>
     </div>`:''}
-    <button type="button" class="btn sm wish-move-action" data-wish-move="${esc(id)}" aria-label="שנה מיקום של ${esc(c.name)} ב־Wishlist">↗ העבר</button>
+    <button type="button" class="btn sm wish-move-action" data-wish-move="${esc(id)}" aria-label="שנה מיקום של ${esc(c.name)} ב־Wishlist" ${priorityOrder?'':'disabled title="ניתן לשנות מיקום רק במיון לפי סדר הרצונות"'}>↗ העבר</button>
    </div>
   </article>`;
  }).join('') : `<div class="no-cards">לא נמצאו קלפים שמתאימים לחיפוש.</div>` :
