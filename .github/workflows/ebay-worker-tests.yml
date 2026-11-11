@@ -22,4 +22,4 @@ jobs:
           node-version: "22"
       - run: node --check ebay-worker/index.js
       - run: node --check deal-finder/live.js
-      - run: node --test ebay-worker/worker.test.mjs
+      - run: node --test ebay-worker/*.test.mjs
