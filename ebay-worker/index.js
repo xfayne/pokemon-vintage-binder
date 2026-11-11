@@ -236,6 +236,24 @@ async function getItemCondition(itemId,market,env,postalCode,card){
   verificationReasons:match?.reasons||[],matchConfidence:match?.confidence||0};
 }
 
+/* Listing photos are retrieved from eBay only when a user opens a gallery.
+ * Never add photo arrays to search results: that would cost requests and bandwidth
+ * for listings the user never chooses to inspect. */
+async function getItemImages(itemId,market,env){
+ const token=await bearer(env);
+ const response=await fetch(API+'/buy/browse/v1/item/'+encodeURIComponent(itemId),{headers:{
+  authorization:'Bearer '+token,'X-EBAY-C-MARKETPLACE-ID':market,accept:'application/json'
+ }});
+ if(!response.ok)throw Error('eBay item images returned HTTP '+response.status);
+ const item=await response.json();
+ const photos=[item.image?.imageUrl,...(Array.isArray(item.additionalImages)?item.additionalImages.map(x=>x?.imageUrl):[])];
+ const images=[...new Set(photos.filter(src=>{
+  if(typeof src!=='string')return false;
+  try{const url=new URL(src);return url.protocol==='https:'&&!url.username&&!url.password}catch{return false}
+ }))].slice(0,25);
+ return {images};
+}
+
 /* SHIPMENT_API: 17TRACK V2.4 integration.
    Keep the 17TRACK key server-side. Verify Firebase ID tokens (not just Origin)
    and restrict the account email so public sign-ups cannot exhaust credits. */
@@ -349,6 +367,15 @@ export default {
   if(!allowedOrigin(origin,env))return reply({error:'Origin not allowed'},403,headers);
   if(u.pathname.startsWith('/api/shipments/'))return shipmentsApi(request,env,headers,u);
   if(request.method==='GET'&&u.pathname==='/health')return reply({ready:!!(env.EBAY_CLIENT_ID&&env.EBAY_CLIENT_SECRET),provider:'eBay Browse API',shippingDestinationConfigured:/^[0-9]{5,10}$/.test(String(env.EBAY_DELIVERY_POSTAL_CODE||'').trim())},200,headers);
+  if(request.method==='POST'&&u.pathname==='/api/item-images'){
+   if(Number(request.headers.get('content-length')||0)>1200)return reply({error:'Payload too large'},413,headers);
+   let body;try{body=await request.json()}catch{return reply({error:'Invalid JSON'},400,headers)}
+   const itemId=String(body?.itemId||''),marketplace=String(body?.marketplace||'');
+   if(!/^v\d\|\d{3,20}\|\d{1,6}$/.test(itemId)||!MARKETS.includes(marketplace))
+    return reply({error:'Invalid item'},400,headers);
+   try{return reply(await getItemImages(itemId,marketplace,env),200,headers)}
+   catch(e){return reply({error:String(e.message||'ITEM_IMAGES_UNAVAILABLE').slice(0,110)},502,headers)}
+  }
   if(request.method==='POST'&&u.pathname==='/api/item-condition'){
    let body;try{body=await request.json()}catch{return reply({error:'Invalid JSON'},400,headers)}
    const itemId=String(body?.itemId||'');
