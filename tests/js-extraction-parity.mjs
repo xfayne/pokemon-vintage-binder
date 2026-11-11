@@ -84,7 +84,7 @@ if (updated.includes('js/shipments.js')) {
       'Shipment extraction changed any other binder behavior');
   }
   const shipmentsTag = '<script src="js/shipments.js?v=20261109-ship1"></script>';
-  const binderTag = '<script src="js/binder.js?v=20261111-wishsort1"></script>';
+  const binderTag = '<script src="js/binder.js?v=20261111-carddeals1"></script>';
   assert.ok(updated.indexOf(shipmentsTag) > 0 && updated.indexOf(shipmentsTag) < updated.indexOf(binderTag),
     'Shipment controller must be loaded before binder.js');
 }
@@ -119,7 +119,7 @@ if (updated.includes('js/collection-views.js')) {
       'The extracted collection renderer differs from old binder code');
   }
   const viewScript='<script src="js/collection-views.js?v=20261111-wishsort1"></script>';
-  const binderScript='<script src="js/binder.js?v=20261111-wishsort1"></script>';
+  const binderScript='<script src="js/binder.js?v=20261111-carddeals1"></script>';
   assert.ok(updated.indexOf(viewScript)>0 && updated.indexOf(viewScript)<updated.indexOf(binderScript),
     'View renderer script must load before binder');
 }
@@ -142,7 +142,7 @@ if (updated.includes('js/owned-cards.js')) {
       'Owned-cards extraction changed binder logic beyond this exact block');
   }
   const ownedTag='<script src="js/owned-cards.js?v=20261109-owned1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261111-wishsort1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261111-carddeals1"></script>';
   assert.ok(updated.indexOf(ownedTag)>0&&updated.indexOf(ownedTag)<updated.indexOf(binderTag),
     'Owned cards controller must load before binder');
 }
@@ -165,7 +165,7 @@ if (updated.includes('js/collection-drag.js')) {
       'Drag extraction modified unrelated collection logic or listeners');
   }
   const dragTag='<script src="js/collection-drag.js?v=20261109-drag1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261111-wishsort1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261111-carddeals1"></script>';
   assert.ok(updated.indexOf(dragTag)>0&&updated.indexOf(dragTag)<updated.indexOf(binderTag),
     'Drag module must be available before the binder controller');
 }
@@ -199,7 +199,7 @@ if (updated.includes('js/collection-ordering.js')) {
     assert.equal(ordering,module,'Collection order implementation was changed during extraction');
   }
   const tag='<script src="js/collection-ordering.js?v=20261109-order1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261111-wishsort1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261111-carddeals1"></script>';
   assert.ok(updated.indexOf(tag)>0&&updated.indexOf(tag)<updated.indexOf(binderTag),
     'Collection order module must load before binder');
 }
@@ -227,7 +227,7 @@ if(updated.includes('js/card-actions.js')){
       'Extracted card action function bodies changed unexpectedly');
   }
   const actionTag='<script src="js/card-actions.js?v=20261110-actions1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261111-wishsort1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261111-carddeals1"></script>';
   assert.ok(updated.indexOf(actionTag)>0&&updated.indexOf(actionTag)<updated.indexOf(binderTag),
     'Card actions script must load before binder');
 }
@@ -240,8 +240,8 @@ if(updated.includes('js/card-details.js')){
   const end=originalBinder.indexOf('function download(content',start);
   const call='const {showModal}=window.VintageCardDetails.create({state,MAP,$,esc,cardNumber,rarityHtml,dealAuctionUrl,toggleOwned,toggleWish,ensureCloudEdit,openMovePicker,save,renderCards,updatePurchasePrice});\n';
   if(originalBinder.includes(call)){
-    assert.equal(modal,execFileSync('git',['show','origin/main:js/card-details.js'],
-      {encoding:'utf8'}),'Previously extracted card details module changed');
+    assert.ok(modal.includes('id="modalDeals"')&&modal.includes('openDealsForCard(c.id)'),
+      'Card details must expose scoped Deals navigation');
   }else{
     assert.ok(start>=0&&end>start,'Card details source boundaries missing');
     const code=originalBinder.slice(start,end);
@@ -252,8 +252,8 @@ if(updated.includes('js/card-details.js')){
       code+'\nreturn {showModal};\n}};\n})();\n';
     assert.equal(modal,expected,'Card details dialog markup or handlers changed');
   }
-  const modalTag='<script src="js/card-details.js?v=20261110-details1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261111-wishsort1"></script>';
+  const modalTag='<script src="js/card-details.js?v=20261111-carddeals1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261111-carddeals1"></script>';
   assert.ok(updated.indexOf(modalTag)>0&&updated.indexOf(modalTag)<updated.indexOf(binderTag),
     'Details module must load before binder');
 }
@@ -280,7 +280,7 @@ if(updated.includes('js/catalog-ui.js')){
     assert.equal(movedModule,expected,'Catalog UI function bodies changed');
   }
   const uiTag='<script src="js/catalog-ui.js?v=20261110-catui1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261111-wishsort1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261111-carddeals1"></script>';
   assert.ok(updated.indexOf(uiTag)>0&&updated.indexOf(uiTag)<updated.indexOf(binderTag),
     'Catalog UI must load before binder app');
 }
@@ -311,7 +311,7 @@ if(updated.includes('js/catalog-loader.js')){
     assert.equal(loader,expectedModule,'Offline dataset decoder or bootstrap logic changed');
   }
   const loaderTag='<script src="js/catalog-loader.js?v=20261110-loader1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261111-wishsort1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261111-carddeals1"></script>';
   assert.ok(updated.indexOf(loaderTag)>0&&updated.indexOf(loaderTag)<updated.indexOf(binderTag),
     'Catalog loader must load before binder entrypoint');
 }
@@ -320,7 +320,7 @@ if(updated.includes('js/collection-state.js')){
   const module=readFileSync('js/collection-state.js','utf8');
   assert.ok(module.includes('window.VintageCollectionState={create('),'Missing collection-state factory');
   const stateTag='<script src="js/collection-state.js?v=20261110-state1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261111-wishsort1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261111-carddeals1"></script>';
   assert.ok(updated.indexOf(stateTag)>0 && updated.indexOf(stateTag)<updated.indexOf(binderTag),
     'Collection state must load before binder');
   assert.ok(readFileSync('js/binder.js','utf8').includes('window.VintageCollectionState.create('),
@@ -355,7 +355,7 @@ if(updated.includes('js/collection-backup.js')){
   const factory='const {backup,copyWishlist,exportCSV,importBackup}=window.VintageCollectionBackup.create({state,MAP,cardNumber,toast,getProgress,normalizeOrders:()=>normalizeOrders(),sortedOwnedCards:()=>sortedOwnedCards(),ensureCloudEdit,save,renderAll,normalizeShipment});\n';
   const start=before.indexOf('function download(content,type,filename){');
   const backupTag='<script src="js/collection-backup.js?v=20261110-backup1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261111-wishsort1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261111-carddeals1"></script>';
   assert.ok(updated.indexOf(backupTag)>0&&updated.indexOf(backupTag)<updated.indexOf(binderTag),
     'Backup controller must be loaded before binder');
   assert.ok(after.includes(factory),'Binder backup factory is not wired');
@@ -720,6 +720,7 @@ async function exercise(version, viewport) {
       open:modal.open,
       title:details.querySelector('h3')?.textContent,
       ownedButton:!!details.querySelector('#modalOwned'),
+      dealsButton:!!details.querySelector('#modalDeals'),
       wishButton:!!details.querySelector('#modalWish'),
       purchaseFieldVisible:!details.querySelector('#modalPurchaseBox')?.hidden,
       cardNumber:details.querySelector('.card-sub')?.textContent||''
@@ -758,6 +759,8 @@ async function exercise(version, viewport) {
     };
   });
   assert.equal(detailState.opening.open,true,'Details modal failed to open');
+  assert.equal(detailState.opening.dealsButton,version==='updated','Scoped Deals button should only exist in updated UI');
+  delete detailState.opening.dealsButton;
   assert.equal(detailState.opening.purchaseFieldVisible,true,'Owned purchase input hidden');
   assert.equal(detailState.condition,'LP','Condition edit did not persist');
   assert.equal(detailState.firstEdition,true,'First Edition flag did not persist');

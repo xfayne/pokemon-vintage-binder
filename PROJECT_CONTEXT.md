@@ -68,3 +68,9 @@ Collector preference: English vintage Unlimited, ungraded/raw cards; prioritize 
 - Prefer small focused changes and tests, especially around eBay parsing/filtering.
 - Distinguish listing price from all-in price, and tentative match from verified card identity.
 - Never claim a feature is deployed solely because it was requested in chat.
+
+## Scoped single-card Deals search (2026-11-11)
+- Card details has a “מציאות” action for every catalog card, including cards absent from the Wishlist or owned cards. Set/number/rarity form one compact row and collection actions sit beside the card name.
+- This opens the existing Deals tab in single-card mode, reusing the Worker search, eBay identity checks, shipping and condition-aware market comparisons, sorting, filters, and gallery. Only that card ID is submitted for scanning.
+- The Deals tab has explicit actions to return to the originating card details or switch to the regular Wishlist scan. Standard Deals navigation still means Wishlist search.
+- The client keeps separate in-memory scan snapshots per Wishlist/card so results and comparison grades do not mix; mode changes invalidate in-flight search and enrichment responses. Firestore and Worker endpoints are untouched.

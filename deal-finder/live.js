@@ -14,6 +14,9 @@
  const SCAN_TTL_MS=30*60*1000;
  const PAGE_SIZE=40;
  let scanCards=[];
+ let scopedCardId=null;
+ let scopeKey='wishlist';
+ const scopeCache=new Map();
  let scanSerial=0;
  let activeRequest=null;
  let conditionEnrichmentRunning=false;
@@ -44,9 +47,14 @@
  const isArtCase=title=>/\bart[\s_-]*cases?\b/i.test(String(title||''));
  const japaneseTitle=title=>/[\u3040-\u30ff\u3400-\u9fff]/u.test(String(title||''))||/\b(?:japanese|japanisch\w*|jpn|jap|japonais\w*|japon[eé]s\w*|japan\s+(?:edition|version|print|language|import|card))\b/i.test(String(title||''));
  const usdMoney=value=>typeof value==='number'&&Number.isFinite(value)?new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:2}).format(value):'—';
+ ui.insertAdjacentHTML('afterbegin','<div id="liveScopeActions" class="live-scope-actions" hidden><span id="liveScopeLabel"></span><div><button type="button" id="liveBackToCard" class="btn">↩ פרטי הקלף</button><button type="button" id="liveAllWishlist" class="btn">כל המשאלות</button></div></div>');
  page.querySelector('.collection-heading').after(ui);
+ const heading=page.querySelector('.collection-heading h2');
+ const subtitle=page.querySelector('.collection-heading .subtle');
+ const defaultHeading=heading?.textContent||'🔎 מציאות';
+ const defaultSubtitle=subtitle?.textContent||'מכרזים אמיתיים על קלפים מרשימת הרצונות שלך';
 
- const list=()=>bridge()?.getWishlistCards?.()||[];
+ const list=()=>scopedCardId?[bridge()?.getCardForDeals?.(scopedCardId)].filter(Boolean):(bridge()?.getWishlistCards?.()||[]);
  const usd=(a)=>{if(!a||typeof a.value!=='number')return null;return window.VintageDealsDashboard?.convertToUSD?.(a.value,a.currency)??null};
  const marketFor=(c,grade)=>bridge()?.getMarketPrice?.(c.id,grade);
  const cardIndex=()=>new Map(list().map(c=>[c.id,c]));
@@ -102,6 +110,8 @@
   badge.textContent=state.status==='awaiting-keys'?'ממתין למפתחות eBay':state.status==='error'?'שגיאת חיבור':state.loading&&state.status==='ready'?'סורק מודעות…':state.status==='ready'?'eBay · API':state.status==='loading'?'מתחבר…':'טרם חובר';
   badge.className='live-badge'+(state.status==='ready'?' ready':'');
   $('liveReload').disabled=state.loading||!state.endpoint||state.status==='awaiting-keys';
+  $('liveReload').textContent=scopedCardId?'↻ סרוק מחדש את הקלף':'↻ סרוק מחדש את כל הקלפים';
+  $('liveProgress').setAttribute('aria-label',scopedCardId?'התקדמות סריקת הקלף':'התקדמות סריקת קלפי ה־Wishlist');
   $('liveMore').hidden=!(state.loading||state.paused&&!state.done);
   $('liveMore').textContent=state.loading?'השהה סריקה':'המשך סריקה';
   $('liveControls').hidden=state.status!=='ready';
@@ -121,7 +131,7 @@
   else if(state.loading)status='סורקים: '+state.searched+' מתוך '+total+' קלפים · נאספו '+state.items.length+' מודעות'+(state.errors.length?' · '+state.errors.length+' שגיאות חלקיות':'');
   else if(state.paused)status=(state.error?state.error+' · ':'הסריקה מושהית · ')+'נבדקו '+state.searched+' מתוך '+total+' קלפים';
   else if(state.done)status='הסריקה הושלמה: '+state.searched+' מתוך '+total+' קלפים · נאספו '+state.items.length+' מודעות'+(state.errors.length?' · '+state.errors.length+' שגיאות חלקיות':'')+(state.lastScanAt?' · עודכן: '+new Date(state.lastScanAt).toLocaleTimeString('he-IL'):'');
-  else status='מחובר ל־eBay. פתיחת הלשונית תתחיל סריקה אוטומטית.';
+  else status=scopedCardId?'מחובר ל־eBay. מחפש מודעות לקלף שבחרת.':'מחובר ל־eBay. פתיחת הלשונית תתחיל סריקה אוטומטית.';
   if(state.status==='ready'&&!/^[0-9]{7}$/.test($('livePostal').value))status+=' · מומלץ להזין מיקוד לחישוב משלוח';
   $('liveStatus').textContent=status;
   const lookup=cardIndex(),sort=$('liveSort').value,shippingOnly=$('liveOnlyShipping').checked;
@@ -364,6 +374,7 @@
  async function enrichTopSellerConditions(){
   if(conditionEnrichmentRunning||state.status!=='ready'||!state.done)return;
   conditionEnrichmentRunning=true;
+  const runningScope=scopeKey;
   try{
    const index=cardIndex();
    const candidates=state.items.filter(item=>!japaneseTitle(item.title)&&!state.conditionDetails.has(keyFor(item))&&(item.verificationStatus==='review'||item.conditionSource!=='seller'))
@@ -371,7 +382,7 @@
     .sort((a,b)=>(a.item.verificationStatus==='review'?0:1)-(b.item.verificationStatus==='review'?0:1)||a.score.group-b.score.group||b.score.score-a.score.score)
     .slice(0,18);
    for(const {item} of candidates){
-    if(state.loading||state.status!=='ready')break;
+    if(runningScope!==scopeKey||state.loading||state.status!=='ready')break;
     const key=keyFor(item);
     if(state.conditionDetails.has(key))continue;
     state.conditionLoading.add(key);
@@ -382,11 +393,12 @@
       body:JSON.stringify({itemId:item.itemId,marketplace:item.marketplace,card:(cardIndex().get(item.cardId)||null),...(postalCode?{postalCode}:{})})
      });
      const data=await response.json();
+     if(runningScope!==scopeKey)break;
      state.conditionDetails.set(key,response.ok?data:{source:'unknown',grade:null,label:''});
-    }catch(e){state.conditionDetails.set(key,{source:'unknown',grade:null,label:''})}
-    finally{state.conditionLoading.delete(key);render()}
+    }catch(e){if(runningScope===scopeKey)state.conditionDetails.set(key,{source:'unknown',grade:null,label:''})}
+    finally{if(runningScope===scopeKey){state.conditionLoading.delete(key);render()}}
    }
-  }finally{conditionEnrichmentRunning=false}
+  }finally{conditionEnrichmentRunning=false;if(runningScope!==scopeKey&&state.done)void enrichTopSellerConditions()}
  }
 
  function pauseScan(){
@@ -487,6 +499,34 @@
   }
  }
 
+
+ // Each scope owns its own scan snapshot; no single-card listing can leak into Wishlist.
+ const scanKeys=['items','searched','done','paused','seen','fetchedAt','errors','visibleCount','scanTotal','lastScanAt','gradeOverrides','conditionDetails','lastRenderedOrder','preserveGradeOrder'];
+ const emptyScan=()=>({items:[],searched:0,done:false,paused:false,seen:new Set(),fetchedAt:null,errors:[],visibleCount:PAGE_SIZE,scanTotal:0,lastScanAt:0,gradeOverrides:new Map(),conditionDetails:new Map(),lastRenderedOrder:[],preserveGradeOrder:false});
+ function changeScope(cardId){
+  const next=cardId?'card:'+cardId:'wishlist';
+  if(next===scopeKey)return true;
+  if(cardId&&!bridge()?.getCardForDeals?.(cardId))return false;
+  if(state.loading)pauseScan();
+  scanSerial++;
+  activeRequest?.abort();activeRequest=null;
+  scopeCache.set(scopeKey,{scanCards:scanCards.slice(),snapshot:Object.fromEntries(scanKeys.map(k=>[k,state[k]]))});
+  scopeKey=next;scopedCardId=cardId;
+  const cached=scopeCache.get(next);
+  Object.assign(state,emptyScan(),cached?.snapshot||{});
+  state.loading=false;state.error='';state.conditionLoading=new Set();
+  scanCards=cached?.scanCards.slice()||[];
+  const card=cardId?bridge()?.getCardForDeals?.(cardId):null;
+  if(heading)heading.textContent=card?'🔎 מציאות · '+card.name:defaultHeading;
+  if(subtitle)subtitle.textContent=card?card.setName+' · #'+card.number+' · '+(card.firstEdition?'1st Edition':'Unlimited'):defaultSubtitle;
+  $('liveScopeActions').hidden=!card;
+  $('liveScopeLabel').textContent=card?'חיפוש ממוקד בקלף אחד':'';
+  render();
+  return true;
+ }
+ $('liveBackToCard').addEventListener('click',()=>{if(scopedCardId)bridge()?.returnToCardDetails?.(scopedCardId)});
+ $('liveAllWishlist').addEventListener('click',()=>{void window.VintageEbayLive.open()});
+
  $('liveReload').addEventListener('click',()=>scanAll(true));
  $('liveMore').addEventListener('click',()=>state.loading?pauseScan():scanAll(false));
  $('liveShowMore').addEventListener('click',()=>{state.visibleCount+=PAGE_SIZE;render()});
@@ -533,6 +573,7 @@
   const key=button.dataset.itemKey,item=state.items.find(x=>keyFor(x)===key);
   if(!item||state.conditionLoading.has(key)||state.conditionDetails.has(key))return;
   state.conditionLoading.add(key);
+  const requestScope=scopeKey;
   render();
   try{
    const postalCode=$('livePostal').value.trim();
@@ -542,26 +583,27 @@
    });
    const data=await response.json();
    if(!response.ok)throw Error(data.error||'Item condition unavailable');
-   state.conditionDetails.set(key,data);
+   if(scopeKey===requestScope)state.conditionDetails.set(key,data);
   }catch(error){
-   state.conditionDetails.set(key,{grade:null,source:'unknown',label:'מידע לא זמין'});
+   if(scopeKey===requestScope)state.conditionDetails.set(key,{grade:null,source:'unknown',label:'מידע לא זמין'});
   }finally{
-   state.conditionLoading.delete(key);
-   render();
+   if(scopeKey===requestScope){state.conditionLoading.delete(key);render()}
   }
  });
 
- window.VintageEbayLive={
-  open:async()=>{
+ async function openCurrentScope(){
    if(state.loading)return;
    if(!state.endpoint){render();return}
    if(state.status!=='ready'){if(!await connect())return}
    if(state.paused){render();return}
    const currentCards=list();
-   const wishlistChanged=currentCards.length!==scanCards.length||currentCards.some((card,i)=>card.id!==scanCards[i]?.id||card.firstEdition!==scanCards[i]?.firstEdition);
-   if(wishlistChanged||!state.done||!state.lastScanAt||Date.now()-state.lastScanAt>SCAN_TTL_MS)await scanAll(true);
+   const cardsChanged=currentCards.length!==scanCards.length||currentCards.some((card,i)=>card.id!==scanCards[i]?.id||card.firstEdition!==scanCards[i]?.firstEdition);
+   if(cardsChanged||!state.done||!state.lastScanAt||Date.now()-state.lastScanAt>SCAN_TTL_MS)await scanAll(true);
    else render();
-  },
+ }
+ window.VintageEbayLive={
+  open:()=>{changeScope(null);return openCurrentScope()},
+  openCard:(cardId)=>changeScope(cardId)?openCurrentScope():Promise.resolve(),
   refreshCards:()=>{if(state.items.length||state.loading||state.done)render()}
  };
  render();
