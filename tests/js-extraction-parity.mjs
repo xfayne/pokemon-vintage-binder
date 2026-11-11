@@ -905,6 +905,7 @@ async function exercise(version, viewport) {
       const reordered=window.VintageBinder.getProgress().wishOrder;
       type('');
       const restored=show();
+      document.querySelector('[data-view-btn="binder"]').click();
       window.VintageCloud={canEdit:()=>false,onChange:()=>{}};
       return {initial,byName,bySet,byNumber,focused,count,savedOrder,
         noMatches,afterMove,reordered,restored};
