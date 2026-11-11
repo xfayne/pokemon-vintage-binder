@@ -333,7 +333,7 @@
  });
  gallery.addEventListener('keydown',e=>{
   if(e.key==='ArrowLeft'||e.key==='ArrowRight'){
-   e.preventDefault();changeGalleryImage(e.key==='ArrowLeft'?1:-1);
+   e.preventDefault();changeGalleryImage(e.key==='ArrowRight'?1:-1);
   }
  });
  let touchStart=null;
