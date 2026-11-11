@@ -435,6 +435,7 @@
    btn.classList.toggle('selected',active);btn.setAttribute('aria-current',active?'true':'false');
    if(active)btn.scrollIntoView({block:'nearest',inline:'nearest'});
   });
+  drawGalleryDefects();
  }
  function setGalleryPhotos(images){
   galleryImages=images;galleryIndex=0;
@@ -455,11 +456,16 @@
   $('liveGalleryTitle').textContent=item.title||'מודעה ב־eBay';
   $('liveGalleryMeta').textContent=[item.marketplace,item.format==='AUCTION'?'מכרז':'קנייה מיידית'].filter(Boolean).join(' · ');
   $('liveGalleryEbay').href=item.url;
+  galleryAnalysisRecord=null;gallerySaveFailed=false;galleryHighlighted=-1;
   $('liveGalleryDemo').hidden=true;
+  $('liveGalleryDemo').replaceChildren();
+  $('liveGalleryDemoButton').disabled=false;
+  $('liveGalleryDemoButton').textContent='✨ נתח מצב ב־AI';
   $('liveGalleryDemoButton').setAttribute('aria-expanded','false');
   setGalleryPhotos(item.image&&imageUrl(item.image)?[item.image]:[]);
   galleryStatus.textContent='טוען את תמונות המודעה מ־eBay…';
   gallery.showModal();
+  void loadGalleryStored(item,serial);
   const cached=galleryCache.get(key);
   if(cached){setGalleryPhotos(cached);galleryStatus.textContent='';return;}
   const controller=new AbortController();galleryAbort=controller;
@@ -484,7 +490,8 @@
  }
  gallery.addEventListener('close',()=>{
   gallerySerial++;galleryAbort?.abort();galleryAbort=null;
-  galleryItem=null;galleryImages=[];$('liveGalleryDemo').hidden=true;
+  galleryItem=null;galleryImages=[];galleryAnalysisRecord=null;gallerySaveFailed=false;
+  $('liveGalleryDemo').hidden=true;drawGalleryDefects();
  });
  gallery.addEventListener('click',e=>{
   if(e.target===gallery){gallery.close();return;}
@@ -493,10 +500,22 @@
   if(e.target.closest('#liveGalleryNext')){changeGalleryImage(1);return;}
   const thumb=e.target.closest('[data-gallery-index]');
   if(thumb){galleryIndex=Number(thumb.dataset.galleryIndex);showGalleryImage();return;}
-  if(e.target.closest('#liveGalleryDemoButton')){
-   const demo=$('liveGalleryDemo');demo.hidden=!demo.hidden;
-   $('liveGalleryDemoButton').setAttribute('aria-expanded',String(!demo.hidden));
+  const flaw=e.target.closest('[data-ai-finding]');
+  if(flaw){
+   const idx=Number(flaw.dataset.aiFinding),obs=galleryAnalysisRecord?.analysis?.observations?.[idx];
+   const loc=(Array.isArray(obs?.locations)?obs.locations:[]).find(x=>Number.isInteger(x.photoIndex)&&x.photoIndex>=1&&x.photoIndex<=galleryImages.length&&validBox(x.box2d));
+   if(loc){galleryIndex=loc.photoIndex-1;galleryHighlighted=idx;showGalleryImage();}
+   return;
   }
+  if(e.target.closest('#liveGalleryRetrySave')){
+   const item=galleryItem,record=galleryAnalysisRecord;
+   if(item&&record)void window.VintageCloud?.saveConditionAnalysis?.(aiSource(item),record.analysis,record.photoIndices).then(saved=>{
+    if(gallery.open&&galleryItem===item){gallerySaveFailed=false;setGalleryAnalysis(saved);}
+   }).catch(()=>{gallerySaveFailed=true;renderGalleryAnalysis();});
+   return;
+  }
+  if(e.target.closest('#liveGalleryReanalyze')){void runGalleryAnalysis(true);return;}
+  if(e.target.closest('#liveGalleryDemoButton')){void runGalleryAnalysis();return;}
  });
  gallery.addEventListener('keydown',e=>{
   if(e.key==='ArrowLeft'||e.key==='ArrowRight'){
@@ -505,6 +524,8 @@
  });
  let touchStart=null;
  const galleryStage=$('liveGalleryStage');
+ $('liveGalleryImage').addEventListener('load',drawGalleryDefects);
+ if(typeof ResizeObserver!=='undefined')new ResizeObserver(drawGalleryDefects).observe(galleryStage);
  galleryStage.addEventListener('touchstart',e=>{
   if(e.touches.length!==1){touchStart=null;return;}
   touchStart={x:e.touches[0].clientX,y:e.touches[0].clientY};
