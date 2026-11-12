@@ -41,7 +41,7 @@
 @media(max-width:650px){.static-img{height:121px;}}
 
 </style></noscript>
-<link rel="stylesheet" href="css/app.css?v=20261111-carddeals1">
+<link rel="stylesheet" href="css/app.css?v=20261112-catalogmulti1">
 <link rel="stylesheet" href="deal-finder/live.css?v=20261112-ai-pulse1">
 </head>
 <body>
@@ -179,17 +179,24 @@
   <div class="notice" id="fetchStatus" hidden></div>
   <div class="toolbar">
    <div class="toolbar-top"><div><h2 id="sectionTitle">כל הסדרות</h2><small id="sectionSub">רשימות קלפים מקוריות באנגלית</small></div><button class="btn sm" id="resetFilters">איפוס סינון ↺</button></div>
-   <div class="filters">
+   <div class="filters catalog-search-row">
     <div class="search-wrap"><input class="field" id="search" placeholder="חיפוש: Gengar, Snorlax, 11/64..." dir="auto" aria-label="חפש קלף"/><span class="search-icon">⌕</span></div>
-    <select class="field" id="statusSelect" aria-label="מצב באוסף"><option value="all">הכול</option><option value="owned">יש לי</option><option value="missing">חסר לי</option><option value="wish">Wishlist ☆</option></select>
-    <select class="field" id="sortSelect" aria-label="סדר מיון"><option value="num">לפי מספר בסט</option><option value="name">לפי שם</option><option value="holo">Holo קודם</option></select>
    </div>
-   <div class="checks">
-    <label class="check"><input type="checkbox" id="holoOnly"/> רק Holo / Shining ✨</label>
-    <label class="check"><input type="checkbox" id="pokemonOnly"/> רק קלפי פוקימון (בלי מאמנים ואנרגיות)</label>
-    <label class="check"><input type="checkbox" id="extrasEnabled"/> לכלול גם אוספים נוספים</label>
-    <span class="info-pill" id="holoLegend">✨ Holo · 🌟 Shining · ◇ רגיל</span>
-   </div>
+   <details class="catalog-advanced" id="catalogAdvanced">
+    <summary><span class="catalog-advanced-title">⚙ סינון ומיון מתקדמים</span><span class="catalog-active-summary" id="catalogFilterSummary">פוקימון בלבד</span></summary>
+    <div class="catalog-advanced-body">
+     <div class="filters catalog-secondary-filters">
+      <select class="field" id="statusSelect" aria-label="מצב באוסף"><option value="all">הכול</option><option value="owned">יש לי</option><option value="missing">חסר לי</option><option value="wish">Wishlist ☆</option></select>
+      <select class="field" id="sortSelect" aria-label="סדר מיון"><option value="num">לפי מספר בסט</option><option value="name">לפי שם</option><option value="holo">Holo קודם</option></select>
+     </div>
+     <div class="checks">
+      <label class="check"><input type="checkbox" id="holoOnly"/> רק Holo / Shining ✨</label>
+      <label class="check"><input type="checkbox" id="pokemonOnly" checked/> רק קלפי פוקימון (בלי מאמנים ואנרגיות)</label>
+      <label class="check"><input type="checkbox" id="extrasEnabled"/> לכלול גם אוספים נוספים</label>
+      <span class="info-pill" id="holoLegend">✨ Holo · 🌟 Shining · ◇ רגיל</span>
+     </div>
+    </div>
+   </details>
   </div>
   <div class="list-header"><span id="resultsCount">1,070 קלפים ב־11 סדרות</span><div class="view-controls"><button class="btn sm" id="showOwned" title="הצג רק קלפים שיש לך">✓ האוסף שלי</button><button class="btn sm" id="showHolo" title="סנן קלפים הולוגרפיים">✨ הולוגרפיים</button></div></div>
   <div class="list-grid" id="cards" role="list"></div>
@@ -218,11 +225,11 @@
 <script src="js/collection-ordering.js?v=20261109-order1"></script>
 <script src="js/card-actions.js?v=20261110-actions1"></script>
 <script src="js/card-details.js?v=20261111-carddeals1"></script>
-<script src="js/catalog-ui.js?v=20261110-catui1"></script>
+<script src="js/catalog-ui.js?v=20261112-catalogmulti1"></script>
 <script src="js/catalog-loader.js?v=20261110-loader1"></script>
-<script src="js/collection-state.js?v=20261110-state1"></script>
+<script src="js/collection-state.js?v=20261112-catalogmulti1"></script>
 <script src="js/collection-backup.js?v=20261110-backup1"></script>
-<script src="js/binder.js?v=20261111-carddeals1"></script>
+<script src="js/binder.js?v=20261112-catalogmulti1"></script>
 
 
 <script src="js/market-prices.js?v=20261109-js1"></script>
