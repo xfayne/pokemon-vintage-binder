@@ -76,6 +76,7 @@ function encodeBase64(bytes){
 }
 function providerError(response){
  if(response.status===429)return 'AI_RATE_LIMITED';
+ if(response.status===503)return 'AI_PROVIDER_BUSY';
  if(response.status===401||response.status===403)return 'AI_PROVIDER_AUTH_FAILED';
  return 'AI_PROVIDER_HTTP_'+response.status;
 }
@@ -101,12 +102,18 @@ export async function analyzeCardCondition({photos,cardContext=null},{apiKey,fet
   thinkingConfig:{thinkingLevel:'low'},maxOutputTokens:2800
  }};
  const controller=new AbortController();
- const timeout=setTimeout(()=>controller.abort(),80000);
+ const startedAt=Date.now();
+ const timeout=setTimeout(()=>controller.abort(),35000);
  try{
-  const response=await fetchImpl(GEMINI_URL,{
-   method:'POST',headers:{'content-type':'application/json','x-goog-api-key':apiKey},
-   body:JSON.stringify(payload),signal:controller.signal
-  });
+  const options={method:'POST',headers:{'content-type':'application/json','x-goog-api-key':apiKey},
+   body:JSON.stringify(payload),signal:controller.signal};
+  let response=await fetchImpl(GEMINI_URL,options);
+  // Retry only a prompt overload response, within the original deadline.
+  if(response.status===503&&Date.now()-startedAt<15000){
+   await response.body?.cancel().catch(()=>{});
+   await new Promise(resolve=>setTimeout(resolve,750));
+   response=await fetchImpl(GEMINI_URL,options);
+  }
   if(!response.ok)throw Error(providerError(response));
   const result=await response.json();
   const candidate=result.candidates?.[0];
