@@ -135,6 +135,15 @@ async function init(config){
 }
 // AI condition cache deliberately lives in a separate per-user subcollection,
 // never in the progress document (which is replaced by the collection sync bridge).
+const CONDITION_ANALYSIS_TTL_MS=10*24*60*60*1000;
+function isConditionAnalysisFresh(record){
+ if(!record)return false;
+ const expiration=record.expiresAt instanceof Date
+  ? record.expiresAt.getTime()
+  : record.expiresAt?.toMillis?.()
+    ?? ((record.analyzedAt?.toMillis?.()??record.clientAnalyzedAt)+CONDITION_ANALYSIS_TTL_MS);
+ return Number.isFinite(expiration)&&expiration>Date.now();
+}
 function conditionAnalysisKey(source){
  if(source?.type==='ebay-listing'&&/^EBAY_(US|GB|DE)$/.test(source.marketplace)&&
     /^v\d\|\d{3,20}\|\d{1,6}$/.test(source.itemId))
@@ -151,7 +160,8 @@ async function getConditionAnalysis(source){
  const uid=user.uid;
  const snapshot=await sdk.getDocFromServer(ref);
  if(uid!==user?.uid||!ready)throw Error('SESSION_CHANGED');
- return snapshot.exists()?snapshot.data():null;
+ const record=snapshot.exists()?snapshot.data():null;
+ return isConditionAnalysisFresh(record)?record:null;
 }
 async function saveConditionAnalysis(source,analysis,photoIndices){
  const ref=conditionRef(source),uid=user.uid;
@@ -160,15 +170,17 @@ async function saveConditionAnalysis(source,analysis,photoIndices){
  if(uid!==user?.uid||!ready)throw Error('SESSION_CHANGED');
  // Preserve a newer record if another tab has already analyzed this listing.
  const existing=current.exists()?current.data():null;
- if(existing?.analyzedAt?.toMillis&&Number(existing.analyzedAt.toMillis())>Date.now()-15000)
+ const now=Date.now();
+ if(isConditionAnalysisFresh(existing)&&existing.analyzedAt?.toMillis?.()>now-15000)
   return existing;
  const documentData={schemaVersion:1,source:{...source},analysis,photoIndices:Array.isArray(photoIndices)?photoIndices.slice(0,8):[],
-  imageCount:Number(analysis.imageCount)||0,analyzedAt:sdk.serverTimestamp(),clientAnalyzedAt:Date.now()};
+  imageCount:Number(analysis.imageCount)||0,analyzedAt:sdk.serverTimestamp(),clientAnalyzedAt:now,
+  expiresAt:new Date(now+CONDITION_ANALYSIS_TTL_MS)};
  await sdk.setDoc(ref,documentData);
  if(uid!==user?.uid||!ready)throw Error('SESSION_CHANGED');
  return documentData;
 }
-window.VintageCloud={getConditionAnalysis,saveConditionAnalysis,conditionAnalysisKey,getUserUid:()=>user&&ready?user.uid:null,canEdit:()=>Boolean(user&&ready),getIdToken:async()=>user&&ready?await sdk.getIdToken(user):null,onChange:({immediate=false}={})=>{
+window.VintageCloud={getConditionAnalysis,saveConditionAnalysis,isConditionAnalysisFresh,conditionAnalysisKey,getUserUid:()=>user&&ready?user.uid:null,canEdit:()=>Boolean(user&&ready),getIdToken:async()=>user&&ready?await sdk.getIdToken(user):null,onChange:({immediate=false}={})=>{
  if(!user||!ready)return;
  changeSeq++;pending=true;setStatus('☁️ ממתין לשמירה…',user.email||'Google');
  clearTimeout(flushTimer);flushTimer=setTimeout(flush,immediate?0:350);
