@@ -121,6 +121,27 @@ test('Gemini overload uses one different model and records the actual provider m
  assert.match(requests[1].url,/gemini-3\.5-flash-lite:generateContent$/);
  assert.deepEqual(requests[0].options,requests[1].options,'Pass the same bounded photos and schema');
 });
+test('Gemini upstream 524 fails over once, recording fallback model',async()=>{
+ const photos=[{index:1,mimeType:'image/jpeg',bytes:new Uint8Array(400)}];
+ const endpoints=[];
+ const result=await analyzeCardCondition({photos},{apiKey:'fake-key',fetchImpl:async url=>{
+  endpoints.push(String(url));
+  return endpoints.length===1?new Response('Gateway timed out',{status:524}):
+   Response.json({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify(valid)}]}}]});
+ }});
+ assert.equal(endpoints.length,2);
+ assert.match(endpoints[0],/gemini-3\.8-flash/);
+ assert.match(endpoints[1],/gemini-3\.5-flash-lite/);
+ assert.equal(result.model,FALLBACK_CONDITION_MODEL);
+});
+test('Provider 524 from both models returns a clear timeout, not an opaque HTTP code',async()=>{
+ const photos=[{index:1,mimeType:'image/jpeg',bytes:new Uint8Array(400)}];
+ let count=0;
+ await assert.rejects(analyzeCardCondition({photos},{apiKey:'fake-key',fetchImpl:async()=>{
+  count++;return new Response('Gateway timed out',{status:524});
+ }}),/AI_PROVIDER_TIMEOUT/);
+ assert.equal(count,2);
+});
 test('Gemini does not cascade indefinitely or substitute models on quota/auth/timeout failures',async()=>{
  const photos=[{index:2,mimeType:'image/jpeg',bytes:new Uint8Array(400)}];
  const requests=[];
