@@ -24,7 +24,9 @@ const normalizeUnchangedLayout = html => normalizeScripts(html)
   .replace(/<section class="collection-page" id="binderPage"[\s\S]*?<\/section>/,
     '<!-- intentionally updated binder controls and placement accordion -->')
   .replace(/<section class="collection-page" id="wishPage"[\s\S]*?<\/section>/,
-    '<!-- intentionally updated wishlist search -->');
+    '<!-- intentionally updated wishlist search -->')
+  .replace(/<div class="toolbar">[\s\S]*?(?=<div class="list-header">)/,
+    '<!-- intentionally updated catalog filter toolbar -->\n  ');
 assert.equal(normalizeUnchangedLayout(current), normalizeUnchangedLayout(baseline),
   'Non-binder HTML layout changed');
 
