@@ -642,9 +642,8 @@ async function exercise(version, viewport) {
       const $=id=>document.getElementById(id);
       const cards=()=>[...document.querySelectorAll('#cards .poke-card')].map(n=>n.dataset.id);
       $('resetFilters').click();
-      const base=document.querySelector('#side [data-set="base1"]');
-      const jungle=document.querySelector('#side [data-set="base2"]');
-      base.click();jungle.click();
+      const bySet=id=>document.querySelector('#side [data-set="'+id+'"]');
+      bySet('base1').click();bySet('base2').click();
       const both={title:$('sectionTitle').textContent,
         active:[...document.querySelectorAll('#side [data-set][aria-pressed="true"]')].map(n=>n.dataset.set),
         hasBase:cards().some(id=>id.startsWith('base1-')),
@@ -652,15 +651,16 @@ async function exercise(version, viewport) {
       $('search').value='Pikachu';$('search').dispatchEvent(new Event('input',{bubbles:true}));
       const searched=cards();
       const pokemonAfterSearch=$('pokemonOnly').checked;
-      base.click();
+      bySet('base1').click();
       const onlyJungle=cards().length>0&&cards().every(id=>id.startsWith('base2-'));
       document.querySelector('#side [data-set="all"]').click();
       const allPressed=document.querySelector('#side [data-set="all"]').getAttribute('aria-pressed');
       const extra=document.querySelector('#sideExtra [data-set]');
       extra.click();
+      const extraId=extra.dataset.set;
       const autoExtra=$('extrasEnabled').checked;
       $('extrasEnabled').checked=false;$('extrasEnabled').dispatchEvent(new Event('change',{bubbles:true}));
-      const extraPruned=extra.getAttribute('aria-pressed')==='false';
+      const extraPruned=bySet(extraId).getAttribute('aria-pressed')==='false';
       $('resetFilters').click();
       return {both,searched,pokemonAfterSearch,onlyJungle,allPressed,autoExtra,extraPruned,
         resetPokemon:$('pokemonOnly').checked,
