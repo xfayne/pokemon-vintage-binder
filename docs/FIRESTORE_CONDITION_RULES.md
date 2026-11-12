@@ -4,35 +4,47 @@ The browser stores successful, per-user AI grading results in a **new** subcolle
 
 `users/{uid}/conditionAnalyses/{analysisKey}`
 
-Do **not** replace the existing ruleset with the snippet below. Add only the nested `match` block inside the deployed `match /databases/{database}/documents` block, **preserving the existing owned-card, share and shipment rules**. This repository does not have access to the deployed Firebase Security Rules, so this change must be confirmed in Firebase Console (Firestore Database → Rules) before claiming that production analyses persist.
+The production rules published on 2026-11-12 use the following blocks inside the existing `match /users/{userId}`. The previous recursive owner rule also matched analysis documents. Firestore grants access when any matching `allow` succeeds, so the recursive rule now excludes `conditionAnalyses`, with a separate rule preserving existing owner access to deeper descendants. The user document and shared binder rules were retained.
 
 ```javascript
-match /users/{uid}/conditionAnalyses/{analysisKey} {
-  allow get, list: if request.auth != null && request.auth.uid == uid;
-
-  allow create, update: if request.auth != null
-    && request.auth.uid == uid
-    && request.resource.data.keys().hasOnly([
+match /{collection}/{document=**} {
+  allow read, write: if collection != 'conditionAnalyses'
+    && request.auth != null && request.auth.uid == userId;
+}
+match /conditionAnalyses/{analysisKey} {
+  function validAnalysis(data) {
+    return data.keys().hasOnly([
       'schemaVersion', 'source', 'analysis', 'photoIndices',
-      'imageCount', 'analyzedAt', 'clientAnalyzedAt'
+      'imageCount', 'analyzedAt', 'clientAnalyzedAt', 'expiresAt'
     ])
-    && request.resource.data.schemaVersion == 1
-    && request.resource.data.source is map
-    && request.resource.data.source.type == 'ebay-listing'
-    && request.resource.data.source.marketplace in ['EBAY_US','EBAY_GB','EBAY_DE']
-    && request.resource.data.source.itemId is string
-    && request.resource.data.source.itemId.size() <= 64
-    && request.resource.data.analysis is map
-    && request.resource.data.analysis.grade in ['NM','LP','MP','HP','DMG']
-    && request.resource.data.photoIndices is list
-    && request.resource.data.photoIndices.size() <= 8
-    && request.resource.data.imageCount is int
-    && request.resource.data.imageCount >= 0
-    && request.resource.data.imageCount <= 25
-    && request.resource.data.analyzedAt == request.time
-    && request.resource.data.clientAnalyzedAt is int;
-
+    && data.schemaVersion == 1
+    && data.source is map
+    && data.source.type == 'ebay-listing'
+    && data.source.marketplace in ['EBAY_US', 'EBAY_GB', 'EBAY_DE']
+    && data.source.itemId is string
+    && data.source.itemId.size() <= 64
+    && data.analysis is map
+    && data.analysis.grade in ['NM', 'LP', 'MP', 'HP', 'DMG']
+    && data.photoIndices is list
+    && data.photoIndices.size() <= 8
+    && data.imageCount is int
+    && data.imageCount >= 0
+    && data.imageCount <= 25
+    && data.analyzedAt == request.time
+    && data.clientAnalyzedAt is int
+    && (!('expiresAt' in data) || (data.expiresAt is timestamp
+      && data.expiresAt.toMillis() == data.clientAnalyzedAt + 864000000
+      && data.expiresAt >= request.time + duration.value(239, 'h')
+      && data.expiresAt <= request.time + duration.value(241, 'h')));
+  }
+  allow get, list: if request.auth != null && request.auth.uid == userId;
+  allow create, update: if request.auth != null && request.auth.uid == userId
+    && validAnalysis(request.resource.data);
   allow delete: if false;
+
+  match /{subcollection}/{document=**} {
+    allow read, write: if request.auth != null && request.auth.uid == userId;
+  }
 }
 ```
 
@@ -44,8 +56,16 @@ The rules permit each signed-in owner to read/write **only their own** analysis 
 - The Firebase client uses `serverTimestamp()` for `analyzedAt`, so the timestamp must match `request.time` in rules.
 - All development tests use in-memory/mock Firestore; they **must not** modify real collection documents or create test records in the production project.
 
-## Test checklist after rules deployment
-1. Signed in as the owner, open a Deals gallery and manually run the analysis; verify the grade and defect rectangles, then refresh to confirm no new model call.
-2. Confirm `users/{uid}/conditionAnalyses/{analysisKey}` contains the normalized analysis and `users/{uid}.progress` is unchanged.
-3. Signed out, confirm no ability to write/see private results. A different user should not see this owner's analysis.
-4. If writes fail with `permission-denied`, the UI keeps the analyzed result in memory and offers **Save again**; don't repeat the Gemini call to retry persistence.
+## Verify with synthetic data
+
+1. In a local emulator, load a copy of the active rules and add the new block. Check that the diff contains only the intended addition and that the existing collection, share, and shipment access still works.
+2. Using a synthetic document with the app's fields and a server timestamp, verify that the owner can get, list, create, and update. Verify that signed-out requests and a different user's requests fail for each operation, owner deletes fail, and invalid payloads fail on create and update.
+3. After publishing, reopen the live Rules tab and confirm that the intended ruleset is active. Keep test writes in the emulator.
+4. The mocked Deals browser test covers defect boxes and cache reuse. A live signed-in gallery analysis automatically attempts to save its result, so use a test environment for end-to-end checks.
+5. If a regular app session encounters `permission-denied`, the UI keeps the result in memory and offers **Save again**. Retrying the save reuses the analysis.
+
+## Production verification (2026-11-12)
+
+The Worker returned HTTP 200 with `aiConfigured: true` from the app origin, and an unauthenticated analysis request returned HTTP 403 with `AI_AUTH_REQUIRED`. Firebase Console confirmed the rules are active in the default database. Rules Playground simulations using synthetic paths allowed owner reads and existing shared-binder reads, denied signed-out and other-user reads, denied owner deletes and malformed writes to analysis documents, and preserved owner access to other user descendants. The local Worker suite and mocked mobile gallery regression passed. An isolated Firestore emulator verified valid owner create/update with a server timestamp, get/list, rejection of other-user and signed-out access, and preservation of existing shipment and shared-binder access. It also accepted an optional timestamp exactly ten days after `clientAnalyzedAt` and rejected an incorrect timestamp. Live authenticated Gemini output and defect alignment on real photos still need verification.
+
+Production billing remains disabled, so Firestore TTL is inactive. The app changes that supply `expiresAt` remain in [PR #59](https://github.com/xfayne/pokemon-vintage-binder/pull/59). Follow [issue #53](https://github.com/xfayne/pokemon-vintage-binder/issues/53) for release status.
