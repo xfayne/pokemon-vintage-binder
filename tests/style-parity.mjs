@@ -10,6 +10,15 @@ const current = readFileSync('index.html', 'utf8');
 const css = readFileSync('css/app.css', 'utf8');
 const baseline = execFileSync('git', ['show', 'origin/main:index.html'], { encoding: 'utf8' });
 
+const baselineCss = execFileSync('git', ['show', 'origin/main:css/app.css'], { encoding: 'utf8' });
+const stylesheetVersion = html => html.match(/href="css\/app\.css\?v=([^"]+)"/)?.[1];
+assert.ok(stylesheetVersion(current), 'App stylesheet must be versioned');
+if (css !== baselineCss) {
+  assert.notEqual(stylesheetVersion(current), stylesheetVersion(baseline),
+    'App CSS changed without updating its cache-busting URL (mobile Safari may retain stale styles)');
+}
+
+
 assert.equal((current.match(/css\/app\.css/g) || []).length, 1);
 assert.ok(css.includes('.static-catalog'), 'CSS fallback rules must be preserved');
 const offlineStyles = current.match(/<noscript><style id="offline-fallback-styles">[\s\S]*?<\/style><\/noscript>\n/);
