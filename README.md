@@ -11,7 +11,7 @@ A mobile-friendly web app for organizing a personal **vintage Pokémon TCG** col
 - **My Binder** — arrange cards in 3×3 binder pages and share a read-only binder view.
 - **Wishlist** — prioritize and reorder wanted cards.
 - **Deals** — discover eBay listings for wishlist cards, compare condition-specific prices, and filter suspicious or irrelevant listings.
-- **AI condition analysis** — manually analyze a listing's front/back photos through Gemini, inspect approximate defect highlights, and reuse the result privately from Firestore (requires owner login and Firestore rules). The grading core is reusable for future owned-card photos.
+- **AI condition analysis** — analyze an eBay listing from Deals or use the standalone **Condition Analysis** tab to take/select up to eight phone photos or paste an eBay listing link. Both paths use the same Gemini grading engine, distribution and defect markers. eBay results reuse the private Firestore cache; personal photo uploads are processed only on demand and are not stored. Owner sign-in is required.
 - **Shipments** — track parcels and associate them with cards.
 - **Google sign-in and backups** — collection data is stored in Firestore; JSON backup/import is available.
 
@@ -28,6 +28,8 @@ This is a lightweight vanilla JavaScript application, hosted on **GitHub Pages**
 | Collection, binder and wishlist modules | `js/` |
 | eBay Deals UI | `deal-finder/` |
 | Photo-condition grading core | `ebay-worker/card-condition.js` |
+| Standalone grading tab | `js/condition-analysis-page.js` |
+| Standalone source adapters | `ebay-worker/standalone-condition.js` |
 | Cloudflare Worker backend | `ebay-worker/` |
 | Browser and regression tests | `tests/` |
 
