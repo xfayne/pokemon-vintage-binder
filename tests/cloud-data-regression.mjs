@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
-import { extname, resolve } from 'node:path';
+import { extname, resolve, sep } from 'node:path';
 import { chromium } from 'playwright';
 
 // Run the actual binder and cloud controllers in Chromium. Swap ONLY the Firebase
@@ -18,7 +18,7 @@ const app = createServer((request, response) => {
     .replace(/^\/+/, '') || 'index.html';
   if (name.includes('..')) { response.writeHead(403); response.end(); return; }
   const absolute = resolve(cwd, name);
-  if (!absolute.startsWith(cwd + '/') || name.startsWith('.')) {
+  if (!absolute.startsWith(cwd + sep) || name.startsWith('.')) {
     response.writeHead(403); response.end(); return;
   }
   try {
@@ -72,7 +72,7 @@ function installFakeFirebase(options) {
       exists:()=>saved!==null,
       data:()=>saved===null?undefined:{...copy(saved),updatedAt:{
         toMillis:()=>Number(saved.updatedAt)||0
-      },...(saved.expiresAt?{expiresAt:{toMillis:()=>Date.parse(saved.expiresAt)}}:{})},
+      },...(saved.expiresAt?{expiresAt:{toMillis:()=>new Date(saved.expiresAt).getTime()}}:{})},
       metadata:{fromCache:false,hasPendingWrites:false,...metadata}
     };
   }
