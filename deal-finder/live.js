@@ -409,7 +409,8 @@
   }
   galleryAnalyzing=true;gallerySaveFailed=false;
   const button=$('liveGalleryDemoButton'),panel=$('liveGalleryDemo');
-  button.disabled=true;button.textContent='✨ מנתח תמונות…';
+  button.disabled=true;button.classList.add('is-loading');button.setAttribute('aria-busy','true');
+  button.textContent='✨ מנתח תמונות…';
   panel.hidden=false;panel.innerHTML='<p>בודק פינות, קצוות, משטחים ופגמים בתמונות המוכר…</p>';
   try{
    const token=await cloud.getIdToken();
@@ -440,6 +441,7 @@
    if(serial===gallerySerial&&gallery.open)analysisError(String(err.message||'ניתוח התמונות נכשל.'));
   }finally{
    galleryAnalyzing=false;
+   button.classList.remove('is-loading');button.removeAttribute('aria-busy');
    if(serial===gallerySerial&&gallery.open){
     if(galleryAnalysisRecord?.analysis)renderGalleryAnalysis();
     else{button.disabled=false;button.textContent='✨ נתח מצב ב־AI';}
@@ -484,6 +486,8 @@
   $('liveGalleryDemo').hidden=true;
   $('liveGalleryDemo').replaceChildren();
   $('liveGalleryDemoButton').disabled=false;
+  $('liveGalleryDemoButton').classList.remove('is-loading');
+  $('liveGalleryDemoButton').removeAttribute('aria-busy');
   $('liveGalleryDemoButton').textContent='✨ נתח מצב ב־AI';
   $('liveGalleryDemoButton').setAttribute('aria-expanded','false');
   setGalleryPhotos(item.image&&imageUrl(item.image)?[item.image]:[]);
@@ -516,6 +520,8 @@
  gallery.addEventListener('close',()=>{
   gallerySerial++;galleryAbort?.abort();galleryAbort=null;
   galleryItem=null;galleryImages=[];galleryAnalysisRecord=null;gallerySaveFailed=false;
+  $('liveGalleryDemoButton').classList.remove('is-loading');
+  $('liveGalleryDemoButton').removeAttribute('aria-busy');
   $('liveGalleryDemo').hidden=true;drawGalleryDefects();
  });
  gallery.addEventListener('click',e=>{
