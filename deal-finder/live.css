@@ -186,6 +186,15 @@
 .live-gallery-actions{display:flex;justify-content:space-between;align-items:center;gap:9px;flex-wrap:wrap}
 .live-gallery-actions a{color:#4058a5;font-size:12px;font-weight:750;text-decoration:none}
 .live-gallery-demo-button{border:1px solid #c6b5ff;border-radius:10px;padding:10px 15px;background:#eee9ff;color:#5433a0;font:inherit;font-size:13px;font-weight:800;cursor:pointer}
+/* A soft, stationary shimmer signals an in-flight AI request without shifting layout. */
+.live-gallery-demo-button.is-loading{cursor:progress;animation:live-ai-button-pulse 1.35s ease-in-out infinite}
+@keyframes live-ai-button-pulse{
+ 0%,100%{background:#eee9ff;border-color:#c6b5ff;box-shadow:0 0 0 0 rgba(121,83,206,.08)}
+ 50%{background:#dcd0fc;border-color:#9e83e9;box-shadow:0 0 0 5px rgba(121,83,206,.12)}
+}
+@media(prefers-reduced-motion:reduce){
+ .live-gallery-demo-button.is-loading{animation:none;background:#ded5f8;border-color:#9e83e9}
+}
 .live-gallery-demo{background:#f9f6ff;border:1px solid #d9cdf9;border-radius:12px;padding:13px;color:#403068;font-size:12px;display:grid;gap:8px}
 .live-gallery-demo[hidden]{display:none}
 .live-gallery-demo>strong{font-size:14px}
