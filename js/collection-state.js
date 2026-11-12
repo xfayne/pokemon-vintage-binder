@@ -2,7 +2,7 @@
 // The collection's single in-memory state and the cloud-edit/save bridge.
 // Persistent storage remains exclusively in firebase-cloud.js / Firestore.
 window.VintageCollectionState={create({$,normalizeOrders,renderAll,renderCollections,toast}){
-const state={cards:[],owned:{},wish:{},removedWish:{},conditions:{},notes:{},purchasePrices:{},firstEdition:{},ownedAddedAt:{},shipments:[],binderExcluded:{},binderOrder:[],wishOrder:[],binderIncludeWish:true,binderPage:0,view:'catalog',active:'all',extras:false,holoOnly:false,pokemonOnly:false,status:'all',sort:'num',query:'',limit:96,ready:false,failures:[]};
+const state={cards:[],owned:{},wish:{},removedWish:{},conditions:{},notes:{},purchasePrices:{},firstEdition:{},ownedAddedAt:{},shipments:[],binderExcluded:{},binderOrder:[],wishOrder:[],binderIncludeWish:true,binderPage:0,view:'catalog',active:'all',selectedSets:[],extras:false,holoOnly:false,pokemonOnly:true,status:'all',sort:'num',query:'',limit:96,ready:false,failures:[]};
 function normalizeShipment(raw){
  if(!raw||typeof raw!=='object')return null;
  const number=String(raw.number||'').trim().toUpperCase();
