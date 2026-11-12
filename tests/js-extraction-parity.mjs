@@ -662,9 +662,11 @@ async function exercise(version, viewport) {
       $('extrasEnabled').checked=false;$('extrasEnabled').dispatchEvent(new Event('change',{bubbles:true}));
       const extraPruned=bySet(extraId).getAttribute('aria-pressed')==='false';
       $('resetFilters').click();
-      return {both,searched,pokemonAfterSearch,onlyJungle,allPressed,autoExtra,extraPruned,
-        resetPokemon:$('pokemonOnly').checked,
-        resetAll:document.querySelector('#side [data-set="all"]').getAttribute('aria-pressed')};
+      const resetPokemon=$('pokemonOnly').checked;
+      const resetAll=document.querySelector('#side [data-set="all"]').getAttribute('aria-pressed');
+      // Restore the original baseline's post-test filters for unrelated parity assertions.
+      $('pokemonOnly').checked=false;$('pokemonOnly').dispatchEvent(new Event('change',{bubbles:true}));
+      return {both,searched,pokemonAfterSearch,onlyJungle,allPressed,autoExtra,extraPruned,resetPokemon,resetAll};
     });
     assert.equal(multi.both.title,'2 סדרות נבחרו');
     assert.deepEqual(multi.both.active,['base1','base2'],'Set buttons must support multiselect');
