@@ -638,6 +638,46 @@ async function exercise(version, viewport) {
   if(version==='updated'&&updated.includes('js/catalog-ui.js')){
     assert.ok(fetched.some(x=>x.file==='catalog-ui.js'&&x.status===200),
       'Catalog UI module did not load');
+    const multi=await page.evaluate(()=>{
+      const $=id=>document.getElementById(id);
+      const cards=()=>[...document.querySelectorAll('#cards .poke-card')].map(n=>n.dataset.id);
+      $('resetFilters').click();
+      const base=document.querySelector('#side [data-set="base1"]');
+      const jungle=document.querySelector('#side [data-set="base2"]');
+      base.click();jungle.click();
+      const both={title:$('sectionTitle').textContent,
+        active:[...document.querySelectorAll('#side [data-set][aria-pressed="true"]')].map(n=>n.dataset.set),
+        hasBase:cards().some(id=>id.startsWith('base1-')),
+        hasJungle:cards().some(id=>id.startsWith('base2-'))};
+      $('search').value='Pikachu';$('search').dispatchEvent(new Event('input',{bubbles:true}));
+      const searched=cards();
+      const pokemonAfterSearch=$('pokemonOnly').checked;
+      base.click();
+      const onlyJungle=cards().length>0&&cards().every(id=>id.startsWith('base2-'));
+      document.querySelector('#side [data-set="all"]').click();
+      const allPressed=document.querySelector('#side [data-set="all"]').getAttribute('aria-pressed');
+      const extra=document.querySelector('#sideExtra [data-set]');
+      extra.click();
+      const autoExtra=$('extrasEnabled').checked;
+      $('extrasEnabled').checked=false;$('extrasEnabled').dispatchEvent(new Event('change',{bubbles:true}));
+      const extraPruned=extra.getAttribute('aria-pressed')==='false';
+      $('resetFilters').click();
+      return {both,searched,pokemonAfterSearch,onlyJungle,allPressed,autoExtra,extraPruned,
+        resetPokemon:$('pokemonOnly').checked,
+        resetAll:document.querySelector('#side [data-set="all"]').getAttribute('aria-pressed')};
+    });
+    assert.equal(multi.both.title,'2 סדרות נבחרו');
+    assert.deepEqual(multi.both.active,['base1','base2'],'Set buttons must support multiselect');
+    assert.ok(multi.both.hasBase&&multi.both.hasJungle,'Both selected sets must have cards in the results');
+    assert.ok(multi.searched.some(id=>id.startsWith('base1-'))&&
+      multi.searched.some(id=>id.startsWith('base2-')),'Search must honor multiple selected sets');
+    assert.equal(multi.pokemonAfterSearch,true,'Search must preserve Pokémon-only');
+    assert.equal(multi.onlyJungle,true,'Clicking an active set must deselect only that set');
+    assert.equal(multi.allPressed,'true','All sets should clear multiselect');
+    assert.equal(multi.autoExtra,true,'Selecting an extra set must enable extras');
+    assert.equal(multi.extraPruned,true,'Disabling extras must prune selected extra sets');
+    assert.equal(multi.resetPokemon,true,'Reset must restore Pokémon-only');
+    assert.equal(multi.resetAll,'true','Reset must restore all sets');
   }
   // Actual collection-card clicks (no real Google session). Verify bidirectional
   // exclusivity, tombstone persistence, purchase amount and currency editing.
