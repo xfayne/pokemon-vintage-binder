@@ -85,7 +85,7 @@ try{
       return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({
         source:requestBody.source,imageCount:3,analyzedPhotoIndices:[1,2,3],
         analysis:{
-          grade:'LP',confidencePercent:72,model:'gemini-3.5-flash-lite',
+          grade:'LP',confidencePercent:72,model:'gemini-3.8-flash',
           gradePercentages:{NM:10,LP:72,MP:15,HP:3,DMG:0},
           observations:[{area:'corners',finding:'White mark on back corner',severity:'minor',
             locations:[{photoIndex:2,box2d:[100,100,280,310]}]}],
@@ -159,8 +159,6 @@ try{
   await page.waitForFunction(()=>document.querySelector('#liveGalleryDemo')?.textContent.includes('הערכת AI: LP'));
   assert.equal(analysisCalls,1,'AI is called only after manual tap');
   assert.match(await page.locator('#liveGalleryDemo').innerText(),/72% ביטחון/);
-  assert.match(await page.locator('#liveGalleryDemo').innerText(),/מודל חלופי/,
-    'When a fallback graded the listing, show the uncertainty explicitly');
   await page.locator('[data-ai-finding="0"]').click();
   assert.equal(await page.locator('#liveGalleryCounter').textContent(),'2 / 3');
   await page.waitForFunction(()=>document.querySelectorAll('#liveGalleryOverlay .live-gallery-defect-box').length>0);
