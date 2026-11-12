@@ -10,6 +10,15 @@ const current = readFileSync('index.html', 'utf8');
 const css = readFileSync('css/app.css', 'utf8');
 const baseline = execFileSync('git', ['show', 'origin/main:index.html'], { encoding: 'utf8' });
 
+const baselineCss = execFileSync('git', ['show', 'origin/main:css/app.css'], { encoding: 'utf8' });
+const stylesheetVersion = html => html.match(/href="css\/app\.css\?v=([^"]+)"/)?.[1];
+assert.ok(stylesheetVersion(current), 'App stylesheet must be versioned');
+if (css !== baselineCss) {
+  assert.notEqual(stylesheetVersion(current), stylesheetVersion(baseline),
+    'App CSS changed without updating its cache-busting URL (mobile Safari may retain stale styles)');
+}
+
+
 assert.equal((current.match(/css\/app\.css/g) || []).length, 1);
 assert.ok(css.includes('.static-catalog'), 'CSS fallback rules must be preserved');
 const offlineStyles = current.match(/<noscript><style id="offline-fallback-styles">[\s\S]*?<\/style><\/noscript>\n/);
@@ -50,7 +59,9 @@ try {
     await baselinePage.goto(baseUrl, {waitUntil:'load'});
     await changedPage.goto(pageUrl, {waitUntil:'load'});
     // Compare the pre-existing no-JS catalog unobscured by the intentionally new navigation item.
-    await changedPage.evaluate(() => document.querySelector('[data-view-btn="analysis"]')?.remove());
+    if (!baseline.includes('data-view-btn="analysis"')) {
+      await changedPage.evaluate(() => document.querySelector('[data-view-btn="analysis"]')?.remove());
+    }
 
     const status = await changedPage.evaluate(() => ({
       stylesheetLoaded: [...document.styleSheets].some(sheet => (sheet.href || '').includes('css/app.css')),

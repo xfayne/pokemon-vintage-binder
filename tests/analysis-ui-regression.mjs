@@ -5,19 +5,21 @@ import {createServer} from 'node:http';
 import {chromium} from 'playwright';
 
 const template=readFileSync('templates/index.template.html','utf8');
+const stylesheet=template.match(/href="(css\/app\.css\?v=[^"]+)"/)?.[1];
+assert.ok(stylesheet,'Versioned app stylesheet missing from page template');
 const section=template.match(/<section class="collection-page" id="analysisPage"[\s\S]*?<\/section>/)?.[0];
 const visibleSection=section?.replace('id="analysisPage" hidden','id="analysisPage"');
 assert.ok(section,'Standalone grading section missing');
 const html='<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8">'+
  '<meta name="viewport" content="width=device-width,initial-scale=1">'+
- '<link rel="stylesheet" href="/css/app.css"></head><body>'+visibleSection+
+ '<link rel="stylesheet" href="/'+stylesheet+'"></head><body>'+visibleSection+
  '<script defer src="/js/condition-analysis-page.js"></script></body></html>';
 const script=readFileSync('js/condition-analysis-page.js');
 const css=readFileSync('css/app.css');
 const server=createServer((req,res)=>{
  if(req.url==='/'){res.writeHead(200,{'content-type':'text/html; charset=utf-8'});res.end(html);return;}
  if(req.url==='/js/condition-analysis-page.js'){res.writeHead(200,{'content-type':'text/javascript'});res.end(script);return;}
- if(req.url==='/css/app.css'){res.writeHead(200,{'content-type':'text/css'});res.end(css);return;}
+ if(req.url==='/'+stylesheet){res.writeHead(200,{'content-type':'text/css'});res.end(css);return;}
  res.writeHead(404);res.end();
 });
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
@@ -29,7 +31,7 @@ const analysis={grade:'LP',confidencePercent:68,gradePercentages:{NM:10,LP:68,MP
  locations:[{photoIndex:1,box2d:[100,100,400,500]}]}],limitations:['Back not shown']};
 const listing={source:{type:'ebay-listing',marketplace:'EBAY_US',itemId:'v1|123456789012|0'},
  title:'Charizard Base Set',url:'https://www.ebay.com/itm/123456789012',
- images:['https://i.ebayimg.com/front.jpg','https://i.ebayimg.com/back.jpg']};
+ images:Array.from({length:7},(_,i)=>'https://i.ebayimg.com/fixture-'+(i+1)+'.jpg')};
 try{
  for(const viewport of [{width:390,height:844},{width:1440,height:900}]){
   const context=await browser.newContext({viewport,serviceWorkers:'block'});
@@ -43,8 +45,10 @@ try{
   });
   const page=await context.newPage();
   const calls={upload:0,ebay:0,resolve:0};
+  // Large portrait listing photos reproduce iPhone Safari's prior page-wide zoom.
+  const tallCard=Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="2400" viewBox="0 0 1600 2400"><rect width="1600" height="2400" fill="#b2c7ec"/></svg>');
   await page.route('https://i.ebayimg.com/**',route=>route.fulfill({status:200,
-   contentType:'image/png',body:png}));
+   contentType:'image/svg+xml',body:tallCard}));
   await page.route('https://pokemon-vintage-ebay-deals.xfayne.workers.dev/**',async route=>{
    const cors={'access-control-allow-origin':'http://127.0.0.1:'+port,
     'access-control-allow-methods':'POST,OPTIONS','access-control-allow-headers':'authorization,content-type'};
@@ -81,7 +85,29 @@ try{
   assert.equal(await page.locator('#analysisPreview').isVisible(),false);
   await page.locator('#analysisEbayUrl').fill('https://ebay.io/m/example');
   await page.locator('#analysisLoadEbay').click();
-  await page.waitForFunction(()=>document.querySelectorAll('#analysisThumbs button').length===2);
+  await page.waitForFunction(()=>document.querySelectorAll('#analysisThumbs button').length===7);
+  await page.waitForFunction(()=>document.querySelector('#analysisMainPhoto')?.naturalWidth===1600);
+  const layout=await page.evaluate(()=>{
+    const button=document.querySelector('[data-analysis-mode="ebay"]');
+    const other=document.querySelector('[data-analysis-mode="photos"]');
+    const stage=document.querySelector('#analysisStage');
+    const photo=document.querySelector('#analysisMainPhoto');
+    const rect=stage.getBoundingClientRect(),img=photo.getBoundingClientRect();
+    return {width:document.documentElement.scrollWidth,viewport:innerWidth,
+      stageWidth:rect.width,photoWidth:img.width,
+      objectFit:getComputedStyle(photo).objectFit,
+      activeBackground:getComputedStyle(button).backgroundColor,
+      inactiveBackground:getComputedStyle(other).backgroundColor,
+      activeForeground:getComputedStyle(button).color,
+      activePressed:button.getAttribute('aria-pressed'),inactivePressed:other.getAttribute('aria-pressed')};
+  });
+  assert.ok(layout.width<=layout.viewport+2,'Large listing photos must not widen the viewport: '+JSON.stringify(layout));
+  assert.ok(layout.stageWidth<=layout.viewport,'Photo viewer must fit the mobile viewport: '+JSON.stringify(layout));
+  assert.ok(layout.photoWidth<=layout.stageWidth+2,'Full-size photo must stay inside the viewer: '+JSON.stringify(layout));
+  assert.equal(layout.objectFit,'contain','Listing photo must be contained rather than rendered at natural size');
+  assert.notEqual(layout.activeBackground,layout.inactiveBackground,'Selected source must be visibly highlighted');
+  assert.equal(layout.activePressed,'true');
+  assert.equal(layout.inactivePressed,'false');
   assert.equal(calls.resolve,1);
   assert.equal(calls.ebay,0,'Resolving listing and fetching photos must not call inference');
   await page.evaluate(a=>{window.fixtureSaved={source:{type:'ebay-listing',marketplace:'EBAY_US',itemId:'v1|123456789012|0'},analysis:a}},analysis);
@@ -89,7 +115,7 @@ try{
   await page.waitForFunction(()=>document.querySelector('#analysisResult')?.textContent.includes('תוצאה שמורה'));
   assert.equal(calls.ebay,0,'Stored eBay result must avoid duplicate inference');
   await page.locator('#analysisNext').click();
-  assert.equal(await page.locator('#analysisCounter').textContent(),'2 / 2');
+  assert.equal(await page.locator('#analysisCounter').textContent(),'2 / 7');
   await page.locator('#analysisResult .analysis-again').click();
   await page.waitForFunction(()=>window.fixtureSaveCount===1);
   assert.equal(calls.ebay,1,'Explicit reanalysis must call the existing eBay inference route');

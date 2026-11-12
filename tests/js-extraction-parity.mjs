@@ -1157,7 +1157,7 @@ try {
     const a = await exercise('original', viewport);
     const b = await exercise('updated', viewport);
     assert.ok(b.initial.tabs.includes('analysis'), 'Standalone condition analysis tab must exist');
-    assert.deepEqual({...b.initial,tabs:b.initial.tabs.filter(t=>t!=='analysis')}, a.initial,
+    assert.deepEqual(b.initial, a.initial,
       'Existing bootstrap output changed at '+viewport.width);
     assert.deepEqual(b.catalogSamples, a.catalogSamples, 'Generated vintage card metadata changed at '+viewport.width);
     assert.deepEqual(b.states, a.states, 'Navigation changed at '+viewport.width);
