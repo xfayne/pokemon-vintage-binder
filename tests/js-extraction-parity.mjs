@@ -84,7 +84,7 @@ if (updated.includes('js/shipments.js')) {
       'Shipment extraction changed any other binder behavior');
   }
   const shipmentsTag = '<script src="js/shipments.js?v=20261109-ship1"></script>';
-  const binderTag = '<script src="js/binder.js?v=20261111-carddeals1"></script>';
+  const binderTag = '<script src="js/binder.js?v=20261112-catalogmulti1"></script>';
   assert.ok(updated.indexOf(shipmentsTag) > 0 && updated.indexOf(shipmentsTag) < updated.indexOf(binderTag),
     'Shipment controller must be loaded before binder.js');
 }
@@ -119,7 +119,7 @@ if (updated.includes('js/collection-views.js')) {
       'The extracted collection renderer differs from old binder code');
   }
   const viewScript='<script src="js/collection-views.js?v=20261111-wishsort1"></script>';
-  const binderScript='<script src="js/binder.js?v=20261111-carddeals1"></script>';
+  const binderScript='<script src="js/binder.js?v=20261112-catalogmulti1"></script>';
   assert.ok(updated.indexOf(viewScript)>0 && updated.indexOf(viewScript)<updated.indexOf(binderScript),
     'View renderer script must load before binder');
 }
@@ -142,7 +142,7 @@ if (updated.includes('js/owned-cards.js')) {
       'Owned-cards extraction changed binder logic beyond this exact block');
   }
   const ownedTag='<script src="js/owned-cards.js?v=20261109-owned1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261111-carddeals1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261112-catalogmulti1"></script>';
   assert.ok(updated.indexOf(ownedTag)>0&&updated.indexOf(ownedTag)<updated.indexOf(binderTag),
     'Owned cards controller must load before binder');
 }
@@ -165,7 +165,7 @@ if (updated.includes('js/collection-drag.js')) {
       'Drag extraction modified unrelated collection logic or listeners');
   }
   const dragTag='<script src="js/collection-drag.js?v=20261109-drag1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261111-carddeals1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261112-catalogmulti1"></script>';
   assert.ok(updated.indexOf(dragTag)>0&&updated.indexOf(dragTag)<updated.indexOf(binderTag),
     'Drag module must be available before the binder controller');
 }
@@ -199,7 +199,7 @@ if (updated.includes('js/collection-ordering.js')) {
     assert.equal(ordering,module,'Collection order implementation was changed during extraction');
   }
   const tag='<script src="js/collection-ordering.js?v=20261109-order1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261111-carddeals1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261112-catalogmulti1"></script>';
   assert.ok(updated.indexOf(tag)>0&&updated.indexOf(tag)<updated.indexOf(binderTag),
     'Collection order module must load before binder');
 }
@@ -227,7 +227,7 @@ if(updated.includes('js/card-actions.js')){
       'Extracted card action function bodies changed unexpectedly');
   }
   const actionTag='<script src="js/card-actions.js?v=20261110-actions1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261111-carddeals1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261112-catalogmulti1"></script>';
   assert.ok(updated.indexOf(actionTag)>0&&updated.indexOf(actionTag)<updated.indexOf(binderTag),
     'Card actions script must load before binder');
 }
@@ -253,7 +253,7 @@ if(updated.includes('js/card-details.js')){
     assert.equal(modal,expected,'Card details dialog markup or handlers changed');
   }
   const modalTag='<script src="js/card-details.js?v=20261111-carddeals1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261111-carddeals1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261112-catalogmulti1"></script>';
   assert.ok(updated.indexOf(modalTag)>0&&updated.indexOf(modalTag)<updated.indexOf(binderTag),
     'Details module must load before binder');
 }
@@ -267,8 +267,8 @@ if(updated.includes('js/catalog-ui.js')){
   const call="const {catalog,relevantSetCards,showHolo,searchKey,searchText,visible,groups,renderSide,renderStats,rarityHtml,cardHTML,renderCards,renderAll}=window.VintageCatalogUI.create({state,MAP,SETS,$,esc,nf,cardNumber,normalNum,renderCollections:()=>renderCollections()});\n";
   if(originalBinder.includes(call)){
     // The catalog UI extraction has already landed on main.
-    assert.equal(movedModule,execFileSync('git',['show','origin/main:js/catalog-ui.js'],
-      {encoding:'utf8'}),'Previously extracted catalog UI changed');
+    assert.ok(movedModule.includes('state.selectedSets') && movedModule.includes('renderFilterSummary'),
+      'Catalog multiselect or summary missing');
   }else{
     assert.ok(start>=0&&end>start,'Catalog UI source boundaries missing');
     const block=originalBinder.slice(start,end);
@@ -279,8 +279,8 @@ if(updated.includes('js/catalog-ui.js')){
       block+'\nreturn {catalog,relevantSetCards,showHolo,searchKey,searchText,visible,groups,renderSide,renderStats,rarityHtml,cardHTML,renderCards,renderAll};\n}};\n})();\n';
     assert.equal(movedModule,expected,'Catalog UI function bodies changed');
   }
-  const uiTag='<script src="js/catalog-ui.js?v=20261110-catui1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261111-carddeals1"></script>';
+  const uiTag='<script src="js/catalog-ui.js?v=20261112-catalogmulti1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261112-catalogmulti1"></script>';
   assert.ok(updated.indexOf(uiTag)>0&&updated.indexOf(uiTag)<updated.indexOf(binderTag),
     'Catalog UI must load before binder app');
 }
@@ -311,7 +311,7 @@ if(updated.includes('js/catalog-loader.js')){
     assert.equal(loader,expectedModule,'Offline dataset decoder or bootstrap logic changed');
   }
   const loaderTag='<script src="js/catalog-loader.js?v=20261110-loader1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261111-carddeals1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261112-catalogmulti1"></script>';
   assert.ok(updated.indexOf(loaderTag)>0&&updated.indexOf(loaderTag)<updated.indexOf(binderTag),
     'Catalog loader must load before binder entrypoint');
 }
@@ -319,8 +319,8 @@ if(updated.includes('js/catalog-loader.js')){
 if(updated.includes('js/collection-state.js')){
   const module=readFileSync('js/collection-state.js','utf8');
   assert.ok(module.includes('window.VintageCollectionState={create('),'Missing collection-state factory');
-  const stateTag='<script src="js/collection-state.js?v=20261110-state1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261111-carddeals1"></script>';
+  const stateTag='<script src="js/collection-state.js?v=20261112-catalogmulti1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261112-catalogmulti1"></script>';
   assert.ok(updated.indexOf(stateTag)>0 && updated.indexOf(stateTag)<updated.indexOf(binderTag),
     'Collection state must load before binder');
   assert.ok(readFileSync('js/binder.js','utf8').includes('window.VintageCollectionState.create('),
@@ -343,8 +343,8 @@ if(updated.includes('js/collection-state.js')){
       'Collection state extraction altered unrelated binder logic');
   } else {
     // On subsequent refactors, the state module already exists in main.
-    assert.equal(module,execFileSync('git',['show','origin/main:js/collection-state.js'],
-      {encoding:'utf8'}),'Extracted collection state unexpectedly changed');
+    assert.ok(module.includes('selectedSets:[]') && module.includes('pokemonOnly:true'),
+      'Catalog defaults missing in state');
   }
 }
 // Preserve the exact backup/CSV/import behavior when moving it into a module.
@@ -355,7 +355,7 @@ if(updated.includes('js/collection-backup.js')){
   const factory='const {backup,copyWishlist,exportCSV,importBackup}=window.VintageCollectionBackup.create({state,MAP,cardNumber,toast,getProgress,normalizeOrders:()=>normalizeOrders(),sortedOwnedCards:()=>sortedOwnedCards(),ensureCloudEdit,save,renderAll,normalizeShipment});\n';
   const start=before.indexOf('function download(content,type,filename){');
   const backupTag='<script src="js/collection-backup.js?v=20261110-backup1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261111-carddeals1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261112-catalogmulti1"></script>';
   assert.ok(updated.indexOf(backupTag)>0&&updated.indexOf(backupTag)<updated.indexOf(binderTag),
     'Backup controller must be loaded before binder');
   assert.ok(after.includes(factory),'Binder backup factory is not wired');
@@ -433,6 +433,14 @@ async function exercise(version, viewport) {
     const initialPlacementClosed = await page.evaluate(() =>
       !document.querySelector('.binder-place').open);
     assert.equal(initialPlacementClosed, true, 'Placement must be closed on first load');
+    const catalogDefaults=await page.evaluate(()=>({
+      advancedOpen:document.getElementById('catalogAdvanced').open,
+      pokemonOnly:document.getElementById('pokemonOnly').checked,
+      summary:document.getElementById('catalogFilterSummary').textContent
+    }));
+    assert.equal(catalogDefaults.advancedOpen,false,'Advanced filters should start closed');
+    assert.equal(catalogDefaults.pokemonOnly,true,'Only Pokémon should be enabled initially');
+    assert.ok(catalogDefaults.summary.includes('פוקימון'),'Collapsed panel should describe the active default');
   }
   const initial = await page.evaluate(() => ({
     cards: document.querySelectorAll('#cards .poke-card').length,
@@ -630,6 +638,48 @@ async function exercise(version, viewport) {
   if(version==='updated'&&updated.includes('js/catalog-ui.js')){
     assert.ok(fetched.some(x=>x.file==='catalog-ui.js'&&x.status===200),
       'Catalog UI module did not load');
+    const multi=await page.evaluate(()=>{
+      const $=id=>document.getElementById(id);
+      const cards=()=>[...document.querySelectorAll('#cards .poke-card')].map(n=>n.dataset.id);
+      $('resetFilters').click();
+      const bySet=id=>document.querySelector('#side [data-set="'+id+'"]');
+      bySet('base1').click();bySet('base2').click();
+      const both={title:$('sectionTitle').textContent,
+        active:[...document.querySelectorAll('#side [data-set][aria-pressed="true"]')].map(n=>n.dataset.set),
+        hasBase:cards().some(id=>id.startsWith('base1-')),
+        hasJungle:cards().some(id=>id.startsWith('base2-'))};
+      $('search').value='Pikachu';$('search').dispatchEvent(new Event('input',{bubbles:true}));
+      const searched=cards();
+      const pokemonAfterSearch=$('pokemonOnly').checked;
+      bySet('base1').click();
+      const onlyJungle=cards().length>0&&cards().every(id=>id.startsWith('base2-'));
+      document.querySelector('#side [data-set="all"]').click();
+      const allPressed=document.querySelector('#side [data-set="all"]').getAttribute('aria-pressed');
+      const extra=document.querySelector('#sideExtra [data-set]');
+      extra.click();
+      const extraId=extra.dataset.set;
+      const autoExtra=$('extrasEnabled').checked;
+      $('extrasEnabled').checked=false;$('extrasEnabled').dispatchEvent(new Event('change',{bubbles:true}));
+      const extraPruned=bySet(extraId).getAttribute('aria-pressed')==='false';
+      $('resetFilters').click();
+      const resetPokemon=$('pokemonOnly').checked;
+      const resetAll=document.querySelector('#side [data-set="all"]').getAttribute('aria-pressed');
+      // Restore the original baseline's post-test filters for unrelated parity assertions.
+      $('pokemonOnly').checked=false;$('pokemonOnly').dispatchEvent(new Event('change',{bubbles:true}));
+      return {both,searched,pokemonAfterSearch,onlyJungle,allPressed,autoExtra,extraPruned,resetPokemon,resetAll};
+    });
+    assert.equal(multi.both.title,'2 סדרות נבחרו');
+    assert.deepEqual(multi.both.active,['base1','base2'],'Set buttons must support multiselect');
+    assert.ok(multi.both.hasBase&&multi.both.hasJungle,'Both selected sets must have cards in the results');
+    assert.ok(multi.searched.some(id=>id.startsWith('base1-'))&&
+      multi.searched.some(id=>id.startsWith('base2-')),'Search must honor multiple selected sets');
+    assert.equal(multi.pokemonAfterSearch,true,'Search must preserve Pokémon-only');
+    assert.equal(multi.onlyJungle,true,'Clicking an active set must deselect only that set');
+    assert.equal(multi.allPressed,'true','All sets should clear multiselect');
+    assert.equal(multi.autoExtra,true,'Selecting an extra set must enable extras');
+    assert.equal(multi.extraPruned,true,'Disabling extras must prune selected extra sets');
+    assert.equal(multi.resetPokemon,true,'Reset must restore Pokémon-only');
+    assert.equal(multi.resetAll,'true','Reset must restore all sets');
   }
   // Actual collection-card clicks (no real Google session). Verify bidirectional
   // exclusivity, tombstone persistence, purchase amount and currency editing.
@@ -1109,8 +1159,13 @@ try {
     assert.deepEqual(b.initial, a.initial, 'Bootstrap output changed at '+viewport.width);
     assert.deepEqual(b.catalogSamples, a.catalogSamples, 'Generated vintage card metadata changed at '+viewport.width);
     assert.deepEqual(b.states, a.states, 'Navigation changed at '+viewport.width);
-    assert.deepEqual(b.filtered, a.filtered, 'Catalog search changed at '+viewport.width);
-    assert.deepEqual(b.catalogState, a.catalogState, 'Catalog filters, group navigation or sorting changed at '+viewport.width);
+    assert.equal(b.filtered.search,a.filtered.search,'Catalog search input changed at '+viewport.width);
+    assert.ok(b.filtered.cards>0&&b.filtered.cards<=a.filtered.cards,
+      'Catalog search must find matching core-set cards without silently including optional sets');
+    for(const key of ['base','owned','wish','holo','pokemon','byName','holoFirst']){
+      assert.deepEqual(b.catalogState[key],a.catalogState[key],
+        'Unchanged catalog behavior regressed for '+key+' at '+viewport.width);
+    }
     assert.deepEqual(b.cardActionState, a.cardActionState, 'Owned/Wishlist actions changed at '+viewport.width);
     assert.deepEqual(b.detailState, a.detailState, 'Card details conditions or modal controls changed at '+viewport.width);
     assert.deepEqual(b.ownedState, a.ownedState, 'Owned cards sort/filter/value changed at '+viewport.width);
