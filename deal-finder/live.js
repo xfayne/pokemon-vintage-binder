@@ -51,9 +51,11 @@
   const cloud=window.VintageCloud,uid=cloud?.getUserUid?.(),key=cloud?.conditionAnalysisKey?.(aiSource(item));
   return uid&&key?uid+':'+key:null;
  };
+ const freshAnalysis=record=>record?.analysis&&window.VintageCloud?.isConditionAnalysisFresh?.(record)!==false;
  const aiFor=item=>{
   const key=aiCacheKey(item);
-  return key?aiCache.get(key)?.analysis||null:null;
+  const record=key&&aiCache.get(key);
+  return freshAnalysis(record)?record.analysis:null;
  };
  function warmCachedAnalyses(){
   const cloud=window.VintageCloud;
@@ -303,7 +305,7 @@
  function drawGalleryDefects(){
   const overlay=$('liveGalleryOverlay'),img=$('liveGalleryImage'),stage=$('liveGalleryStage');
   overlay.replaceChildren();
-  const observations=galleryAnalysisRecord?.analysis?.observations||[];
+  const observations=freshAnalysis(galleryAnalysisRecord)?galleryAnalysisRecord.analysis.observations||[]:[];
   if(!Array.isArray(observations)||!img.complete||!img.naturalWidth||!img.naturalHeight||!galleryImages.length)return;
   const width=stage.clientWidth,height=stage.clientHeight;
   const scale=Math.min(width/img.naturalWidth,height/img.naturalHeight);
@@ -344,7 +346,7 @@
   }catch(_){}
  }
  function renderGalleryAnalysis(){
-  const panel=$('liveGalleryDemo'),button=$('liveGalleryDemoButton'),record=galleryAnalysisRecord,analysis=record?.analysis;
+  const panel=$('liveGalleryDemo'),button=$('liveGalleryDemoButton'),record=galleryAnalysisRecord,analysis=freshAnalysis(record)?record.analysis:null;
   if(!analysis){
    if(!galleryAnalyzing){panel.hidden=true;button.disabled=false;button.textContent='✨ נתח מצב ב־AI';button.setAttribute('aria-expanded','false');}
    drawGalleryDefects();return;
@@ -369,7 +371,7 @@
   drawGalleryDefects();
  }
  function setGalleryAnalysis(record){
-  if(!record?.analysis||!GRADES.includes(record.analysis.grade))return;
+  if(!freshAnalysis(record)||!GRADES.includes(record.analysis.grade))return;
   galleryAnalysisRecord=record;galleryHighlighted=-1;
   if(record.analysis.imageSetFingerprint&&galleryFingerprint)record.stale=record.analysis.imageSetFingerprint!==galleryFingerprint;
   renderGalleryAnalysis();
@@ -386,8 +388,9 @@
   const cloud=window.VintageCloud;
   if(!cloud?.canEdit?.())return;
   const key=aiCacheKey(item);
-  if(key&&aiCache.has(key)){
-   if(gallerySerial===serial&&gallery.open)setGalleryAnalysis(aiCache.get(key));
+  const cached=key&&aiCache.get(key);
+  if(freshAnalysis(cached)){
+   if(gallerySerial===serial&&gallery.open)setGalleryAnalysis(cached);
    return;
   }
   try{
@@ -400,8 +403,8 @@
   const item=galleryItem,serial=gallerySerial,cloud=window.VintageCloud;
   if(!cloud?.canEdit?.()){analysisError('כדי לנתח מצב צריך להתחבר ל־Google.');return;}
   if(!force){
-   const cached=galleryAnalysisRecord||aiCache.get(aiCacheKey(item));
-   if(cached?.analysis){setGalleryAnalysis(cached);return;}
+   const cached=freshAnalysis(galleryAnalysisRecord)?galleryAnalysisRecord:aiCache.get(aiCacheKey(item));
+   if(freshAnalysis(cached)){setGalleryAnalysis(cached);return;}
    try{
     const saved=await cloud.getConditionAnalysis(aiSource(item));
     if(saved?.analysis){if(serial===gallerySerial)setGalleryAnalysis(saved);return;}
@@ -532,7 +535,7 @@
   }
   if(e.target.closest('#liveGalleryRetrySave')){
    const item=galleryItem,record=galleryAnalysisRecord;
-   if(item&&record)void window.VintageCloud?.saveConditionAnalysis?.(aiSource(item),record.analysis,record.photoIndices).then(saved=>{
+   if(item&&freshAnalysis(record))void window.VintageCloud?.saveConditionAnalysis?.(aiSource(item),record.analysis,record.photoIndices).then(saved=>{
     if(gallery.open&&galleryItem===item){gallerySaveFailed=false;setGalleryAnalysis(saved);}
    }).catch(()=>{gallerySaveFailed=true;renderGalleryAnalysis();});
    return;
