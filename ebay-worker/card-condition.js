@@ -78,7 +78,7 @@ function encodeBase64(bytes){
 function providerError(response){
  if(response.status===429)return 'AI_RATE_LIMITED';
  if(response.status===503)return 'AI_PROVIDER_BUSY';
- if(response.status===504)return 'AI_PROVIDER_TIMEOUT';
+ if(response.status===504||response.status===524)return 'AI_PROVIDER_TIMEOUT';
  if(response.status===401||response.status===403)return 'AI_PROVIDER_AUTH_FAILED';
  return 'AI_PROVIDER_HTTP_'+response.status;
 }
@@ -107,10 +107,11 @@ export async function analyzeCardCondition({photos,cardContext=null},{apiKey,fet
   body:JSON.stringify(payload)};
  let model=CONDITION_MODEL;
  let response=await fetchImpl(geminiUrl(model),options);
- // Repeated 503 on Free Tier may persist even for tiny prompts. Try ONE different
+ // Repeated 503/524 on Free Tier may persist even for tiny prompts. Try ONE different
  // Gemini multimodal model instead of hammering the overloaded primary endpoint.
- // Do not fail over on quota/auth errors or retry a failing fallback.
- if(response.status===503){
+ // 524 is a gateway timeout, not a quota response. Never retry a failing fallback.
+ // Do not fail over on quota/auth errors.
+ if(response.status===503||response.status===524){
   await response.body?.cancel().catch(()=>{});
   model=FALLBACK_CONDITION_MODEL;
   response=await fetchImpl(geminiUrl(model),options);
