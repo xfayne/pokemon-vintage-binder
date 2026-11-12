@@ -76,10 +76,11 @@ try{
     status:200,contentType:'image/svg+xml',
     body:'<svg xmlns="http://www.w3.org/2000/svg" width="200" height="300"></svg>'
   }));
-  await context.route('https://pokemon-vintage-ebay-deals.xfayne.workers.dev/**',route=>{
+  await context.route('https://pokemon-vintage-ebay-deals.xfayne.workers.dev/**',async route=>{
     const requestUrl=route.request().url();
     if(requestUrl.endsWith('/api/analyze-condition')){
       analysisCalls++;
+      await new Promise(resolve=>setTimeout(resolve,300)); // Hold fixture response to inspect loading UI.
       const requestBody=JSON.parse(route.request().postData()||'{}');
       assert.equal(requestBody.source.type,'ebay-listing');
       return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({
@@ -156,7 +157,13 @@ try{
   assert.equal(await page.locator('#liveGalleryDemo').isVisible(),false);
   assert.equal(analysisCalls,0,'Opening a listing must not analyze images');
   await page.locator('#liveGalleryDemoButton').click();
+  await page.waitForFunction(()=>document.querySelector('#liveGalleryDemoButton')?.classList.contains('is-loading'));
+  assert.equal(await page.locator('#liveGalleryDemoButton').isDisabled(),true);
+  assert.equal(await page.locator('#liveGalleryDemoButton').getAttribute('aria-busy'),'true');
+  assert.match(await page.locator('#liveGalleryDemoButton').textContent(),/מנתח תמונות/);
   await page.waitForFunction(()=>document.querySelector('#liveGalleryDemo')?.textContent.includes('הערכת AI: LP'));
+  assert.equal(await page.locator('#liveGalleryDemoButton').evaluate(el=>el.classList.contains('is-loading')),false,'Loading pulse must stop after completion');
+  assert.equal(await page.locator('#liveGalleryDemoButton').getAttribute('aria-busy'),null);
   assert.equal(analysisCalls,1,'AI is called only after manual tap');
   assert.match(await page.locator('#liveGalleryDemo').innerText(),/72% ביטחון/);
   await page.locator('[data-ai-finding="0"]').click();
