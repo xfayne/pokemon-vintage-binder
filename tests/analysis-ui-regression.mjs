@@ -45,13 +45,17 @@ try{
   await page.route('https://i.ebayimg.com/**',route=>route.fulfill({status:200,
    contentType:'image/png',body:png}));
   await page.route('https://pokemon-vintage-ebay-deals.xfayne.workers.dev/**',async route=>{
+   const cors={'access-control-allow-origin':'http://127.0.0.1:'+port,
+    'access-control-allow-methods':'POST,OPTIONS','access-control-allow-headers':'authorization,content-type'};
+   if(route.request().method()==='OPTIONS'){await route.fulfill({status:204,headers:cors});return;}
+   const respond=json=>route.fulfill({json,headers:cors});
    const path=new URL(route.request().url()).pathname;
-   if(path==='/api/resolve-ebay-link'){calls.resolve++;await route.fulfill({json:listing});return;}
+   if(path==='/api/resolve-ebay-link'){calls.resolve++;await respond(listing);return;}
    if(path==='/api/analyze-upload'){calls.upload++;
     assert.match(route.request().headers()['content-type'],/^multipart\/form-data/);
-    await route.fulfill({json:{analysis,imageCount:1,analyzedPhotoIndices:[1]}});return;}
+    await respond({analysis,imageCount:1,analyzedPhotoIndices:[1]});return;}
    if(path==='/api/analyze-condition'){calls.ebay++;
-    await route.fulfill({json:{analysis,imageCount:2,analyzedPhotoIndices:[1,2]}});return;}
+    await respond({analysis,imageCount:2,analyzedPhotoIndices:[1,2]});return;}
    await route.abort();
   });
   const errors=[];
