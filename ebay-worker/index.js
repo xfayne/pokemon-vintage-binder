@@ -263,7 +263,8 @@ function isEbayImage(src){
  }catch{return false}
 }
 async function imageBytes(url){
- const response=await fetch(url,{redirect:'error',headers:{accept:'image/jpeg,image/png,image/webp'}});
+ // Workers supports manual redirects. The status check rejects redirects before following them.
+ const response=await fetch(url,{redirect:'manual',headers:{accept:'image/jpeg,image/png,image/webp'}});
  if(!response.ok)throw Error('AI_IMAGE_FETCH_FAILED');
  const contentType=String(response.headers.get('content-type')||'').split(';')[0].toLowerCase();
  if(!['image/jpeg','image/png','image/webp'].includes(contentType))throw Error('AI_UNSUPPORTED_IMAGE');
