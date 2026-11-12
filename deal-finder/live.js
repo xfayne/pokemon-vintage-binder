@@ -411,15 +411,12 @@
   const button=$('liveGalleryDemoButton'),panel=$('liveGalleryDemo');
   button.disabled=true;button.textContent='✨ מנתח תמונות…';
   panel.hidden=false;panel.innerHTML='<p>בודק פינות, קצוות, משטחים ופגמים בתמונות המוכר…</p>';
-  const controller=new AbortController();
-  const timeout=setTimeout(()=>controller.abort(),50000);
   try{
    const token=await cloud.getIdToken();
    if(!token)throw Error('יש להתחבר לחשבון Google.');
    const card=cardIndex().get(item.cardId);
    const response=await fetch(state.endpoint+'/api/analyze-condition',{method:'POST',
     headers:{'content-type':'application/json',authorization:'Bearer '+token},
-    signal:controller.signal,
     body:JSON.stringify({source:aiSource(item),cardContext:card?{name:card.name,setName:card.setName}:null})
    });
    const data=await response.json();
@@ -440,11 +437,8 @@
     if(serial===gallerySerial){gallerySaveFailed=true;renderGalleryAnalysis();}
    }
   }catch(err){
-   if(serial===gallerySerial&&gallery.open)analysisError(err.name==='AbortError'
-    ?'הניתוח לא הסתיים בזמן. אפשר לנסות שוב.'
-    :String(err.message||'ניתוח התמונות נכשל.'));
+   if(serial===gallerySerial&&gallery.open)analysisError(String(err.message||'ניתוח התמונות נכשל.'));
   }finally{
-   clearTimeout(timeout);
    galleryAnalyzing=false;
    if(serial===gallerySerial&&gallery.open){
     if(galleryAnalysisRecord?.analysis)renderGalleryAnalysis();
