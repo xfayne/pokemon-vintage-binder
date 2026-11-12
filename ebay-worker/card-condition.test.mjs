@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {analyzeCardCondition,normalizeConditionResult,CONDITION_MODEL} from './card-condition.js';
+import {analyzeCardCondition,normalizeConditionResult,CONDITION_MODEL,FALLBACK_CONDITION_MODEL} from './card-condition.js';
 import worker from './index.js';
 
 const valid={grade:'LP',gradePercentages:{NM:10,LP:60,MP:25,HP:4,DMG:1},
@@ -104,7 +104,7 @@ test('authenticated analysis downloads eBay photos with Workers-compatible redir
  assert.deepEqual(result.analysis.observations[0].locations,valid.observations[0].locations);
 });
 
-test('Gemini retries a 503 once and can recover without changing the model or request',async()=>{
+test('Gemini overload uses one different model and records the actual provider model',async()=>{
  const photos=[{index:2,mimeType:'image/jpeg',bytes:new Uint8Array(400)}];
  const requests=[];
  const fetchImpl=async(url,options)=>{
@@ -115,16 +115,44 @@ test('Gemini retries a 503 once and can recover without changing the model or re
  };
  const result=await analyzeCardCondition({photos},{apiKey:'fake-key',fetchImpl});
  assert.equal(result.grade,'LP');
- assert.equal(requests.length,2);
- assert.deepEqual(requests[0],requests[1]);
+ assert.equal(result.model,FALLBACK_CONDITION_MODEL,'Always persist the real model used');
+ assert.equal(requests.length,2,'One primary and only one fallback');
+ assert.match(requests[0].url,/gemini-3\.8-flash:generateContent$/);
+ assert.match(requests[1].url,/gemini-3\.5-flash-lite:generateContent$/);
+ assert.deepEqual(requests[0].options,requests[1].options,'Pass the same bounded photos and schema');
 });
-test('Gemini stops after two overload responses and does not retry quota or timeout failures',async()=>{
+test('Gemini upstream 524 fails over once, recording fallback model',async()=>{
+ const photos=[{index:1,mimeType:'image/jpeg',bytes:new Uint8Array(400)}];
+ const endpoints=[];
+ const result=await analyzeCardCondition({photos},{apiKey:'fake-key',fetchImpl:async url=>{
+  endpoints.push(String(url));
+  return endpoints.length===1?new Response('Gateway timed out',{status:524}):
+   Response.json({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify(valid)}]}}]});
+ }});
+ assert.equal(endpoints.length,2);
+ assert.match(endpoints[0],/gemini-3\.8-flash/);
+ assert.match(endpoints[1],/gemini-3\.5-flash-lite/);
+ assert.equal(result.model,FALLBACK_CONDITION_MODEL);
+});
+test('Provider 524 from both models returns a clear timeout, not an opaque HTTP code',async()=>{
+ const photos=[{index:1,mimeType:'image/jpeg',bytes:new Uint8Array(400)}];
+ let count=0;
+ await assert.rejects(analyzeCardCondition({photos},{apiKey:'fake-key',fetchImpl:async()=>{
+  count++;return new Response('Gateway timed out',{status:524});
+ }}),/AI_PROVIDER_TIMEOUT/);
+ assert.equal(count,2);
+});
+test('Gemini does not cascade indefinitely or substitute models on quota/auth/timeout failures',async()=>{
  const photos=[{index:2,mimeType:'image/jpeg',bytes:new Uint8Array(400)}];
- let calls=0;
+ const requests=[];
  const run=fetchImpl=>analyzeCardCondition({photos},{apiKey:'fake-key',fetchImpl});
- await assert.rejects(run(async()=>{calls++;return new Response('busy',{status:503});}),/AI_PROVIDER_BUSY/);
- assert.equal(calls,2);
- await assert.rejects(run(async()=>{calls++;return new Response('quota',{status:429});}),/AI_RATE_LIMITED/);
- await assert.rejects(run(async()=>{calls++;return new Response('provider timed out',{status:504});}),/AI_PROVIDER_TIMEOUT/);
- assert.equal(calls,4);
+ await assert.rejects(run(async url=>{requests.push(url);return new Response('busy',{status:503});}),/AI_PROVIDER_BUSY/);
+ assert.equal(requests.length,2);
+ assert.match(requests[1],/gemini-3\.5-flash-lite:generateContent$/);
+ for(const [status,error] of [[429,/AI_RATE_LIMITED/],[504,/AI_PROVIDER_TIMEOUT/],[403,/AI_PROVIDER_AUTH_FAILED/]]){
+  const before=requests.length;
+  await assert.rejects(run(async url=>{requests.push(url);return new Response('error',{status});}),error);
+  assert.equal(requests.length,before+1,'Non-503 errors must not cause additional calls');
+  assert.match(requests[requests.length-1],/gemini-3\.8-flash:generateContent$/);
+ }
 });

@@ -99,8 +99,8 @@
   const ai=aiFor(item),override=state.gradeOverrides.get(key),cached=aiCache.get(aiCacheKey(item));
   const grade=override||ai?.grade||declared||item.conditionGrade||'MP';
   const source=override?'user':ai?'ai':declared?'seller':item.conditionSource||'unknown';
-  const label=ai?(cached?.stale?'תמונות השתנו · ניתוח AI ישן':'AI · '+ai.confidencePercent+'% ביטחון'):detail?.label||item.conditionLabel||item.condition||'';
-  return {grade,source,label,confidence:cached?.stale?0:ai?.confidencePercent??null,stale:!!cached?.stale,overridden:!!override};
+  const label=ai?(cached?.stale?'תמונות השתנו · ניתוח AI ישן':'AI'+(ai.model==='gemini-3.5-flash-lite'?' חלופי':'')+' · '+ai.confidencePercent+'% ביטחון'):detail?.label||item.conditionLabel||item.condition||'';
+  return {grade,source,label,confidence:cached?.stale?0:ai?.confidencePercent??null,stale:!!cached?.stale,fallback:ai?.model==='gemini-3.5-flash-lite',overridden:!!override};
  };
  function evaluation(item,card){
   const gradeInfo=resolvedGrade(item);
@@ -114,7 +114,7 @@
   const difference=market!==null&&comparable!==null?(market-comparable)/market:null;
   const discount=allIn!==null&&verification.status==='strong'?difference:null;
   const hours=item.format==='AUCTION'?(new Date(item.endTime).getTime()-Date.now())/3600000:null;
-  const reliable=verification.status==='strong'&&discount!==null&&verification.confidence>=70&&gradeInfo.source!=='unknown'&&(gradeInfo.source!=='ai'||gradeInfo.confidence>=75)&&!/\\b(?:damaged|creased|folded|poor condition)\\b/i.test(item.title||'')&&!/\\b(?:lot|bundle)\\b/i.test(item.title||'');
+  const reliable=verification.status==='strong'&&discount!==null&&verification.confidence>=70&&gradeInfo.source!=='unknown'&&!gradeInfo.fallback&&(gradeInfo.source!=='ai'||gradeInfo.confidence>=75)&&!/\\b(?:damaged|creased|folded|poor condition)\\b/i.test(item.title||'')&&!/\\b(?:lot|bundle)\\b/i.test(item.title||'');
   let group=4;
   if(reliable&&discount>=0.20&&((item.format==='FIXED_PRICE')||(hours!==null&&hours>=0&&hours<=6)))group=0;
   else if(reliable&&discount>=0.15&&((item.format==='FIXED_PRICE')||(hours!==null&&hours>=0&&hours<=24)))group=1;
@@ -227,7 +227,7 @@
     score.difference>=0?(item.format==='AUCTION'?'ההצעה כרגע נמוכה ב־':'זול ב־')+pct+'%':(item.format==='AUCTION'?'ההצעה כרגע גבוהה ב־':'יקר ב־')+pct+'%';
    const tone=!verified?'unknown':score.provisional?'provisional':score.discount===null?'unknown':score.discount>=0?'cheaper':'pricier';
    const key=keyFor(item);
-   const conditionText=score.gradeInfo.source==='ai'?'ניתוח AI · '+score.gradeInfo.confidence+'% ביטחון':score.gradeInfo.source==='user'?'בחירה ידנית':score.gradeInfo.source==='seller'?'על פי eBay':score.gradeInfo.source==='title'?'מזוהה בכותרת':'לא ידוע (MP כברירת מחדל)';
+   const conditionText=score.gradeInfo.source==='ai'?'ניתוח AI'+(score.gradeInfo.fallback?' חלופי':'')+' · '+score.gradeInfo.confidence+'% ביטחון':score.gradeInfo.source==='user'?'בחירה ידנית':score.gradeInfo.source==='seller'?'על פי eBay':score.gradeInfo.source==='title'?'מזוהה בכותרת':'לא ידוע (MP כברירת מחדל)';
    const selectedLabel=score.gradeInfo.overridden?' · שינית ידנית':'';
    const detail=state.conditionDetails.get(key);
    const showFetch=(!verified||score.gradeInfo.source!=='seller')&&!detail;
@@ -358,7 +358,8 @@
      (loc?'<small>תמונה '+loc.photoIndex+' · הצג פגם</small>':'<small>ללא סימון מדויק</small>')+'</button>';
   }).join(''):'<p>לא זוהו פגמים שניתן לתאר בביטחון מתוך התמונות שסופקו.</p>';
   const limits=(Array.isArray(analysis.limitations)?analysis.limitations:[]).slice(0,8).map(x=>'<li>'+escape(x)+'</li>').join('');
-  panel.innerHTML='<strong>הערכת AI: '+escape(analysis.grade)+' · '+confidence+'% ביטחון</strong>'+    (record.stale?'<p class="live-ai-warning">⚠️ תמונות המודעה השתנו מאז הניתוח. אפשר לנתח מחדש ידנית.</p>':'')+
+  panel.innerHTML='<strong>הערכת AI: '+escape(analysis.grade)+' · '+confidence+'% ביטחון</strong>'+
+    (analysis.model==='gemini-3.5-flash-lite'?'<p class="live-ai-warning">⚠️ Gemini 3.8 עמוס. הניתוח בוצע במודל חלופי, שעשוי להיות פחות מדויק בזיהוי שריטות ופגמים קטנים. מומלץ לבדוק את הסימונים בתמונות.</p>':'')+    (record.stale?'<p class="live-ai-warning">⚠️ תמונות המודעה השתנו מאז הניתוח. אפשר לנתח מחדש ידנית.</p>':'')+
     '<p>הערכה לפי התמונות בלבד, אינה דירוג מקצועי. המסגרות מצביעות על פגמים אפשריים.</p>'+
     '<div class="live-ai-distribution">'+distribution+'</div>'+
     '<div class="live-ai-findings">'+findings+'</div>'+
