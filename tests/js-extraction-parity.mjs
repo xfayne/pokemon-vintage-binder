@@ -1184,3 +1184,6 @@ try {
   await browser.close();
   await new Promise(resolve => app.close(resolve));
 }
+
+// Exercise the deliberately new analysis screen separately from existing UI parity.
+if(updated.includes('js/condition-analysis-page.js'))await import('./analysis-ui-regression.mjs');
