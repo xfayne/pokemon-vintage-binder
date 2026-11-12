@@ -59,7 +59,9 @@ try {
     await baselinePage.goto(baseUrl, {waitUntil:'load'});
     await changedPage.goto(pageUrl, {waitUntil:'load'});
     // Compare the pre-existing no-JS catalog unobscured by the intentionally new navigation item.
-    await changedPage.evaluate(() => document.querySelector('[data-view-btn="analysis"]')?.remove());
+    if (!baseline.includes('data-view-btn="analysis"')) {
+      await changedPage.evaluate(() => document.querySelector('[data-view-btn="analysis"]')?.remove());
+    }
 
     const status = await changedPage.evaluate(() => ({
       stylesheetLoaded: [...document.styleSheets].some(sheet => (sheet.href || '').includes('css/app.css')),
