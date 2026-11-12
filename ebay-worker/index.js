@@ -320,7 +320,7 @@ async function analyzeConditionApi(request,env,headers){
   return reply({analysis,source:{type:'ebay-listing',marketplace,itemId},imageCount:listing.images.length,analyzedPhotoIndices:photos.map(x=>x.index)},200,headers);
  }catch(e){
   const msg=String(e?.message||'AI_UNAVAILABLE');
-  const status=msg==='AI_RATE_LIMITED'?429:503;
+  const status=msg==='AI_RATE_LIMITED'?429:msg==='AI_PROVIDER_TIMEOUT'?504:503;
   return reply({error:/^AI_[A-Z0-9_]+$/.test(msg)?msg:'AI_UNAVAILABLE'},status,headers);
  }
 }
