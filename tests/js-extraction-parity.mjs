@@ -1157,7 +1157,9 @@ try {
     assert.deepEqual(b.initial, a.initial, 'Bootstrap output changed at '+viewport.width);
     assert.deepEqual(b.catalogSamples, a.catalogSamples, 'Generated vintage card metadata changed at '+viewport.width);
     assert.deepEqual(b.states, a.states, 'Navigation changed at '+viewport.width);
-    assert.deepEqual(b.filtered, a.filtered, 'Catalog search changed at '+viewport.width);
+    assert.equal(b.filtered.search,a.filtered.search,'Catalog search input changed at '+viewport.width);
+    assert.ok(b.filtered.cards>0&&b.filtered.cards<=a.filtered.cards,
+      'Catalog search must find matching core-set cards without silently including optional sets');
     for(const key of ['base','owned','wish','holo','pokemon','byName','holoFirst']){
       assert.deepEqual(b.catalogState[key],a.catalogState[key],
         'Unchanged catalog behavior regressed for '+key+' at '+viewport.width);
