@@ -108,6 +108,7 @@ test('Gemini retries a 503 once and can recover without changing the model or re
  const photos=[{index:2,mimeType:'image/jpeg',bytes:new Uint8Array(400)}];
  const requests=[];
  const fetchImpl=async(url,options)=>{
+  assert.equal(options.signal,undefined,'Do not impose a local provider deadline');
   requests.push({url,options});
   if(requests.length===1)return new Response('busy',{status:503});
   return Response.json({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify(valid)}]}}]});
@@ -124,6 +125,6 @@ test('Gemini stops after two overload responses and does not retry quota or time
  await assert.rejects(run(async()=>{calls++;return new Response('busy',{status:503});}),/AI_PROVIDER_BUSY/);
  assert.equal(calls,2);
  await assert.rejects(run(async()=>{calls++;return new Response('quota',{status:429});}),/AI_RATE_LIMITED/);
- await assert.rejects(run(async()=>{calls++;throw new DOMException('timed out','AbortError');}),/AI_PROVIDER_TIMEOUT/);
+ await assert.rejects(run(async()=>{calls++;return new Response('provider timed out',{status:504});}),/AI_PROVIDER_TIMEOUT/);
  assert.equal(calls,4);
 });
