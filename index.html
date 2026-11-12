@@ -63,6 +63,7 @@
   <button type="button" data-view-btn="wishlist" aria-pressed="false">💜 Wishlist <span class="nav-number" id="wishCountTab"></span></button>
   <button type="button" data-view-btn="shipments" aria-pressed="false">📦 משלוחים <span id="shipmentUnreadTab" class="shipment-unread" hidden></span></button>
   <button type="button" data-view-btn="deals" aria-pressed="false">🔎 מציאות</button>
+  <button type="button" data-view-btn="analysis" aria-pressed="false">✨ ניתוח מצב</button>
 </nav>
 </div>
 
@@ -148,6 +149,52 @@
   <div class="shipment-form-actions"><button class="btn primary" type="submit">שמור משלוח</button><button class="btn" type="button" id="shipmentCancel">ביטול</button></div>
  </form>
 </dialog>
+<section class="collection-page" id="analysisPage" hidden aria-label="ניתוח מצב קלף">
+ <div class="collection-panel analysis-page">
+  <div class="collection-heading"><div><h2>✨ ניתוח מצב קלף</h2><div class="subtle">הערכת מצב לפי תמונות, באמצעות אותו מנוע AI של מסך המציאות</div></div></div>
+  <div class="analysis-source" role="group" aria-label="מקור התמונות">
+   <button type="button" class="selected" data-analysis-mode="photos" aria-pressed="true">📷 צילום / תמונות</button>
+   <button type="button" data-analysis-mode="ebay" aria-pressed="false">🔗 מודעה ב־eBay</button>
+  </div>
+  <div id="analysisUpload">
+   <div class="analysis-picker">
+    <strong>העלה תמונות של הקלף</strong>
+    <p>כדאי לצלם את החזית והגב בתאורה טובה. אפשר לצרף עד 8 תמונות.</p>
+    <div class="analysis-actions">
+     <button type="button" class="btn primary" id="analysisCameraButton">📷 צלם קלף</button>
+     <button type="button" class="btn" id="analysisFilesButton">＋ הוסף תמונות</button>
+    </div>
+    <input id="analysisCameraInput" type="file" accept="image/*" capture="environment" hidden>
+    <input id="analysisFilesInput" type="file" accept="image/*" multiple hidden>
+   </div>
+  </div>
+  <div id="analysisEbay" hidden>
+   <label class="analysis-url-label" for="analysisEbayUrl">קישור למודעה ב־eBay</label>
+   <div class="analysis-url-row">
+    <input id="analysisEbayUrl" type="url" dir="ltr" inputmode="url" autocomplete="url" placeholder="https://www.ebay.com/itm/..." aria-label="כתובת מודעת eBay">
+    <button class="btn primary" id="analysisLoadEbay" type="button">טען תמונות</button>
+   </div>
+   <p class="analysis-help">אפשר גם קישור שיתוף קצר של eBay. התמונות ייטענו בלי להפעיל ניתוח בתשלום.</p>
+  </div>
+  <div id="analysisStatus" class="analysis-status" role="status" aria-live="polite"></div>
+  <div id="analysisPreview" hidden>
+   <div class="analysis-photo-stage" id="analysisStage">
+    <img id="analysisMainPhoto" alt="תמונת הקלף" />
+    <div id="analysisOverlay" aria-hidden="true"></div>
+    <button id="analysisPrev" type="button" aria-label="תמונה קודמת">❮</button>
+    <button id="analysisNext" type="button" aria-label="תמונה הבאה">❯</button>
+    <span id="analysisCounter" dir="ltr"></span>
+   </div>
+   <div id="analysisThumbs" class="analysis-thumbs" aria-label="תמונות לניתוח"></div>
+   <div id="analysisListing" class="analysis-listing" hidden></div>
+   <div class="analysis-submit">
+    <button type="button" id="analysisRun" class="btn primary">✨ נתח מצב ב־AI</button>
+    <span>NM · LP · MP · HP · DMG</span>
+   </div>
+   <div id="analysisResult" class="analysis-result" hidden></div>
+  </div>
+ </div>
+</section>
 <section class="collection-page" id="dealsPage" hidden aria-label="מציאות ומכרזי eBay">
  <div class="collection-panel"><div class="collection-heading"><div><h2>🔎 מציאות</h2><div class="subtle">מכרזים אמיתיים על קלפים מרשימת הרצונות שלך</div></div></div></div>
 </section>
@@ -1527,7 +1574,7 @@
 <script src="js/catalog-loader.js?v=20261110-loader1"></script>
 <script src="js/collection-state.js?v=20261112-catalogmulti1"></script>
 <script src="js/collection-backup.js?v=20261110-backup1"></script>
-<script src="js/binder.js?v=20261112-catalogmulti1"></script>
+<script src="js/binder.js?v=20261112-analysis1"></script>
 
 
 <script src="js/market-prices.js?v=20261109-js1"></script>
@@ -1536,4 +1583,5 @@
 <script type="module" src="js/firebase-cloud.js?v=20261109-js1"></script>
 <script defer src="deal-finder/dashboard.js?v=20261106-clean-1"></script>
 <script defer src="deal-finder/live.js?v=20261112-ai-pulse1"></script>
+<script defer src="js/condition-analysis-page.js?v=20261112-analysis1"></script>
 </body></html>
