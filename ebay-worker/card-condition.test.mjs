@@ -52,3 +52,54 @@ test('public route never reaches provider without Firebase authentication',async
  assert.equal(res.status,403);
  assert.equal((await res.json()).error,'AI_AUTH_REQUIRED');
 });
+
+test('authenticated analysis downloads eBay photos with Workers-compatible redirect handling',async(t)=>{
+ const project='pokemon-vintage-binder',owner='owner@example.com',kid='fixture-signing-key';
+ const keys=await crypto.subtle.generateKey({
+  name:'RSASSA-PKCS1-v1_5',modulusLength:2048,publicExponent:new Uint8Array([1,0,1]),hash:'SHA-256'
+ },true,['sign','verify']);
+ const jwk={...await crypto.subtle.exportKey('jwk',keys.publicKey),kid};
+ const encode=value=>Buffer.from(JSON.stringify(value)).toString('base64url');
+ const now=Math.floor(Date.now()/1000);
+ const claims={aud:project,iss:'https://securetoken.google.com/'+project,sub:'fixture-owner',
+  exp:now+600,iat:now,auth_time:now,email:owner,email_verified:true};
+ const unsigned=encode({alg:'RS256',kid})+'.'+encode(claims);
+ const signature=await crypto.subtle.sign('RSASSA-PKCS1-v1_5',keys.privateKey,new TextEncoder().encode(unsigned));
+ const token=unsigned+'.'+Buffer.from(signature).toString('base64url');
+ const source={type:'ebay-listing',itemId:'v1|123456|0',marketplace:'EBAY_US'};
+ let imageFetches=0,providerCalls=0;
+ t.mock.method(globalThis,'fetch',async(input,options)=>{
+  const url=new URL(input);
+  if(url.hostname==='www.googleapis.com')return Response.json({keys:[jwk]});
+  if(url.hostname==='api.ebay.com'&&url.pathname.endsWith('/token'))
+   return Response.json({access_token:'fixture-ebay-token',expires_in:3600});
+  if(url.hostname==='api.ebay.com'&&url.pathname.includes('/item/'))
+   return Response.json({image:{imageUrl:'https://i.ebayimg.com/redirect.jpg'},
+    additionalImages:[{imageUrl:'https://i.ebayimg.com/usable.jpg'}]});
+  if(url.hostname==='i.ebayimg.com'){
+   imageFetches++;
+   // workerd throws when fetch is constructed with redirect: 'error'.
+   assert.equal(options.redirect,'manual');
+   if(url.pathname==='/redirect.jpg')return Response.redirect('https://example.invalid/other.jpg');
+   return new Response(new Uint8Array(400).fill(7),{headers:{'content-type':'image/jpeg'}});
+  }
+  if(url.hostname==='generativelanguage.googleapis.com'){
+   providerCalls++;
+   const images=JSON.parse(options.body).contents[0].parts.filter(part=>part.inline_data);
+   assert.equal(images.length,1);
+   assert.equal(images[0].inline_data.mime_type,'image/jpeg');
+   return Response.json({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify(valid)}]}}]});
+  }
+  assert.fail('Unexpected outbound fetch: '+url.hostname);
+ });
+ const response=await worker.fetch(new Request('https://worker.example/api/analyze-condition',{method:'POST',
+  headers:{origin:'https://xfayne.github.io','content-type':'application/json',authorization:'Bearer '+token},
+  body:JSON.stringify({source})}),{ALLOWED_ORIGIN:'https://xfayne.github.io',GEMINI_API_KEY:'fixture-key',
+  TRACK17_OWNER_EMAIL:owner,EBAY_CLIENT_ID:'fixture-client',EBAY_CLIENT_SECRET:'fixture-secret'});
+ const result=await response.json();
+ assert.equal(response.status,200,JSON.stringify(result));
+ assert.equal(imageFetches,2);
+ assert.equal(providerCalls,1);
+ assert.deepEqual(result.analyzedPhotoIndices,[2]);
+ assert.deepEqual(result.analysis.observations[0].locations,valid.observations[0].locations);
+});
