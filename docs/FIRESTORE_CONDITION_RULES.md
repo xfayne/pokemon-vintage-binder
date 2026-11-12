@@ -4,35 +4,43 @@ The browser stores successful, per-user AI grading results in a **new** subcolle
 
 `users/{uid}/conditionAnalyses/{analysisKey}`
 
-Do **not** replace the existing ruleset with the snippet below. Add only the nested `match` block inside the deployed `match /databases/{database}/documents` block, **preserving the existing owned-card, share and shipment rules**. Use the active rules in Firebase Console (Firestore Database → Rules) as the baseline. Review every overlapping `match`, including recursive wildcards. Firestore grants access when any matching `allow` evaluates to true, so an overlapping rule can grant access to another user or allow deletes. If a rule overlaps, review its existing consumers before publishing.
+The production rules published on 2026-11-12 use the following blocks inside the existing `match /users/{userId}`. The previous recursive owner rule also matched analysis documents. Firestore grants access when any matching `allow` succeeds, so the recursive rule now excludes `conditionAnalyses`, with a separate rule preserving existing owner access to deeper descendants. The user document and shared binder rules were retained.
 
 ```javascript
-match /users/{uid}/conditionAnalyses/{analysisKey} {
-  allow get, list: if request.auth != null && request.auth.uid == uid;
-
-  allow create, update: if request.auth != null
-    && request.auth.uid == uid
-    && request.resource.data.keys().hasOnly([
+match /{collection}/{document=**} {
+  allow read, write: if collection != 'conditionAnalyses'
+    && request.auth != null && request.auth.uid == userId;
+}
+match /conditionAnalyses/{analysisKey} {
+  function validAnalysis(data) {
+    return data.keys().hasOnly([
       'schemaVersion', 'source', 'analysis', 'photoIndices',
       'imageCount', 'analyzedAt', 'clientAnalyzedAt'
     ])
-    && request.resource.data.schemaVersion == 1
-    && request.resource.data.source is map
-    && request.resource.data.source.type == 'ebay-listing'
-    && request.resource.data.source.marketplace in ['EBAY_US','EBAY_GB','EBAY_DE']
-    && request.resource.data.source.itemId is string
-    && request.resource.data.source.itemId.size() <= 64
-    && request.resource.data.analysis is map
-    && request.resource.data.analysis.grade in ['NM','LP','MP','HP','DMG']
-    && request.resource.data.photoIndices is list
-    && request.resource.data.photoIndices.size() <= 8
-    && request.resource.data.imageCount is int
-    && request.resource.data.imageCount >= 0
-    && request.resource.data.imageCount <= 25
-    && request.resource.data.analyzedAt == request.time
-    && request.resource.data.clientAnalyzedAt is int;
-
+    && data.schemaVersion == 1
+    && data.source is map
+    && data.source.type == 'ebay-listing'
+    && data.source.marketplace in ['EBAY_US', 'EBAY_GB', 'EBAY_DE']
+    && data.source.itemId is string
+    && data.source.itemId.size() <= 64
+    && data.analysis is map
+    && data.analysis.grade in ['NM', 'LP', 'MP', 'HP', 'DMG']
+    && data.photoIndices is list
+    && data.photoIndices.size() <= 8
+    && data.imageCount is int
+    && data.imageCount >= 0
+    && data.imageCount <= 25
+    && data.analyzedAt == request.time
+    && data.clientAnalyzedAt is int;
+  }
+  allow get, list: if request.auth != null && request.auth.uid == userId;
+  allow create, update: if request.auth != null && request.auth.uid == userId
+    && validAnalysis(request.resource.data);
   allow delete: if false;
+
+  match /{subcollection}/{document=**} {
+    allow read, write: if request.auth != null && request.auth.uid == userId;
+  }
 }
 ```
 
@@ -54,4 +62,4 @@ The rules permit each signed-in owner to read/write **only their own** analysis 
 
 ## Production verification (2026-11-12)
 
-The Worker returned HTTP 200 with `aiConfigured: true` from the app origin, and an unauthenticated analysis request returned HTTP 403 with `AI_AUTH_REQUIRED`. The live Gemini response, alignment on real listing photos, and the active Firestore rules remain unverified. Follow [issue #53](https://github.com/xfayne/pokemon-vintage-binder/issues/53) for release status.
+The Worker returned HTTP 200 with `aiConfigured: true` from the app origin, and an unauthenticated analysis request returned HTTP 403 with `AI_AUTH_REQUIRED`. Firebase Console confirmed the rules are active in the default database. Rules Playground simulations using synthetic paths allowed owner reads and existing shared-binder reads, denied signed-out and other-user reads, denied owner deletes and malformed writes to analysis documents, and preserved owner access to other user descendants. The local Worker suite and mocked mobile gallery regression passed. Valid writes with a server timestamp and live Gemini output on real photos still need end-to-end verification. Follow [issue #53](https://github.com/xfayne/pokemon-vintage-binder/issues/53) for release status.
