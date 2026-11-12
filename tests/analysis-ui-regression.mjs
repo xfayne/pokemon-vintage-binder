@@ -6,10 +6,11 @@ import {chromium} from 'playwright';
 
 const template=readFileSync('templates/index.template.html','utf8');
 const section=template.match(/<section class="collection-page" id="analysisPage"[\s\S]*?<\/section>/)?.[0];
+const visibleSection=section?.replace('id="analysisPage" hidden','id="analysisPage"');
 assert.ok(section,'Standalone grading section missing');
 const html='<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8">'+
  '<meta name="viewport" content="width=device-width,initial-scale=1">'+
- '<link rel="stylesheet" href="/css/app.css"></head><body>'+section+
+ '<link rel="stylesheet" href="/css/app.css"></head><body>'+visibleSection+
  '<script defer src="/js/condition-analysis-page.js"></script></body></html>';
 const script=readFileSync('js/condition-analysis-page.js');
 const css=readFileSync('css/app.css');
@@ -75,6 +76,7 @@ try{
   await page.waitForFunction(()=>document.querySelectorAll('#analysisOverlay .analysis-defect-box').length>0);
   await page.locator('#analysisRun').click();
   assert.equal(calls.upload,1,'Repeated normal action should reuse visible upload result');
+  await page.waitForFunction(()=>!document.querySelector('#analysisRun')?.classList.contains('is-loading'));
   await page.locator('[data-analysis-mode="ebay"]').click();
   assert.equal(await page.locator('#analysisPreview').isVisible(),false);
   await page.locator('#analysisEbayUrl').fill('https://ebay.io/m/example');
