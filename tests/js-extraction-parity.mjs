@@ -84,7 +84,7 @@ if (updated.includes('js/shipments.js')) {
       'Shipment extraction changed any other binder behavior');
   }
   const shipmentsTag = '<script src="js/shipments.js?v=20261109-ship1"></script>';
-  const binderTag = '<script src="js/binder.js?v=20261112-catalogmulti1"></script>';
+  const binderTag = '<script src="js/binder.js?v=20261112-analysis1"></script>';
   assert.ok(updated.indexOf(shipmentsTag) > 0 && updated.indexOf(shipmentsTag) < updated.indexOf(binderTag),
     'Shipment controller must be loaded before binder.js');
 }
@@ -119,7 +119,7 @@ if (updated.includes('js/collection-views.js')) {
       'The extracted collection renderer differs from old binder code');
   }
   const viewScript='<script src="js/collection-views.js?v=20261111-wishsort1"></script>';
-  const binderScript='<script src="js/binder.js?v=20261112-catalogmulti1"></script>';
+  const binderScript='<script src="js/binder.js?v=20261112-analysis1"></script>';
   assert.ok(updated.indexOf(viewScript)>0 && updated.indexOf(viewScript)<updated.indexOf(binderScript),
     'View renderer script must load before binder');
 }
@@ -142,7 +142,7 @@ if (updated.includes('js/owned-cards.js')) {
       'Owned-cards extraction changed binder logic beyond this exact block');
   }
   const ownedTag='<script src="js/owned-cards.js?v=20261109-owned1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261112-catalogmulti1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261112-analysis1"></script>';
   assert.ok(updated.indexOf(ownedTag)>0&&updated.indexOf(ownedTag)<updated.indexOf(binderTag),
     'Owned cards controller must load before binder');
 }
@@ -165,7 +165,7 @@ if (updated.includes('js/collection-drag.js')) {
       'Drag extraction modified unrelated collection logic or listeners');
   }
   const dragTag='<script src="js/collection-drag.js?v=20261109-drag1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261112-catalogmulti1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261112-analysis1"></script>';
   assert.ok(updated.indexOf(dragTag)>0&&updated.indexOf(dragTag)<updated.indexOf(binderTag),
     'Drag module must be available before the binder controller');
 }
@@ -199,7 +199,7 @@ if (updated.includes('js/collection-ordering.js')) {
     assert.equal(ordering,module,'Collection order implementation was changed during extraction');
   }
   const tag='<script src="js/collection-ordering.js?v=20261109-order1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261112-catalogmulti1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261112-analysis1"></script>';
   assert.ok(updated.indexOf(tag)>0&&updated.indexOf(tag)<updated.indexOf(binderTag),
     'Collection order module must load before binder');
 }
@@ -227,7 +227,7 @@ if(updated.includes('js/card-actions.js')){
       'Extracted card action function bodies changed unexpectedly');
   }
   const actionTag='<script src="js/card-actions.js?v=20261110-actions1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261112-catalogmulti1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261112-analysis1"></script>';
   assert.ok(updated.indexOf(actionTag)>0&&updated.indexOf(actionTag)<updated.indexOf(binderTag),
     'Card actions script must load before binder');
 }
@@ -253,7 +253,7 @@ if(updated.includes('js/card-details.js')){
     assert.equal(modal,expected,'Card details dialog markup or handlers changed');
   }
   const modalTag='<script src="js/card-details.js?v=20261111-carddeals1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261112-catalogmulti1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261112-analysis1"></script>';
   assert.ok(updated.indexOf(modalTag)>0&&updated.indexOf(modalTag)<updated.indexOf(binderTag),
     'Details module must load before binder');
 }
@@ -280,7 +280,7 @@ if(updated.includes('js/catalog-ui.js')){
     assert.equal(movedModule,expected,'Catalog UI function bodies changed');
   }
   const uiTag='<script src="js/catalog-ui.js?v=20261112-catalogmulti1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261112-catalogmulti1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261112-analysis1"></script>';
   assert.ok(updated.indexOf(uiTag)>0&&updated.indexOf(uiTag)<updated.indexOf(binderTag),
     'Catalog UI must load before binder app');
 }
@@ -311,7 +311,7 @@ if(updated.includes('js/catalog-loader.js')){
     assert.equal(loader,expectedModule,'Offline dataset decoder or bootstrap logic changed');
   }
   const loaderTag='<script src="js/catalog-loader.js?v=20261110-loader1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261112-catalogmulti1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261112-analysis1"></script>';
   assert.ok(updated.indexOf(loaderTag)>0&&updated.indexOf(loaderTag)<updated.indexOf(binderTag),
     'Catalog loader must load before binder entrypoint');
 }
@@ -320,7 +320,7 @@ if(updated.includes('js/collection-state.js')){
   const module=readFileSync('js/collection-state.js','utf8');
   assert.ok(module.includes('window.VintageCollectionState={create('),'Missing collection-state factory');
   const stateTag='<script src="js/collection-state.js?v=20261112-catalogmulti1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261112-catalogmulti1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261112-analysis1"></script>';
   assert.ok(updated.indexOf(stateTag)>0 && updated.indexOf(stateTag)<updated.indexOf(binderTag),
     'Collection state must load before binder');
   assert.ok(readFileSync('js/binder.js','utf8').includes('window.VintageCollectionState.create('),
@@ -355,7 +355,7 @@ if(updated.includes('js/collection-backup.js')){
   const factory='const {backup,copyWishlist,exportCSV,importBackup}=window.VintageCollectionBackup.create({state,MAP,cardNumber,toast,getProgress,normalizeOrders:()=>normalizeOrders(),sortedOwnedCards:()=>sortedOwnedCards(),ensureCloudEdit,save,renderAll,normalizeShipment});\n';
   const start=before.indexOf('function download(content,type,filename){');
   const backupTag='<script src="js/collection-backup.js?v=20261110-backup1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261112-catalogmulti1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261112-analysis1"></script>';
   assert.ok(updated.indexOf(backupTag)>0&&updated.indexOf(backupTag)<updated.indexOf(binderTag),
     'Backup controller must be loaded before binder');
   assert.ok(after.includes(factory),'Binder backup factory is not wired');
@@ -1156,7 +1156,9 @@ try {
   for (const viewport of [{width:390,height:844},{width:1440,height:900}]) {
     const a = await exercise('original', viewport);
     const b = await exercise('updated', viewport);
-    assert.deepEqual(b.initial, a.initial, 'Bootstrap output changed at '+viewport.width);
+    assert.ok(b.initial.tabs.includes('analysis'), 'Standalone condition analysis tab must exist');
+    assert.deepEqual({...b.initial,tabs:b.initial.tabs.filter(t=>t!=='analysis')}, a.initial,
+      'Existing bootstrap output changed at '+viewport.width);
     assert.deepEqual(b.catalogSamples, a.catalogSamples, 'Generated vintage card metadata changed at '+viewport.width);
     assert.deepEqual(b.states, a.states, 'Navigation changed at '+viewport.width);
     assert.equal(b.filtered.search,a.filtered.search,'Catalog search input changed at '+viewport.width);
@@ -1182,3 +1184,6 @@ try {
   await browser.close();
   await new Promise(resolve => app.close(resolve));
 }
+
+// Exercise the deliberately new analysis screen separately from existing UI parity.
+if(updated.includes('js/condition-analysis-page.js'))await import('./analysis-ui-regression.mjs');

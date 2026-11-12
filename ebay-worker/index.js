@@ -1,4 +1,5 @@
 import {analyzeCardCondition} from './card-condition.js';
+import {analyzeUploadApi,resolveEbayLinkApi} from './standalone-condition.js';
 /**
  * Cloudflare Worker /api/search: trusted eBay API proxy.
  * Secrets: EBAY_CLIENT_ID, EBAY_CLIENT_SECRET.
@@ -438,6 +439,8 @@ export default {
   if(!allowedOrigin(origin,env))return reply({error:'Origin not allowed'},403,headers);
   if(u.pathname.startsWith('/api/shipments/'))return shipmentsApi(request,env,headers,u);
   if(request.method==='POST'&&u.pathname==='/api/analyze-condition')return analyzeConditionApi(request,env,headers);
+  if(request.method==='POST'&&u.pathname==='/api/analyze-upload')return analyzeUploadApi(request,env,headers,{reply,verifyFirebaseBearer});
+  if(request.method==='POST'&&u.pathname==='/api/resolve-ebay-link')return resolveEbayLinkApi(request,env,headers,{reply,verifyFirebaseBearer,bearer,isEbayImage});
   if(request.method==='GET'&&u.pathname==='/health')return reply({ready:!!(env.EBAY_CLIENT_ID&&env.EBAY_CLIENT_SECRET),provider:'eBay Browse API',shippingDestinationConfigured:/^[0-9]{5,10}$/.test(String(env.EBAY_DELIVERY_POSTAL_CODE||'').trim()),aiConfigured:Boolean(env.GEMINI_API_KEY)},200,headers);
   if(request.method==='POST'&&u.pathname==='/api/item-images'){
    if(Number(request.headers.get('content-length')||0)>1200)return reply({error:'Payload too large'},413,headers);

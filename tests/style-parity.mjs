@@ -20,6 +20,9 @@ assert.equal(offlineStyles[0], baselineStyles[0], 'Standalone fallback styles ch
 const normalizeScripts = html => html.replace(/<script\b[^>]*>[\s\S]*?<\/script>\s*/gi, '');
 const normalizeUnchangedLayout = html => normalizeScripts(html)
   .replace(/css\/app\.css\?v=[^"]+/g, 'css/app.css?v=VERSION')
+  // The new standalone analysis tab is deliberately outside this static catalog parity contract.
+  .replace(/^  <button type="button" data-view-btn="analysis"[^\n]*\n/gm, '')
+  .replace(/<section class="collection-page" id="analysisPage"[\s\S]*?<\/section>\n/, '')
   .replace(/deal-finder\/live\.css\?v=[^"]+/g, 'deal-finder/live.css?v=VERSION')
   .replace(/<section class="collection-page" id="binderPage"[\s\S]*?<\/section>/,
     '<!-- intentionally updated binder controls and placement accordion -->')
@@ -46,6 +49,8 @@ try {
     const baseUrl = new URL(tempFile, root).href;
     await baselinePage.goto(baseUrl, {waitUntil:'load'});
     await changedPage.goto(pageUrl, {waitUntil:'load'});
+    // Compare the pre-existing no-JS catalog unobscured by the intentionally new navigation item.
+    await changedPage.evaluate(() => document.querySelector('[data-view-btn="analysis"]')?.remove());
 
     const status = await changedPage.evaluate(() => ({
       stylesheetLoaded: [...document.styleSheets].some(sheet => (sheet.href || '').includes('css/app.css')),

@@ -81,8 +81,8 @@ function placeBinder(id,page,slot){
 }
 
 const {renderShipments,refreshShipments}=window.VintageShipments.create({state,MAP,cardNumber,esc,$,ensureCloudEdit,save,toast});
-function showView(view,doScroll=true,dealsCardId=null){if(!['catalog','owned','binder','wishlist','shipments','deals'].includes(view))return;state.view=view;
- $('catalogShell').hidden=view!=='catalog';$('ownedPage').hidden=view!=='owned';$('binderPage').hidden=view!=='binder';$('wishPage').hidden=view!=='wishlist';$('dealsPage').hidden=view!=='deals';$('shipmentsPage').hidden=view!=='shipments';
+function showView(view,doScroll=true,dealsCardId=null){if(!['catalog','owned','binder','wishlist','shipments','deals','analysis'].includes(view))return;state.view=view;
+ $('catalogShell').hidden=view!=='catalog';$('ownedPage').hidden=view!=='owned';$('binderPage').hidden=view!=='binder';$('wishPage').hidden=view!=='wishlist';$('dealsPage').hidden=view!=='deals';$('shipmentsPage').hidden=view!=='shipments';$('analysisPage').hidden=view!=='analysis';
  document.querySelectorAll('[data-view-btn]').forEach(b=>{const a=b.dataset.viewBtn===view;b.classList.toggle('active',a);b.setAttribute('aria-pressed',String(a));});
  if(view!=='catalog')renderCollections();if(view==='deals'){if(dealsCardId)window.VintageEbayLive?.openCard?.(dealsCardId);else window.VintageEbayLive?.open?.();}if(view==='shipments')refreshShipments();if(doScroll)window.scrollTo({top:0,behavior:'smooth'});
 }

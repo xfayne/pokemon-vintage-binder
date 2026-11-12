@@ -278,3 +278,6 @@ test('item-images rejects invalid IDs, unsupported marketplaces and unauthorized
  assert.equal((await make('v1|123|0','EBAY_JP')).status,400);
  assert.equal((await make('v1|123|0','EBAY_GB','https://untrusted.example')).status,403);
 });
+
+// Include standalone source adapter cases in the required worker test command.
+await import('./standalone-condition.test.mjs');
