@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
-import { extname, resolve } from 'node:path';
+import { extname, resolve, sep } from 'node:path';
 import { chromium } from 'playwright';
 
 // Run the actual binder and cloud controllers in Chromium. Swap ONLY the Firebase
@@ -18,7 +18,7 @@ const app = createServer((request, response) => {
     .replace(/^\/+/, '') || 'index.html';
   if (name.includes('..')) { response.writeHead(403); response.end(); return; }
   const absolute = resolve(cwd, name);
-  if (!absolute.startsWith(cwd + '/') || name.startsWith('.')) {
+  if (!absolute.startsWith(cwd + sep) || name.startsWith('.')) {
     response.writeHead(403); response.end(); return;
   }
   try {
@@ -72,7 +72,7 @@ function installFakeFirebase(options) {
       exists:()=>saved!==null,
       data:()=>saved===null?undefined:{...copy(saved),updatedAt:{
         toMillis:()=>Number(saved.updatedAt)||0
-      }},
+      },...(saved.expiresAt?{expiresAt:{toMillis:()=>new Date(saved.expiresAt).getTime()}}:{})},
       metadata:{fromCache:false,hasPendingWrites:false,...metadata}
     };
   }
@@ -171,6 +171,24 @@ try {
   const {context,page,errors}=await openFixture();
   page.on('dialog',dialog=>dialog.accept());
   try {
+    const analysisCache=await page.evaluate(async()=>{
+      const source={type:'ebay-listing',marketplace:'EBAY_US',itemId:'v1|123456|0'};
+      const cloud=window.VintageCloud;
+      const saved=await cloud.saveConditionAnalysis(source,{grade:'LP',imageCount:1},[0]);
+      const record=await cloud.getConditionAnalysis(source);
+      const ttl=record.expiresAt.toMillis()-saved.clientAnalyzedAt;
+      const doc=window.__cloudTest.docs['users/'+cloud.getUserUid()+'/conditionAnalyses/'+cloud.conditionAnalysisKey(source)];
+      doc.expiresAt=new Date(Date.now()-1).toISOString();
+      const expired=await cloud.getConditionAnalysis(source);
+      await cloud.saveConditionAnalysis(source,{grade:'NM',imageCount:1},[0]);
+      const refreshed=await cloud.getConditionAnalysis(source);
+      delete window.__cloudTest.docs['users/'+cloud.getUserUid()+'/conditionAnalyses/'+cloud.conditionAnalysisKey(source)].expiresAt;
+      const legacy=await cloud.getConditionAnalysis(source);
+      window.__cloudTest.writes.length=0;
+      return {ttl,expired,refreshed:refreshed.analysis.grade,legacy:legacy.analysis.grade};
+    });
+    assert.deepEqual(analysisCache,{ttl:864000000,expired:null,refreshed:'NM',legacy:'NM'});
+
     // Startup is server-first; stale browser data is purged, never loaded.
     const startup=await getState(page);
     assert.deepEqual(startup.owned,initialProgress.owned);

@@ -144,3 +144,7 @@ Actual `cardId` should use the app's existing stable card ID, if available; do n
 - **Phase 4**: test real results and on-image marks interactively **after implementation**, using a few representative listings chosen by the user, then refine conservatism, prompt and overlays as necessary. No large upfront benchmark.
 
 **Implementation notes:** `ebay-worker/card-condition.js` contains the source-neutral grader with a Gemini REST adapter; the Worker eBay adapter permits only verified eBay CDN images, validates owner Firebase token and enforces per-item cooldown. `js/firebase-cloud.js` persists analyses under the `conditionAnalyses` collection. Gallery displays manual/cached results and overlay rectangles; image-set SHA-256 fingerprint allows stale notices without automatic reanalysis. See [Firestore rule addition](FIRESTORE_CONDITION_RULES.md). Mocked Worker and browser tests never access paid APIs or actual user Firestore. Verify production rules and live Gemini behavior after deployment.
+
+## eBay analysis retention
+
+New eBay analysis documents carry a Firestore timestamp `expiresAt` set to ten days after saving. Firestore TTL deletes those documents in the background. The browser stops reusing them at expiration, including while deletion is pending. Older records use their analysis timestamp for cache freshness. No migration writes are needed for existing records.
