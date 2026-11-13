@@ -103,7 +103,7 @@
 .binder-page-tools[hidden]{display:none}
 .binder-page-tools .btn{padding:8px 12px;font-size:12px}
 .binder-pocket-reserved{display:flex;justify-content:center;align-items:center;background:linear-gradient(140deg,#243957,#2d4565);border:1px dashed #bdcbe0}
-.binder-pocket-reserved::after{display:none}
+.binder-pocket.empty.binder-pocket-reserved::after{display:none}
 .binder-pocket-reserved span{max-width:90%;font-size:11px;line-height:1.4;text-align:center;color:#dde9ff;font-weight:750}
 .binder-pocket-dialog select{display:block;box-sizing:border-box;width:100%;min-height:45px;font-size:16px;border:1px solid #bfcde2;background:#fff;color:#203150;border-radius:10px;padding:8px}
 .binder-pocket-status{min-height:40px;margin:12px 0 0;color:#52637c;font-size:13px;line-height:1.55}
