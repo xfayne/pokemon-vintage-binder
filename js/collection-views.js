@@ -52,7 +52,7 @@ function renderCollections({skipHidden=false}={}){if(!state.ready)return;normali
   const c=cardLookup.get(id);if(!c)return '';
   const condition=state.conditions[id]||'';
   const market=condition?window.VintageMarketPrices?.getOwnedPrice?.(c,MAP.get(c.set)?.name||'',condition,!!state.firstEdition[id]):null;
-  const amount=typeof market==='number'?new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(market):'';
+  const amount=typeof market==='number'?window.VintageCurrency.format(market,'USD'):'';
   return `<article class="wish-item" role="listitem" ${priorityOrder?'data-order-kind="wishlist" data-drag-kind="wishlist" data-drag-index="'+i+'"':''} data-order-index="${i}" data-open-wish="${esc(id)}" tabindex="0" aria-label="פרטים על ${esc(c.name)}">
    <span class="wish-rank" ${priorityOrder?'data-drag-kind="wishlist" data-drag-index="'+i+'" title="גרור כדי לשנות את הסדר"':''} aria-label="עדיפות ${i+1}">${i+1}</span>
    <img loading="lazy" decoding="async" src="${esc(c.image)}" alt="${esc(c.name)}" ${priorityOrder?'data-drag-kind="wishlist" data-drag-index="'+i+'"':''} title="${priorityOrder?'גרור לשינוי הסדר · הקש לפתיחת פרטים':'הקש לפתיחת פרטים'}" draggable="false">
