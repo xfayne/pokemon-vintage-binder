@@ -213,7 +213,9 @@
 <dialog id="binderMovePageDialog" class="wish-move-dialog" aria-labelledby="binderMovePageTitle">
  <h3 id="binderMovePageTitle">העברת עמוד שלם</h3>
  <p class="wish-move-summary" id="binderMovePageCurrent"></p>
- <label for="binderMovePagePosition">למיקום איזה עמוד להעביר?</label>
+ <label for="binderMovePageSource">עמוד להעברה</label>
+ <input id="binderMovePageSource" type="number" min="1" step="1" inputmode="numeric" autocomplete="off">
+ <label for="binderMovePagePosition">למיקום חדש</label>
  <input id="binderMovePagePosition" type="number" min="1" step="1" inputmode="numeric" autocomplete="off">
  <div class="wish-move-actions"><button type="button" class="btn primary" id="binderMovePageConfirm">העבר עמוד</button></div>
  <button type="button" class="wish-move-cancel" id="binderMovePageCancel">ביטול</button>
