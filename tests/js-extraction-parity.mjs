@@ -115,17 +115,24 @@ if (updated.includes('js/collection-views.js')) {
       .replace("function renderCollections({skipHidden=false}={}){if(!state.ready)return;normalizeOrders();if(!skipHidden||state.view==='shipments')renderShipments();",
         "function renderCollections(){if(!state.ready)return;normalizeOrders();renderShipments();")
       .replace(" // Catalog actions need updated nav badges, not several off-screen image grids.\n // Every destination is rendered normally on showView before it becomes visible.\n if(skipHidden&&state.view==='catalog')return;\n","");
-    assert.equal(normalizedPrefix,
-      previousViews.slice(0,previousViews.indexOf(searchStart)),
-      'Binder rendering changed outside the documented catalog fast path');
-    assert.equal(views.slice(views.indexOf(afterWishlist)),
-      previousViews.slice(previousViews.indexOf(afterWishlist)),
-      'Post-Wishlist collection behavior changed unexpectedly');
+    assert.ok(normalizedPrefix.includes("const binderMarkup=Array.from({length:9}") &&
+      normalizedPrefix.includes("reconcileKeyedChildren($('binderGrid'),binderMarkup,'binder')"),
+      'Binder pocket renderer must reconcile existing image nodes');
+    assert.ok(views.includes("reconcileKeyedChildren($('wishlistItems'),wishlistMarkup,'wishlist')") &&
+      views.includes('function reconcileKeyedChildren(') &&
+      views.includes('function patchElement('),
+      'Wishlist must reuse mounted card/photo nodes after reordering');
+    const currentTail=views.slice(views.indexOf(afterWishlist),
+      views.indexOf('\n}',views.indexOf(afterWishlist))+2);
+    const previousTail=previousViews.slice(previousViews.indexOf(afterWishlist),
+      previousViews.indexOf('\n}',previousViews.indexOf(afterWishlist))+2);
+    assert.equal(currentTail,previousTail,
+      'Collection renderer completion changed unexpectedly');
   } else {
     assert.equal(newBinder.replace(call,()=>extracted),oldBinder,
       'The extracted collection renderer differs from old binder code');
   }
-  const viewScript='<script src="js/collection-views.js?v=20261113-layout2"></script>';
+  const viewScript='<script src="js/collection-views.js?v=20261113-reorder1"></script>';
   const binderScript='<script src="js/binder.js?v=20261113-layout2"></script>';
   assert.ok(updated.indexOf(viewScript)>0 && updated.indexOf(viewScript)<updated.indexOf(binderScript),
     'View renderer script must load before binder');
@@ -941,7 +948,7 @@ async function exercise(version, viewport) {
   }
   // Collection interaction regression: wishlist move-to-top, independent binder
   // order, and visibility of wishlist-only pockets. No Firestore writes.
-  const collectionState = await page.evaluate(() => {
+  const collectionState = await page.evaluate(isUpdated => {
     window.VintageBinder.adoptProgress({
       owned:{'base1-1':true,'base1-2':true},
       wish:{'base2-3':true,'base2-4':true},
@@ -955,16 +962,42 @@ async function exercise(version, viewport) {
       id:row.dataset.openWish,order:Number(row.dataset.orderIndex),
       draggable:row.dataset.dragKind
     }));
+    const wishImages=new Map([...document.querySelectorAll('.wish-item')].map(row=>
+      [row.dataset.openWish,row.querySelector('img')]));
     document.querySelector('[data-wish-move="base2-4"]').click();
     const moveDialogOpened = document.querySelector('#wishMoveDialog').open;
     document.querySelector('#wishMoveTop').click();
     const afterWishlist = [...document.querySelectorAll('.wish-item')].map(row=>row.dataset.openWish);
     const afterWishOrder = window.VintageBinder.getProgress().wishOrder;
+    if(isUpdated){
+      for(const row of document.querySelectorAll('.wish-item')){
+        if(wishImages.get(row.dataset.openWish)!==row.querySelector('img'))
+          throw Error('Wishlist reorder remounted '+row.dataset.openWish+' image');
+        if(row.dataset.orderIndex!==row.querySelector('img').dataset.dragIndex)
+          throw Error('Wishlist drag target has an outdated order index');
+        if(Number(row.querySelector('.wish-rank').textContent)-1!==Number(row.dataset.orderIndex))
+          throw Error('Wishlist rank label does not match the new position');
+      }
+    }
     document.querySelector('[data-view-btn="binder"]').click();
     const beforeBinder = [...document.querySelectorAll('.binder-pocket[data-card-id]')]
       .map(row=>({id:row.dataset.cardId,wishOnly:row.classList.contains('wish')}));
+    const binderImages=new Map([...document.querySelectorAll('.binder-pocket[data-card-id]')].map(row=>
+      [row.dataset.cardId,row.querySelector('img')]));
     document.querySelector('[data-move-kind="binder"][data-move-index="0"][data-move-delta="1"]').click();
     const afterBinderOrder = window.VintageBinder.getProgress().binderOrder;
+    if(isUpdated){
+      for(const row of document.querySelectorAll('.binder-pocket[data-card-id]')){
+        if(binderImages.get(row.dataset.cardId)!==row.querySelector('img'))
+          throw Error('Binder reorder remounted '+row.dataset.cardId+' image');
+        const index=row.dataset.orderIndex;
+        if(row.querySelector('.drag-handle').dataset.dragIndex!==index)
+          throw Error('Binder handle points to an old slot');
+        for(const button of row.querySelectorAll('[data-move-index]'))
+          if(button.dataset.moveIndex!==index)
+            throw Error('Binder move arrow still points to the old slot');
+      }
+    }
     const afterBinder = [...document.querySelectorAll('.binder-pocket[data-card-id]')]
       .map(row=>row.dataset.cardId);
     const checkbox = document.querySelector('#binderIncludeWish');
@@ -979,7 +1012,7 @@ async function exercise(version, viewport) {
       beforeWishlist,moveDialogOpened,afterWishlist,afterWishOrder,
       beforeBinder,afterBinderOrder,afterBinder,overlayHidden
     };
-  });
+  },version==='updated');
   assert.equal(collectionState.beforeWishlist.length, 2, 'Wishlist fixtures missing');
   assert.equal(collectionState.moveDialogOpened, true, 'Wishlist move dialog did not open');
   assert.deepEqual(collectionState.afterWishOrder, ['base2-4','base2-3'], 'Move-to-top failed');

@@ -11,7 +11,7 @@ function renderCollections({skipHidden=false}={}){if(!state.ready)return;normali
  if($('binderTargetPage').options.length!==binderPageCount()||!$('binderTargetSlot').options.length)refreshPlacementTargets();
  const list=binderVisible();const pageCount=Math.max(1,Math.ceil(list.length/9));state.binderPage=Math.min(Math.max(0,state.binderPage),pageCount-1);
  const cardLookup=new Map(state.cards.map(c=>[c.id,c]));
- $('binderGrid').innerHTML=Array.from({length:9},(_,slot)=>{const idx=state.binderPage*9+slot,id=list[idx];if(!id)return `<div class="binder-pocket empty" aria-label="כיס ריק"></div>`;
+ const binderMarkup=Array.from({length:9},(_,slot)=>{const idx=state.binderPage*9+slot,id=list[idx];if(!id)return `<div class="binder-pocket empty" aria-label="כיס ריק"></div>`;
  const c=cardLookup.get(id);if(!c)return '<div class="binder-pocket empty"></div>';
  const owned=!!state.owned[id],muted=!owned&&!state.binderIncludeWish;
  return `<article class="binder-pocket ${owned?'':'wish'} ${muted?'wish-muted':''}" role="listitem" data-order-kind="binder" data-order-index="${idx}" data-card-id="${esc(id)}">
@@ -20,6 +20,7 @@ function renderCollections({skipHidden=false}={}){if(!state.ready)return;normali
  <div class="pocket-title">${esc(c.name)}</div><div class="pocket-sub">${esc(MAP.get(c.set)?.name||'')} #${esc(cardNumber(c))}</div>
  <div class="pocket-actions"><button type="button" data-binder-move="${esc(id)}" aria-label="בחר מיקום חדש עבור ${esc(c.name)}">↗ העבר</button><button type="button" class="binder-remove" data-binder-remove="${esc(id)}" aria-label="הסר את ${esc(c.name)} מהבינדר בלבד">✕ הסר</button></div>
  <div class="reorder-row"><button type="button" aria-label="מקום קודם" data-move-kind="binder" data-move-index="${idx}" data-move-delta="-1" ${idx===0?'disabled':''}>↑</button><button type="button" class="drag-handle" data-drag-kind="binder" data-drag-index="${idx}" aria-label="גרור לשינוי הסדר">⋮⋮</button><button type="button" aria-label="מקום הבא" data-move-kind="binder" data-move-index="${idx}" data-move-delta="1" ${idx===list.length-1?'disabled':''}>↓</button></div></article>`}).join('');
+ reconcileKeyedChildren($('binderGrid'),binderMarkup,'binder');
  $('binderBook').hidden=list.length===0;$('binderPager').hidden=list.length===0;$('binderEmpty').hidden=list.length!==0;
  $('binderPageLabel').textContent='עמוד '+(state.binderPage+1)+' מתוך '+pageCount;
  $('binderPrev').disabled=state.binderPage===0;$('binderNext').disabled=state.binderPage>=pageCount-1;
@@ -47,7 +48,7 @@ function renderCollections({skipHidden=false}={}){if(!state.ready)return;normali
    return (wishSort==='price-desc'?bv-av:av-bv)||a.i-b.i;
   });
  }
- $('wishlistItems').innerHTML=state.wishOrder.length ? wishMatches.length ? wishMatches.map(({id,i})=>{
+ const wishlistMarkup=state.wishOrder.length ? wishMatches.length ? wishMatches.map(({id,i})=>{
   const c=cardLookup.get(id);if(!c)return '';
   const condition=state.conditions[id]||'';
   const market=condition?window.VintageMarketPrices?.getOwnedPrice?.(c,MAP.get(c.set)?.name||'',condition,!!state.firstEdition[id]):null;
@@ -66,8 +67,75 @@ function renderCollections({skipHidden=false}={}){if(!state.ready)return;normali
   </article>`;
  }).join('') : `<div class="no-cards">לא נמצאו קלפים שמתאימים לחיפוש.</div>` :
  `<div class="no-cards">Wishlist עדיין ריקה. סמן ☆ ליד קלף בקטלוג כדי להוסיף אותו. <button type="button" class="btn sm primary" data-view-btn="catalog">לקטלוג</button></div>`;
+ reconcileKeyedChildren($('wishlistItems'),wishlistMarkup,'wishlist');
  renderOwnedList();
  if(state.view==='deals')renderDeals();
+}
+
+
+// A reorder moves existing DOM articles instead of recreating their card art.
+// An inert template provides updated prices, ranks and drag targets without
+// connecting any throwaway <img> elements to the document.
+function syncAttributes(current,next){
+ for(const attr of Array.from(current.attributes)){
+  // Preserve an onerror fallback style on an existing failed image.
+  if(!next.hasAttribute(attr.name)&&!(current.tagName==='IMG'&&attr.name==='style'))
+   current.removeAttribute(attr.name);
+ }
+ for(const attr of Array.from(next.attributes)){
+  if(current.getAttribute(attr.name)!==attr.value)current.setAttribute(attr.name,attr.value);
+ }
+}
+function patchElement(current,next){
+ if(current.nodeType!==next.nodeType||
+    (current.nodeType===1&&current.tagName!==next.tagName)){
+  current.replaceWith(next);return;
+ }
+ if(current.nodeType===3){
+  if(current.nodeValue!==next.nodeValue)current.nodeValue=next.nodeValue;
+  return;
+ }
+ if(current.nodeType!==1)return;
+ syncAttributes(current,next);
+ // Keep an already mounted and decoded image, while refreshing its attributes.
+ if(current.tagName==='IMG')return;
+ const desired=Array.from(next.childNodes);
+ for(let i=0;i<desired.length;i++){
+  const child=current.childNodes[i];
+  if(child)patchElement(child,desired[i]);
+  else current.appendChild(desired[i]);
+ }
+ while(current.childNodes.length>desired.length)current.lastChild.remove();
+}
+function reconcileKeyedChildren(container,markup,kind){
+ const template=document.createElement('template');
+ template.innerHTML=markup;
+ const incoming=Array.from(template.content.children);
+ const keyOf=(node,index)=>{
+  if(kind==='wishlist')return node.dataset.openWish||null;
+  return node.dataset.cardId||(
+   node.matches('.binder-pocket.empty')?'empty:'+index:null
+  );
+ };
+ const existing=new Map(Array.from(container.children).map((node,i)=>[keyOf(node,i),node])
+  .filter(([key])=>key!==null));
+ const wanted=incoming.map((node,i)=>{
+  const key=keyOf(node,i),mounted=key===null?null:existing.get(key);
+  if(mounted&&mounted.tagName===node.tagName){
+   patchElement(mounted,node);return mounted;
+  }
+  return node;
+ });
+ const keep=new Set(wanted);
+ for(const node of Array.from(container.children))if(!keep.has(node))node.remove();
+ // An anchor pass moves whole existing articles and their mounted images.
+ let anchor=null;
+ for(let i=wanted.length-1;i>=0;i--){
+  const node=wanted[i];
+  if(node.parentNode!==container||node.nextElementSibling!==anchor)
+   container.insertBefore(node,anchor);
+  anchor=node;
+ }
 }
 return {renderCollections};
 }};

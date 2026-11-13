@@ -63,6 +63,11 @@ Collector preference: English vintage Unlimited, ungraded/raw cards; prioritize 
 - Native catalog advanced filters, Deals advanced filters and binder placement <details> use a measured-height Web Animations API disclosure, including programmatic placement opening; reduced-motion visitors retain native immediate details toggling. The binder body has its own padded wrapper so the summary never jumps horizontally when expanded.
 - Browser parity tests assert catalog art node identity across searches, stable modal photo geometry without network imagery, and expanding/collapsing panels on mobile/desktop.
 
+## Image-stable Wishlist and binder reordering (2026-11-13)
+- The Wishlist and 3×3 binder previously replaced entire list HTML after every reorder, causing card art to blink. The collection view renderer now reconciles rows by stable card identity, moving existing DOM nodes with image elements intact.
+- The reconciliation refreshes rank labels, drag and move indices, button states, condition-based prices, binder ownership badges and wishlist overlay styling without detaching unchanged images. New/removed cards and page navigation remain supported.
+- Playwright regression coverage verifies image identity and action index consistency when reordering Wishlist and binder cards in mobile/desktop layouts. Firestore ordering and persistence contracts remain unchanged.
+
 ## Open questions / backlog
 - The remaining `js/binder.js` IIFE coordinates UI modules; state/hydration, cloud-save notification, JSON backup/import, CSV and clipboard export have moved into `js/collection-state.js` and `js/collection-backup.js`; Firestore schema, Google login and persistence continue to live in `js/firebase-cloud.js`. Further decomposition should keep these interfaces stable and remain test-driven.
 
