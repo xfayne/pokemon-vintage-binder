@@ -217,7 +217,7 @@ if(updated.includes('js/card-actions.js')){
   const actions=readFileSync('js/card-actions.js','utf8');
   const first=baseline.indexOf('function toggleOwned(id){');
   const last=baseline.indexOf('function showModal(id){',first);
-  const call='const {toggleOwned,removeWish,toggleWish,updatePurchasePrice}=window.VintageCardActions.create({state,$,ensureCloudEdit,normalizeOrders:()=>normalizeOrders(),save,renderAll,toast,showModal:id=>showModal(id)});\n';
+  const call='const {toggleOwned,removeWish,toggleWish,updatePurchasePrice}=window.VintageCardActions.create({state,$,ensureCloudEdit,normalizeOrders:()=>normalizeOrders(),save,refreshCard,toast,showModal:id=>showModal(id)});\n';
   if (baseline.includes(call)) {
     // The action module now patches a single catalog card; preserve the cloud
     // tombstone and immediate-save contracts instead of enforcing byte parity.
@@ -272,7 +272,7 @@ if(updated.includes('js/catalog-ui.js')){
   const movedModule=readFileSync('js/catalog-ui.js','utf8');
   const start=originalBinder.indexOf('function catalog(){');
   const end=originalBinder.indexOf('function toast(msg)',start);
-  const call="const {catalog,relevantSetCards,showHolo,searchKey,searchText,visible,groups,renderSide,renderStats,rarityHtml,cardHTML,renderCards,renderAll}=window.VintageCatalogUI.create({state,MAP,SETS,$,esc,nf,cardNumber,normalNum,renderCollections:()=>renderCollections()});\n";
+  const call="const {catalog,relevantSetCards,showHolo,searchKey,searchText,visible,groups,renderSide,renderStats,rarityHtml,cardHTML,renderCards,renderAll,refreshCard}=window.VintageCatalogUI.create({state,MAP,SETS,$,esc,nf,cardNumber,normalNum,renderCollections:()=>renderCollections()});\n";
   if(originalBinder.includes(call)){
     // The catalog UI extraction has already landed on main.
     assert.ok(movedModule.includes('state.selectedSets') && movedModule.includes('renderFilterSummary'),
