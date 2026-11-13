@@ -1,7 +1,8 @@
 (()=>{'use strict';
 window.VintageCollectionViews={create({state,MAP,$,esc,cardNumber,normalizeOrders,renderShipments,binderPageCount,refreshPlacementTargets,binderVisible,renderOwnedList,renderDeals}){
+const isEmptyPocket=window.VintageCollectionOrdering.isEmptyPocket;
 function renderCollections({skipHidden=false}={}){if(!state.ready)return;normalizeOrders();if(!skipHidden||state.view==='shipments')renderShipments();
- $('binderCountTab').textContent=state.binderOrder.length+' קלפים';$('wishCountTab').textContent=state.wishOrder.length;
+ $('binderCountTab').textContent=state.binderOrder.filter(id=>!isEmptyPocket(id)).length+' קלפים';$('wishCountTab').textContent=state.wishOrder.length;
  $('binderCount').textContent=state.binderOrder.filter(id=>state.owned[id]).length+' באוסף · '+state.binderOrder.filter(id=>!state.owned[id]&&state.wish[id]).length+' משאלות';
  $('wishCount').textContent=state.wishOrder.length+' משאלות';
  $('binderIncludeWish').checked=state.binderIncludeWish;
@@ -12,6 +13,7 @@ function renderCollections({skipHidden=false}={}){if(!state.ready)return;normali
  const list=binderVisible();const pageCount=Math.max(1,Math.ceil(list.length/9));state.binderPage=Math.min(Math.max(0,state.binderPage),pageCount-1);
  const cardLookup=new Map(state.cards.map(c=>[c.id,c]));
  const binderMarkup=Array.from({length:9},(_,slot)=>{const idx=state.binderPage*9+slot,id=list[idx];if(!id)return `<div class="binder-pocket empty" aria-label="כיס ריק"></div>`;
+ if(isEmptyPocket(id))return `<div class="binder-pocket empty binder-pocket-reserved" aria-label="כיס ${slot+1} שמור כריק"><span>כיס שמור כריק</span></div>`;
  const c=cardLookup.get(id);if(!c)return '<div class="binder-pocket empty"></div>';
  const owned=!!state.owned[id],muted=!owned&&!state.binderIncludeWish;
  return `<article class="binder-pocket ${owned?'':'wish'} ${muted?'wish-muted':''}" role="listitem" data-order-kind="binder" data-order-index="${idx}" data-card-id="${esc(id)}">
@@ -23,6 +25,8 @@ function renderCollections({skipHidden=false}={}){if(!state.ready)return;normali
  reconcileKeyedChildren($('binderGrid'),binderMarkup,'binder');
  $('binderBook').hidden=list.length===0;$('binderPager').hidden=list.length===0;$('binderEmpty').hidden=list.length!==0;
  $('binderPageLabel').textContent='עמוד '+(state.binderPage+1)+' מתוך '+pageCount;
+ $('binderPageTools').hidden=list.length===0;
+ $('binderMovePage').disabled=pageCount<2;
  $('binderPrev').disabled=state.binderPage===0;$('binderNext').disabled=state.binderPage>=pageCount-1;
  const wishQuery=$('wishFind').value.trim().toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'');
  const wishSort=$('wishSort').value;
