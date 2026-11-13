@@ -73,6 +73,12 @@ Collector preference: English vintage Unlimited, ungraded/raw cards; prioritize 
 - The app's sticky tab pills keep the same mounted buttons and a white base background while a dark pseudo-element fades in/out on selection. Touch presses no longer scale the nav pills; this avoids flash from competing paint and transform transitions on iOS. Reduced-motion keeps immediate switching. No-JavaScript fallback presentation remains unchanged.
 - Mobile/desktop browser regression verifies ownership states before and after taps and checks an actual intermediate nav fill during tab transitions.
 
+## Cross-screen flicker / flow audit (2026-11-13)
+- Audited client-side repaint paths across catalog, binder placement search, My Cards, Wishlist, Shipments, Deals, photo analysis and read-only binder. A repeated cause of image flicker was replacing large `innerHTML` lists on minor state changes.
+- Shared `js/image-stable-dom.js` keyed DOM reconciliation preserves already-mounted image nodes and interactive controls across live data refreshes and reorders. Applied to binder search suggestions, Owned cards, shipments, shipment card picker and eBay Deals search results. Initial image and genuinely new/removed item rendering is unchanged. The existing Wishlist/binder pocket keyed reconciliation remains intact.
+- Binder placement selection only changes selected classes and `aria-selected` on existing suggestions, never regenerating their images. Shipment tracking expands a persistent timeline inside a grid-height disclosure, keeping parcel rows and card thumbnails mounted while status/read counters change. Reduced-motion respects user preference.
+- Regression tests cover selected/remaining image-node identity in binder search, shipment refresh/details, editor picker, owned filtering and Deals recomputations. No Firestore schema/Worker changes or production user-data mutation.
+
 ## Open questions / backlog
 - The remaining `js/binder.js` IIFE coordinates UI modules; state/hydration, cloud-save notification, JSON backup/import, CSV and clipboard export have moved into `js/collection-state.js` and `js/collection-backup.js`; Firestore schema, Google login and persistence continue to live in `js/firebase-cloud.js`. Further decomposition should keep these interfaces stable and remain test-driven.
 

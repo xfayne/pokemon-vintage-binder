@@ -802,3 +802,16 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
 @media(prefers-reduced-motion:reduce){
  .js-ready .main-nav button::before{transition:none}
 }
+
+/* Smooth in-place selection, parcel status disclosure and stable list imagery. */
+.binder-match{transition:background-color .2s ease,border-color .2s ease,box-shadow .2s ease}
+.binder-match.selected{box-shadow:0 0 0 1px #566bd122}
+.shipment-timeline-region{
+ display:grid;grid-template-rows:0fr;opacity:0;
+ transition:grid-template-rows .28s cubic-bezier(.22,1,.36,1),opacity .2s ease;
+}
+.shipment-timeline-region.is-expanded{grid-template-rows:1fr;opacity:1}
+.shipment-timeline-collapse{min-height:0;overflow:hidden}
+@media(prefers-reduced-motion:reduce){
+ .shipment-timeline-region,.binder-match{transition:none!important}
+}
