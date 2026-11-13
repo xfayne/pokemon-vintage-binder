@@ -17,7 +17,7 @@ function adoptProgress(value){for(const k of ['owned','wish','removedWish','cond
 function ensureCloudEdit(){if(window.VintageCloud?.canEdit?.())return true;
  toast('כדי לשמור שינויים צריך להתחבר ל־Google ולהמתין לטעינת האוסף.');
  const dialog=$('cloudDialog');if(dialog&&!dialog.open)dialog.showModal();return false;}
-function save(immediately=false){if(!ensureCloudEdit())return;window.VintageCloud.onChange({immediate:immediately});renderCollections();}
+function save(immediately=false){if(!ensureCloudEdit())return;window.VintageCloud.onChange({immediate:immediately});renderCollections({skipHidden:state.view==='catalog'});}
 return {state,getProgress,adoptProgress,ensureCloudEdit,save,normalizeShipment};
 }};
 })();
