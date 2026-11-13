@@ -42,9 +42,15 @@ const single=(id,title,price)=>({
 const cards=Array.from({length:52},(_,i)=>single('item-'+i,
   'Slowking 14/111 Neo Genesis Holo Unlimited Pokemon Card '+i,
   i===0?3:10+i/10));
-// Two verified, overpriced offers: +593% must never outrank +42% by accident.
-cards[50].currentBid={value:693,currency:'USD'};
-cards[51].currentBid={value:142,currency:'USD'};
+// Screenshot regression: the unknown-condition MP default (+593%) was assigned
+// group 3 ahead of the seller-graded LP (+42%) in group 4. These fixtures
+// reproduce both the grades and price gaps, not just the percentages.
+cards[50].currentBid={value:207.9,currency:'USD'}; // MP $30: 593% above
+cards[50].conditionGrade=null;
+cards[50].conditionSource='unknown';
+cards[51].currentBid={value:85.2,currency:'USD'}; // LP $60: 42% above
+cards[51].conditionGrade='LP';
+cards[51].conditionSource='seller';
 const accessories=[
   single('case-space','Slowking 14/111 Neo Genesis Pokemon Art Case',2),
   single('case-hyphen','Slowking 14/111 Neo Genesis Pokemon Art-Case',2),
@@ -261,8 +267,14 @@ try{
   await page.locator('#liveSort').selectOption('recommended');
   await page.locator('#liveShowMore').click();
   const overpriceOrder=await keys();
+  const unknownPriceText=await page.locator('[data-listing-key="item-50"]').innerText();
+  const knownPriceText=await page.locator('[data-listing-key="item-51"]').innerText();
+  assert.match(unknownPriceText,/MP כברירת מחדל/,'Unknown-grade fixture should use the MP fallback');
+  assert.match(unknownPriceText,/593%/,'Unknown-grade listing must reproduce +593%');
+  assert.match(knownPriceText,/על פי eBay/,'Seller-known fixture should use the declared LP');
+  assert.match(knownPriceText,/42%/,'Known-grade listing must reproduce +42%');
   assert.ok(overpriceOrder.indexOf('item-51')<overpriceOrder.indexOf('item-50'),
-    'A +42% overpayment must rank before a +593% overpayment');
+    'Seller-graded +42% overpayment must outrank unknown-grade +593% in recommended sort');
   await page.locator('select.live-item-grade[data-item-key="item-51"]').selectOption('DMG');
   const gradeOrder=await keys();
   assert.ok(gradeOrder.indexOf('item-51')<gradeOrder.indexOf('item-50'),

@@ -115,11 +115,16 @@
   const discount=allIn!==null&&verification.status==='strong'?difference:null;
   const hours=item.format==='AUCTION'?(new Date(item.endTime).getTime()-Date.now())/3600000:null;
   const reliable=verification.status==='strong'&&discount!==null&&verification.confidence>=70&&gradeInfo.source!=='unknown'&&(gradeInfo.source!=='ai'||gradeInfo.confidence>=75)&&!/\\b(?:damaged|creased|folded|poor condition)\\b/i.test(item.title||'')&&!/\\b(?:lot|bundle)\\b/i.test(item.title||'');
+  // Group ordering is more important than the score within each group.
+  // In particular, an unknown-condition listing can still have a *known*,
+  // massively overpriced all-in price against its provisional MP reference.
+  // It must not be promoted ahead of less overpriced, seller-graded listings.
   let group=4;
   if(reliable&&discount>=0.20&&((item.format==='FIXED_PRICE')||(hours!==null&&hours>=0&&hours<=6)))group=0;
   else if(reliable&&discount>=0.15&&((item.format==='FIXED_PRICE')||(hours!==null&&hours>=0&&hours<=24)))group=1;
-  else if(discount!==null&&discount>0)group=2;
   else if(verification.status!=='strong')group=5;
+  else if(discount!==null&&discount<=0)group=4;
+  else if(discount!==null&&discount>0&&gradeInfo.source!=='unknown')group=2;
   else if(provisional||gradeInfo.source==='unknown'||discount===null)group=3;
   const score=(discount??-1)*100+(item.format==='FIXED_PRICE'?20:hours!==null&&hours<=6?18:hours!==null&&hours<=24?9:0)+verification.confidence/20;
   const warnings=Array.isArray(item.warnings)?item.warnings.slice():[];
