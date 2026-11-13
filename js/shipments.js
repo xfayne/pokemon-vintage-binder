@@ -33,7 +33,7 @@ function renderShipments(){
  $('shipmentRefresh').disabled=shipmentRefreshing;
  $('shipmentRefresh').textContent=shipmentRefreshing?'מעדכן…':'↻ עדכון';
  const lookup=new Map(state.cards.map(c=>[c.id,c]));
- $('shipmentList').innerHTML=state.shipments.length?state.shipments.map(item=>{
+ const markup=state.shipments.length?state.shipments.map(item=>{
   const live=shipmentLive.get(item.id),unread=shipmentNewEvents(item).length,expanded=shipmentExpandedId===item.id;
   const cards=item.cardIds.map(id=>lookup.get(id)).filter(Boolean);
   const latestEvent=Array.isArray(live?.events)?live.events[0]:null;
@@ -41,8 +41,8 @@ function renderShipments(){
   const latestContent=latestEvent?.description?`<div class="shipment-latest"><span class="shipment-latest-icon" aria-hidden="true">🚚</span><div class="shipment-latest-body"><div class="shipment-latest-description">${esc(latestEvent.description)}</div>${latestEvent.time?`<time class="shipment-latest-date">${esc(shipmentEventTime(latestEvent.time))}</time>`:''}</div></div>`:'';
   const images=cards.slice(0,6).map(c=>`<img src="${esc(c.image)}" alt="${esc(c.name)}" loading="lazy" title="${esc(c.name)}">`).join('');
   const events=live?.events||[];
-  const timeline=expanded?`<div class="shipment-timeline">${live?.error?`<p class="shipment-label">${esc(live.error.message||'אין עדיין נתוני מעקב')}</p>`:events.length?events.map(event=>`<div class="shipment-event"><span class="shipment-dot" aria-hidden="true"></span><div class="shipment-event-main"><strong>${esc(event.description||shipmentStatus(event.stage))}</strong><small>${esc([shipmentEventTime(event.time),event.location].filter(Boolean).join(' · '))}</small></div></div>`).join(''):'<p class="shipment-label">עדיין אין אירועי מעקב זמינים. נסה לרענן בהמשך.</p>'}</div>`:'';
-  return `<article class="shipment-entry ${unread?'is-new':''}">
+  const timeline=`<div class="shipment-timeline-region ${expanded?'is-expanded':''}" aria-hidden="${!expanded}"><div class="shipment-timeline-collapse"><div class="shipment-timeline">${live?.error?`<p class="shipment-label">${esc(live.error.message||'אין עדיין נתוני מעקב')}</p>`:events.length?events.map(event=>`<div class="shipment-event"><span class="shipment-dot" aria-hidden="true"></span><div class="shipment-event-main"><strong>${esc(event.description||shipmentStatus(event.stage))}</strong><small>${esc([shipmentEventTime(event.time),event.location].filter(Boolean).join(' · '))}</small></div></div>`).join(''):'<p class="shipment-label">עדיין אין אירועי מעקב זמינים. נסה לרענן בהמשך.</p>'}</div></div></div>`;
+  return `<article class="shipment-entry ${unread?'is-new':''}" data-shipment-id="${esc(item.id)}">
    <div class="shipment-entry-top"><div><h3 class="shipment-entry-title">${esc(item.title||'משלוח')}</h3><div class="shipment-tracking-number" dir="ltr">${esc(item.number)}</div><div class="shipment-label">${cards.length} קלפים משויכים</div></div><span class="shipment-status">${esc(status)}</span></div>
    ${latestContent}
    <div class="shipment-actions-row">
@@ -57,6 +57,7 @@ function renderShipments(){
    ${timeline}
   </article>`;
  }).join(''):'<div class="shipment-empty">אין משלוחים עדיין. לחץ על ״+ משלוח״ כדי להוסיף מספר מעקב ולשייך אליו קלפים.</div>';
+ window.VintageStableDOM.reconcileHTML($('shipmentList'),markup,'data-shipment-id');
 }
 function openShipmentEditor(id=null){
  if(!ensureCloudEdit())return;
@@ -78,7 +79,8 @@ function renderShipmentPicker(){
   if(!query)return !!(state.wish[c.id]||state.owned[c.id]);
   return (c.name+' '+c.id+' '+cardNumber(c)+' '+(MAP.get(c.set)?.name||'')).toLowerCase().includes(query);
  }).sort((a,b)=>(Number(!!state.wish[b.id])-Number(!!state.wish[a.id]))||(Number(!!state.owned[b.id])-Number(!!state.owned[a.id]))).slice(0,18);
- $('shipmentCardResults').innerHTML=matches.length?matches.map(c=>`<button type="button" class="shipment-card-choice ${shipmentSelectedIds.has(c.id)?'selected':''}" data-ship-pick="${esc(c.id)}"><img src="${esc(c.image)}" alt="" loading="lazy"><span>${esc(c.name)}<small>${esc(MAP.get(c.set)?.name||'')} · #${esc(cardNumber(c))}</small></span><strong>${shipmentSelectedIds.has(c.id)?'✓':'+'}</strong></button>`).join(''):'<p class="shipment-label">חפש קלף בקטלוג כדי לשייך אותו.</p>';
+ const choicesMarkup=matches.length?matches.map(c=>`<button type="button" class="shipment-card-choice ${shipmentSelectedIds.has(c.id)?'selected':''}" data-ship-pick="${esc(c.id)}"><img src="${esc(c.image)}" alt="" loading="lazy"><span>${esc(c.name)}<small>${esc(MAP.get(c.set)?.name||'')} · #${esc(cardNumber(c))}</small></span><strong>${shipmentSelectedIds.has(c.id)?'✓':'+'}</strong></button>`).join(''):'<p class="shipment-label">חפש קלף בקטלוג כדי לשייך אותו.</p>';
+ window.VintageStableDOM.reconcileHTML($('shipmentCardResults'),choicesMarkup,'data-ship-pick');
 }
 function markShipmentRead(id){
  const item=state.shipments.find(x=>x.id===id),events=shipmentLive.get(id)?.events;

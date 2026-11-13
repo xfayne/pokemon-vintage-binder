@@ -48,7 +48,7 @@ function renderOwnedList(){
  $('ownedCount').textContent=own.length+' קלפים · '+own.filter(showHolo).length+' Holo / Shining';
  const q=searchKey($('ownedFind').value);
  const matched=own.filter(c=>!q||searchText(c).includes(q));
- $('ownedItems').innerHTML=matched.length?matched.map(c=>{
+ const markup=matched.length?matched.map(c=>{
   const inBinder=state.binderOrder.includes(c.id),condition=state.conditions[c.id]||'';
   const market=condition?window.VintageMarketPrices?.getOwnedPrice?.(c,MAP.get(c.set)?.name||'',condition,!!state.firstEdition[c.id]):null;
   const amount=typeof market==='number'?new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(market):'';
@@ -60,6 +60,7 @@ function renderOwnedList(){
       <span class="owned-condition">${esc(condition)}${state.firstEdition[c.id]?' · 1st':''}</span>
     </div>`:''}
   </article>`}).join(''):`<div class="no-cards">${own.length?'לא נמצאו קלפים מתאימים לחיפוש.':'עוד אין קלפים ברשימה. אפשר לסמן ״יש לי״ בקטלוג.'}</div>`;
+ window.VintageStableDOM.reconcileHTML($('ownedItems'),markup,'data-open-owned');
 }
 
 return {sortedOwnedCards,refreshOwned,renderOwnedList};

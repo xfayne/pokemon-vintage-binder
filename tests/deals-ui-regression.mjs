@@ -7,12 +7,16 @@ import { chromium } from 'playwright';
 // eBay network calls are replaced with deterministic item fixtures, never real bids.
 const fixtureHtml = '<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"></head><body>'+
   '<section id="dealsPage"><div class="collection-panel"><div class="collection-heading"><div><h2>🔎 מציאות</h2><div class="subtle">Wishlist deals</div></div></div></div></section>'+
-  '<script src="/deal-finder/live.js"></script></body></html>';
+  '<script src="/js/image-stable-dom.js"></script><script src="/deal-finder/live.js"></script></body></html>';
 const liveScript=readFileSync('deal-finder/live.js','utf8');
+const stableDomScript=readFileSync('js/image-stable-dom.js','utf8');
 const server=createServer((request,response)=>{
   if(request.url==='/'){
     response.writeHead(200,{'content-type':'text/html; charset=utf-8'});
     response.end(fixtureHtml);
+  }else if(request.url==='/js/image-stable-dom.js'){
+    response.writeHead(200,{'content-type':'text/javascript; charset=utf-8'});
+    response.end(stableDomScript);
   }else if(request.url==='/deal-finder/live.js'){
     response.writeHead(200,{'content-type':'text/javascript; charset=utf-8'});
     response.end(liveScript);
@@ -123,6 +127,10 @@ try{
   const keys=()=>page.locator('#liveListings select.live-item-grade')
     .evaluateAll(selects=>selects.map(select=>select.dataset.itemKey));
   const initial=await keys();
+  await page.evaluate(()=>{
+    window.__stableListingArticle=document.querySelector('[data-listing-key="item-0"]');
+    window.__stableListingPhoto=window.__stableListingArticle.querySelector('img');
+  });
   assert.equal(initial.length,40,'Expected first page of 40 deals');
   assert.equal(initial[0],'item-0','Cheapest listing should rank first in recommended view');
   assert.ok(!initial.some(key=>key.startsWith('case-')));
@@ -171,6 +179,9 @@ try{
   await page.waitForFunction(()=>document.querySelectorAll('#liveGalleryOverlay .live-gallery-defect-box').length>0);
   assert.equal(await page.locator('#liveGalleryOverlay .live-gallery-defect-box').count(),1);
   assert.equal(await page.locator('#liveListings article:has(select.live-item-grade[data-item-key="item-0"]) .live-single-grade').innerText().then(s=>s.includes('AI')),true);
+  assert.equal(await page.evaluate(()=>document.querySelector('[data-listing-key="item-0"]')===window.__stableListingArticle &&
+    document.querySelector('[data-listing-key="item-0"] img')===window.__stableListingPhoto),
+    true,'AI/price refresh remounted a listing card photo');
   await page.locator('#liveGalleryClose').click();
   assert.equal(await page.locator('#liveGallery').evaluate(el=>el.open),false);
   await page.locator('.live-image-open[data-image-key="item-0"]').click();
@@ -186,6 +197,9 @@ try{
   assert.deepEqual(after,initial,
     'Changing a grade must not reorder or hide the current listing');
   assert.equal(await page.locator('#liveListings select.live-item-grade').first().inputValue(),'DMG');
+  assert.equal(await page.evaluate(()=>document.querySelector('[data-listing-key="item-0"]')===window.__stableListingArticle &&
+    document.querySelector('[data-listing-key="item-0"] img')===window.__stableListingPhoto),
+    true,'Changing comparison condition remounted a listing photo');
   const cardText=await page.locator('#liveListings > article').first().innerText();
   assert.match(cardText,/מחירון DMG/,'Price comparison grade should update');
   assert.match(cardText,/\$5(?:\.00)?/,'Market price should use the selected grade');

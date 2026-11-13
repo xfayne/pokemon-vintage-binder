@@ -76,15 +76,17 @@ if (updated.includes('js/shipments.js')) {
     if (!updated.includes('js/collection-views.js')) {
       assert.equal(newBinder, oldBinder, 'Binder controller unexpectedly changed');
     }
-    assert.equal(source, execFileSync('git',['show','origin/main:js/shipments.js'], {encoding:'utf8'}),
-      'Shipment controller unexpectedly changed');
+    assert.ok(source.includes("window.VintageStableDOM.reconcileHTML($('shipmentList'),markup,'data-shipment-id')") &&
+      source.includes("window.VintageStableDOM.reconcileHTML($('shipmentCardResults'),choicesMarkup,'data-ship-pick')") &&
+      source.includes('shipment-timeline-region'),
+      'Shipment controller must preserve parcel photos and animate details');
   } else {
     // The original shipment extraction PR must reconstruct the old inlined code.
     assert.equal(newBinder.replace(call, () => extracted), oldBinder,
       'Shipment extraction changed any other binder behavior');
   }
-  const shipmentsTag = '<script src="js/shipments.js?v=20261109-ship1"></script>';
-  const binderTag = '<script src="js/binder.js?v=20261113-layout2"></script>';
+  const shipmentsTag = '<script src="js/shipments.js?v=20261113-audit1"></script>';
+  const binderTag = '<script src="js/binder.js?v=20261113-audit1"></script>';
   assert.ok(updated.indexOf(shipmentsTag) > 0 && updated.indexOf(shipmentsTag) < updated.indexOf(binderTag),
     'Shipment controller must be loaded before binder.js');
 }
@@ -133,7 +135,7 @@ if (updated.includes('js/collection-views.js')) {
       'The extracted collection renderer differs from old binder code');
   }
   const viewScript='<script src="js/collection-views.js?v=20261113-reorder1"></script>';
-  const binderScript='<script src="js/binder.js?v=20261113-layout2"></script>';
+  const binderScript='<script src="js/binder.js?v=20261113-audit1"></script>';
   assert.ok(updated.indexOf(viewScript)>0 && updated.indexOf(viewScript)<updated.indexOf(binderScript),
     'View renderer script must load before binder');
 }
@@ -149,14 +151,14 @@ if (updated.includes('js/owned-cards.js')) {
   assert.ok(i>=0&&j>i,'Owned-cards factory has unexpected boundaries');
   if (before.includes(call)) {
     // In later refactors the owned controller already exists in main.
-    assert.equal(module, execFileSync('git',['show','origin/main:js/owned-cards.js'],{encoding:'utf8'}),
-      'Previously extracted owned-cards controller changed');
+    assert.ok(module.includes("window.VintageStableDOM.reconcileHTML($('ownedItems'),markup,'data-open-owned')"),
+      'Owned cards must preserve photos across search and sort');
   } else {
     assert.equal(after.replace(call,()=>module.slice(i+begin.length,j)),before,
       'Owned-cards extraction changed binder logic beyond this exact block');
   }
-  const ownedTag='<script src="js/owned-cards.js?v=20261109-owned1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261113-layout2"></script>';
+  const ownedTag='<script src="js/owned-cards.js?v=20261113-audit1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261113-audit1"></script>';
   assert.ok(updated.indexOf(ownedTag)>0&&updated.indexOf(ownedTag)<updated.indexOf(binderTag),
     'Owned cards controller must load before binder');
 }
@@ -179,7 +181,7 @@ if (updated.includes('js/collection-drag.js')) {
       'Drag extraction modified unrelated collection logic or listeners');
   }
   const dragTag='<script src="js/collection-drag.js?v=20261109-drag1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261113-layout2"></script>';
+  const binderTag='<script src="js/binder.js?v=20261113-audit1"></script>';
   assert.ok(updated.indexOf(dragTag)>0&&updated.indexOf(dragTag)<updated.indexOf(binderTag),
     'Drag module must be available before the binder controller');
 }
@@ -213,7 +215,7 @@ if (updated.includes('js/collection-ordering.js')) {
     assert.equal(ordering,module,'Collection order implementation was changed during extraction');
   }
   const tag='<script src="js/collection-ordering.js?v=20261109-order1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261113-layout2"></script>';
+  const binderTag='<script src="js/binder.js?v=20261113-audit1"></script>';
   assert.ok(updated.indexOf(tag)>0&&updated.indexOf(tag)<updated.indexOf(binderTag),
     'Collection order module must load before binder');
 }
@@ -242,7 +244,7 @@ if(updated.includes('js/card-actions.js')){
       'Extracted card action function bodies changed unexpectedly');
   }
   const actionTag='<script src="js/card-actions.js?v=20261113-ux-flow1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261113-layout2"></script>';
+  const binderTag='<script src="js/binder.js?v=20261113-audit1"></script>';
   assert.ok(updated.indexOf(actionTag)>0&&updated.indexOf(actionTag)<updated.indexOf(binderTag),
     'Card actions script must load before binder');
 }
@@ -268,7 +270,7 @@ if(updated.includes('js/card-details.js')){
     assert.equal(modal,expected,'Card details dialog markup or handlers changed');
   }
   const modalTag='<script src="js/card-details.js?v=20261113-nav-owned1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261113-layout2"></script>';
+  const binderTag='<script src="js/binder.js?v=20261113-audit1"></script>';
   assert.ok(updated.indexOf(modalTag)>0&&updated.indexOf(modalTag)<updated.indexOf(binderTag),
     'Details module must load before binder');
 }
@@ -295,7 +297,7 @@ if(updated.includes('js/catalog-ui.js')){
     assert.equal(movedModule,expected,'Catalog UI function bodies changed');
   }
   const uiTag='<script src="js/catalog-ui.js?v=20261113-layout2"></script>';
-  const binderTag='<script src="js/binder.js?v=20261113-layout2"></script>';
+  const binderTag='<script src="js/binder.js?v=20261113-audit1"></script>';
   assert.ok(updated.indexOf(uiTag)>0&&updated.indexOf(uiTag)<updated.indexOf(binderTag),
     'Catalog UI must load before binder app');
 }
@@ -326,7 +328,7 @@ if(updated.includes('js/catalog-loader.js')){
     assert.equal(loader,expectedModule,'Offline dataset decoder or bootstrap logic changed');
   }
   const loaderTag='<script src="js/catalog-loader.js?v=20261110-loader1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261113-layout2"></script>';
+  const binderTag='<script src="js/binder.js?v=20261113-audit1"></script>';
   assert.ok(updated.indexOf(loaderTag)>0&&updated.indexOf(loaderTag)<updated.indexOf(binderTag),
     'Catalog loader must load before binder entrypoint');
 }
@@ -335,7 +337,7 @@ if(updated.includes('js/collection-state.js')){
   const module=readFileSync('js/collection-state.js','utf8');
   assert.ok(module.includes('window.VintageCollectionState={create('),'Missing collection-state factory');
   const stateTag='<script src="js/collection-state.js?v=20261113-layout2"></script>';
-  const binderTag='<script src="js/binder.js?v=20261113-layout2"></script>';
+  const binderTag='<script src="js/binder.js?v=20261113-audit1"></script>';
   assert.ok(updated.indexOf(stateTag)>0 && updated.indexOf(stateTag)<updated.indexOf(binderTag),
     'Collection state must load before binder');
   assert.ok(readFileSync('js/binder.js','utf8').includes('window.VintageCollectionState.create('),
@@ -370,7 +372,7 @@ if(updated.includes('js/collection-backup.js')){
   const factory='const {backup,copyWishlist,exportCSV,importBackup}=window.VintageCollectionBackup.create({state,MAP,cardNumber,toast,getProgress,normalizeOrders:()=>normalizeOrders(),sortedOwnedCards:()=>sortedOwnedCards(),ensureCloudEdit,save,renderAll,normalizeShipment});\n';
   const start=before.indexOf('function download(content,type,filename){');
   const backupTag='<script src="js/collection-backup.js?v=20261110-backup1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261113-layout2"></script>';
+  const binderTag='<script src="js/binder.js?v=20261113-audit1"></script>';
   assert.ok(updated.indexOf(backupTag)>0&&updated.indexOf(backupTag)<updated.indexOf(binderTag),
     'Backup controller must be loaded before binder');
   assert.ok(after.includes(factory),'Binder backup factory is not wired');
@@ -1202,8 +1204,37 @@ async function exercise(version, viewport) {
     assert.equal(binderUi.openedFromCard, true, 'Move action must open the placement panel');
     assert.ok(binderUi.bookGap < 50, 'Unexpected blank area before binder book');
   }
+  // Binder result selection and live filtering must preserve result photos.
+  if(version==='updated'){
+    const pickerIdentity=await page.evaluate(()=>{
+      window.VintageBinder.adoptProgress({
+        owned:{'base1-1':true,'base1-2':true},
+        wish:{'base2-3':true},
+        binderOrder:['base1-1','base1-2','base2-3']
+      });
+      document.querySelector('[data-view-btn="binder"]').click();
+      const input=document.querySelector('#binderFind');
+      input.value='a';input.dispatchEvent(new Event('input',{bubbles:true}));
+      const options=[...document.querySelectorAll('#binderMatches [data-pick-binder]')];
+      if(options.length<2)throw Error('Binder picker fixtures missing');
+      const photos=new Map(options.map(button=>[button.dataset.pickBinder,button.querySelector('img')]));
+      options[0].click();options[1].click();
+      const after=[...document.querySelectorAll('#binderMatches [data-pick-binder]')];
+      const selected=after.filter(el=>el.getAttribute('aria-selected')==='true');
+      const preserved=after.every(el=>photos.get(el.dataset.pickBinder)===el.querySelector('img'));
+      input.value='alaka';input.dispatchEvent(new Event('input',{bubbles:true}));
+      const retained=[...document.querySelectorAll('#binderMatches [data-pick-binder]')].every(
+        el=>photos.get(el.dataset.pickBinder)===el.querySelector('img'));
+      return {preserved,retained,selected:selected.map(el=>el.dataset.pickBinder),
+        expected:options[1].dataset.pickBinder};
+    });
+    assert.equal(pickerIdentity.preserved,true,'Binder selection remounted result photos');
+    assert.equal(pickerIdentity.retained,true,'Binder filtering remounted unchanged result photos');
+    assert.deepEqual(pickerIdentity.selected,[pickerIdentity.expected],
+      'Binder selection highlight was not updated');
+  }
   // Shipment controller: ownership rendering and edit form must remain identical.
-  const shipmentState = await page.evaluate(() => {
+  const shipmentState = await page.evaluate(async isUpdated => {
     window.VintageBinder.adoptProgress({shipments: [
       {id:'shipment_demo_01', number:'RR123456789IL', title:'בדיקת משלוח',
        cardIds:['base1-1','base2-3'], seenEventIds:[], initialized:true, carrier:0},
@@ -1213,14 +1244,49 @@ async function exercise(version, viewport) {
     document.querySelector('[data-view-btn="shipments"]').click();
     const before = {
       shipments: document.querySelectorAll('.shipment-entry').length,
-      list: document.querySelector('#shipmentList').innerHTML,
+      list: [...document.querySelectorAll('#shipmentList .shipment-entry')].map(row=>({
+         title:row.querySelector('.shipment-entry-title')?.textContent,
+         number:row.querySelector('.shipment-tracking-number')?.textContent,
+         cardImages:row.querySelectorAll('.shipment-card-images img').length
+       })),
       unread: document.querySelector('#shipmentUnreadTab').textContent,
       badgeHidden: document.querySelector('#shipmentUnreadTab').hidden,
       items: window.VintageBinder.getProgress().shipments.map(x=>({id:x.id,number:x.number,cardIds:x.cardIds}))
     };
+    if(isUpdated){
+      const first=document.querySelector('[data-shipment-id="shipment_demo_01"]');
+      const img=first.querySelector('.shipment-card-images img');
+      const timeline=first.querySelector('.shipment-timeline-region');
+      if(!timeline||timeline.classList.contains('is-expanded'))
+        throw Error('Shipment timeline should start collapsed');
+      first.querySelector('[data-ship-open]').click();
+      const opening=timeline.classList.contains('is-expanded');
+      await new Promise(resolve=>setTimeout(resolve,130));
+      const intermediate=timeline.getBoundingClientRect().height;
+      await new Promise(resolve=>setTimeout(resolve,300));
+      const full=timeline.getBoundingClientRect().height;
+      const imageStable=first.querySelector('.shipment-card-images img')===img;
+      first.querySelector('[data-ship-open]').click();
+      await new Promise(resolve=>setTimeout(resolve,350));
+      if(!opening||!(intermediate>0&&intermediate<full)||!imageStable||
+         timeline.getBoundingClientRect().height>1)
+        throw Error('Shipment details did not animate while retaining photos');
+    }
     // Stub ONLY the edit authorization; no real account or network calls.
     window.VintageCloud = {canEdit:()=>true, onChange:()=>{}};
+    const beforeEditPhoto=document.querySelector('[data-shipment-id="shipment_demo_01"] .shipment-card-images img');
     document.querySelector('[data-ship-edit="shipment_demo_01"]').click();
+    if(isUpdated){
+      const option=document.querySelector('#shipmentCardResults [data-ship-pick="base1-1"]');
+      if(!option)throw Error('Shipment editor choice fixture missing');
+      const photo=option.querySelector('img');
+      const selectedBefore=option.classList.contains('selected');
+      option.click();
+      const after=document.querySelector('#shipmentCardResults [data-ship-pick="base1-1"]');
+      if(after.querySelector('img')!==photo||after.classList.contains('selected')===selectedBefore)
+        throw Error('Shipment picker selection remounted its photo');
+      after.click();
+    }
     const editor = {
       open: document.querySelector('#shipmentDialog').open,
       number: document.querySelector('#shipmentNumber').value,
@@ -1229,12 +1295,14 @@ async function exercise(version, viewport) {
     };
     document.querySelector('#shipmentName').value = 'שם מעודכן';
     document.querySelector('#shipmentForm').requestSubmit();
+    if(isUpdated&&document.querySelector('[data-shipment-id="shipment_demo_01"] .shipment-card-images img')!==beforeEditPhoto)
+      throw Error('Editing shipment remounted an unchanged thumbnail');
     return {
       before, editor,
       afterName: window.VintageBinder.getProgress().shipments.find(x=>x.id==='shipment_demo_01')?.title,
       afterEntries: document.querySelectorAll('.shipment-entry').length
     };
-  });
+  },version==='updated');
   if (version === 'updated' && updated.includes('js/shipments.js')) {
     assert.ok(fetched.some(item => item.file === 'shipments.js' && item.status === 200),
       'Shipment controller did not load');

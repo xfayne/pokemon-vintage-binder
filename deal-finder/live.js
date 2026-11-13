@@ -220,7 +220,7 @@
   $('liveCount').textContent='מציג '+Math.min(state.visibleCount,enriched.length)+' מתוך '+enriched.length+' מודעות · '+strongCount+' התאמות חזקות · '+reviewCount+' דורשות אימות'+(activeFilters?' · סינון פעיל':'');
   $('liveShowMore').hidden=enriched.length<=state.visibleCount;
   $('liveShowMore').textContent='הצג עוד מודעות ('+Math.min(PAGE_SIZE,enriched.length-state.visibleCount)+' מתוך '+(enriched.length-state.visibleCount)+')';
-  $('liveListings').innerHTML=enriched.length?enriched.slice(0,state.visibleCount).map(({item,card,score})=>{
+  const listingMarkup=enriched.length?enriched.slice(0,state.visibleCount).map(({item,card,score})=>{
    const verified=score.verification.status==='strong';
    const grade=score.gradeInfo.grade, pct=!verified||score.difference===null?null:Math.round(Math.abs(score.difference)*100);
    const discountText=!verified?'לא מוצגת הנחה עד לאימות הקלף':pct===null?'מחירון לא זמין':
@@ -244,7 +244,7 @@
    const warnings=score.warnings.length?'<div class="live-flags">'+score.warnings.slice(0,3).map(x=>'<span>'+escape(x)+'</span>').join('')+'</div>':'';
      const image=item.image?'<button type="button" class="live-image-open" data-image-key="'+escape(key)+'" title="פתח את תמונות המודעה" aria-label="פתח גלריית תמונות עבור '+escape(item.title)+'"><img src="'+escape(item.image)+'" alt="" loading="lazy" decoding="async"></button>':'<div class="live-no-image">✦</div>';
    const name=card?card.name+' · '+card.setName:'קלף לא מזוהה';
-   return '<article class="live-item" role="listitem"><div class="live-card-main">'+image+
+   return '<article class="live-item" role="listitem" data-listing-key="'+escape(key)+'"><div class="live-card-main">'+image+
     '<div class="live-card-text"><small>'+escape(name)+'</small><strong>'+escape(item.title)+'</strong>'+
     '<span>'+escape(sourceLabel)+' · '+escape(item.marketplace)+' · '+(isFixed?'מחיר קבוע':(item.bidCount===null?'מספר הצעות לא זמין':item.bidCount+' הצעות'))+' · '+escape(endLabel)+'</span>'+
     '<span>מוכר: '+escape(item.sellerName||'לא ידוע')+(item.sellerFeedback!==null?' · '+escape(item.sellerFeedback)+'% חיובי':'')+'</span>'+offer+'</div>'+tier+'</div>'+
@@ -264,6 +264,7 @@
     '<a href="'+escape(item.url)+'" target="_blank" rel="noopener noreferrer">למודעה ב־eBay ↗</a></div></article>';
   }).join(''):state.status==='ready'&&!state.loading?
    '<div class="live-empty">'+(state.items.length?'אין מודעות שתואמות לפילטרים. לחץ על איפוס סינון.':state.done?'לא נמצאו מודעות תואמות בקלפים שנבדקו. נסה לסרוק מחדש.':'עדיין לא נמצאו מודעות תואמות.')+'</div>':'';
+  window.VintageStableDOM.reconcileHTML($('liveListings'),listingMarkup,'data-listing-key');
   warmCachedAnalyses();
  }
 
