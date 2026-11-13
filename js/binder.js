@@ -91,14 +91,18 @@ function openPageMoveDialog(){
  if(!ensureCloudEdit())return;
  const count=binderPageCount();if(count<2)return;
  $('binderMovePageCurrent').textContent='עמוד '+(state.binderPage+1)+' מתוך '+count;
- const input=$('binderMovePagePosition');input.min='1';input.max=String(count);
- input.value=String(state.binderPage+1);
+ for(const name of ['binderMovePageSource','binderMovePagePosition']){
+  const input=$(name);input.min='1';input.max=String(count);input.value=String(state.binderPage+1);
+ }
  $('binderMovePageDialog').showModal();
 }
 function applyPageMove(){
- const input=$('binderMovePagePosition'),target=Number(input.value),from=state.binderPage+1;
- if(!input.value||!Number.isInteger(target)||target<1||target>binderPageCount()){
-  input.reportValidity();input.focus();return;
+ const source=$('binderMovePageSource'),input=$('binderMovePagePosition');
+ const from=Number(source.value),target=Number(input.value),count=binderPageCount();
+ for(const [el,value] of [[source,from],[input,target]]){
+  if(!el.value||!Number.isInteger(value)||value<1||value>count){
+   el.reportValidity();el.focus();return;
+  }
  }
  const changed=movePage(from,target);
  $('binderMovePageDialog').close();
@@ -252,7 +256,8 @@ function attachCollections(){
  $('binderMovePage').onclick=openPageMoveDialog;
  $('binderMovePageConfirm').onclick=applyPageMove;
  $('binderMovePageCancel').onclick=()=>$('binderMovePageDialog').close();
- $('binderMovePagePosition').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();applyPageMove();}});
+ for(const name of ['binderMovePageSource','binderMovePagePosition'])
+  $(name).addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();applyPageMove();}});
  $('binderManagePockets').onclick=openPocketDialog;
  $('binderPocketPosition').addEventListener('change',updatePocketDialog);
  $('binderPocketMark').onclick=()=>applyPocketChange(false);
