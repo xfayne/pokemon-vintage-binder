@@ -1280,14 +1280,15 @@ async function exercise(version, viewport) {
       // Shipment-linked cards need not also be Owned or Wishlist; search the
       // full offline catalog so the deterministic fixture is available.
       const pickerSearch=document.querySelector('#shipmentCardSearch');
-      pickerSearch.value='Alakazam';
+      pickerSearch.value='Chansey';
       pickerSearch.dispatchEvent(new Event('input',{bubbles:true}));
-      const option=document.querySelector('#shipmentCardResults [data-ship-pick="base1-1"]');
+      // Toggle an unassigned card so the original chip ordering is unchanged.
+      const option=document.querySelector('#shipmentCardResults [data-ship-pick="base1-3"]');
       if(!option)throw Error('Shipment editor choice fixture missing');
       const photo=option.querySelector('img');
       const selectedBefore=option.classList.contains('selected');
       option.click();
-      const after=document.querySelector('#shipmentCardResults [data-ship-pick="base1-1"]');
+      const after=document.querySelector('#shipmentCardResults [data-ship-pick="base1-3"]');
       if(after.querySelector('img')!==photo||after.classList.contains('selected')===selectedBefore)
         throw Error('Shipment picker selection remounted its photo');
       after.click();
