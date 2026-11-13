@@ -37,7 +37,7 @@ let catalogPromise=null,requestId=0;
 const esc=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const nameKey=s=>String(s??'').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/♀/g,'f').replace(/♂/g,'m').replace(/[^a-z0-9]/g,'');
 const numKey=s=>String(s??'').replace(/^#/,'').split('/')[0].replace(/[^0-9]/g,'').replace(/^0+(?=\d)/,'');
-const usd=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n);
+const usd=n=>window.VintageCurrency.format(n,'USD');
 async function getJSON(path){
  const ac=new AbortController(),timer=setTimeout(()=>ac.abort(),13000);
  try{const r=await fetch(path,{signal:ac.signal});if(!r.ok)throw Error('HTTP '+r.status);return await r.json();}
