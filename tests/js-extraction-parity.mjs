@@ -212,10 +212,11 @@ if(updated.includes('js/card-actions.js')){
   const last=baseline.indexOf('function showModal(id){',first);
   const call='const {toggleOwned,removeWish,toggleWish,updatePurchasePrice}=window.VintageCardActions.create({state,$,ensureCloudEdit,normalizeOrders:()=>normalizeOrders(),save,renderAll,toast,showModal:id=>showModal(id)});\n';
   if (baseline.includes(call)) {
-    // This module is already on main, so later refactors may legitimately
-    // modify binder.js without changing its extracted card actions.
-    assert.equal(actions,execFileSync('git',['show','origin/main:js/card-actions.js'],
-      {encoding:'utf8'}),'Previously extracted card actions module changed');
+    // The action module now patches a single catalog card; preserve the cloud
+    // tombstone and immediate-save contracts instead of enforcing byte parity.
+    assert.ok(actions.includes("state.removedWish[id]=Date.now()") &&
+      actions.includes("save(true);refreshCard(id)"),
+      'Card actions must retain cloud tombstones and single-card updates');
   } else {
     assert.ok(first>=0&&last>first,'Card actions source anchors missing');
     const moved=baseline.slice(first,last);
@@ -683,7 +684,7 @@ async function exercise(version, viewport) {
   }
   // Actual collection-card clicks (no real Google session). Verify bidirectional
   // exclusivity, tombstone persistence, purchase amount and currency editing.
-  const cardActionState=await page.evaluate(()=>{
+  const cardActionState=await page.evaluate(isUpdated=>{
     const saved=[];
     window.VintageCloud={canEdit:()=>true,onChange:args=>saved.push(!!args?.immediate)};
     window.VintageBinder.adoptProgress({
@@ -699,7 +700,10 @@ async function exercise(version, viewport) {
       if(!node)throw Error('Missing card action '+selector);
       node.click();
     };
+    const stableCard=document.querySelector('#cards [data-id="base1-1"]');
     click('[data-own="base1-1"]');
+    if(isUpdated&&document.querySelector('#cards [data-id="base1-1"]')!==stableCard)
+      throw Error('Ownership tap rebuilt the visible catalog card');
     const afterOwned=window.VintageBinder.getProgress();
     click('[data-own="base1-1"]');
     const afterRemove=window.VintageBinder.getProgress();
@@ -733,7 +737,7 @@ async function exercise(version, viewport) {
       cleared:afterPurchaseClear.purchasePrices['base1-1']??null,
       immediateSaves:saved.filter(Boolean).length
     };
-  });
+  },version==='updated');
   assert.equal(cardActionState.afterOwned.owned,true,'Add-to-owned failed');
   assert.equal(cardActionState.afterOwned.wish,false,'Owned/Wishlist exclusivity failed');
   assert.equal(cardActionState.afterOwned.tombstone,true,'Wishlist removal tombstone missing');
@@ -755,7 +759,7 @@ async function exercise(version, viewport) {
   }
   // Exercise card details interactions with real DOM handlers and in-memory
   // cloud authorization: condition, 1st edition, owned->wishlist and move to binder.
-  const detailState=await page.evaluate(()=>{
+  const detailState=await page.evaluate(isUpdated=>{
     window.VintageCloud={canEdit:()=>true,onChange:()=>{}};
     window.VintageBinder.adoptProgress({owned:{'base1-1':true}});
     document.querySelector('[data-view-btn="catalog"]').click();
@@ -782,7 +786,10 @@ async function exercise(version, viewport) {
     edition.checked=true;
     edition.dispatchEvent(new Event('change',{bubbles:true}));
     const afterMeta=window.VintageBinder.getProgress();
+    const samePhoto=details.querySelector('.modal-img');
     document.querySelector('#modalOwned').click();
+    if(isUpdated&&details.querySelector('.modal-img')!==samePhoto)
+      throw Error('Ownership tap rebuilt the open card photo');
     const afterOwnedOff={
       owned:!!window.VintageBinder.getProgress().owned['base1-1'],
       wishActionVisible:!!document.querySelector('#modalWish'),
@@ -807,7 +814,7 @@ async function exercise(version, viewport) {
       firstEdition:!!afterMeta.firstEdition['base1-1'],
       afterOwnedOff,afterWish,afterMove
     };
-  });
+  },version==='updated');
   assert.equal(detailState.opening.open,true,'Details modal failed to open');
   assert.equal(detailState.opening.dealsButton,true,'Scoped Deals button must exist in both the existing main UI and PR UI');
   delete detailState.opening.dealsButton;
