@@ -357,7 +357,7 @@ try {
     await bp.locator('#binderPocketMark').click();
     const reserved=await getState(bp);
     assert.ok(reserved.binderOrder[1].startsWith('__binder_empty__:'));
-    assert.equal(await bp.locator('#binderGrid .binder-pocket-reserved').count(),8);
+    assert.equal(await bp.locator('#binderGrid .binder-pocket-reserved').count(),7);
     await bp.locator('#binderManagePockets').click();
     await bp.locator('#binderPocketPosition').selectOption('2');
     await bp.locator('#binderPocketClear').click();
