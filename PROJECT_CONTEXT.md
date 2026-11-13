@@ -79,6 +79,13 @@ Collector preference: English vintage Unlimited, ungraded/raw cards; prioritize 
 - Binder placement selection only changes selected classes and `aria-selected` on existing suggestions, never regenerating their images. Shipment tracking expands a persistent timeline inside a grid-height disclosure, keeping parcel rows and card thumbnails mounted while status/read counters change. Reduced-motion respects user preference.
 - Regression tests cover selected/remaining image-node identity in binder search, shipment refresh/details, editor picker, owned filtering and Deals recomputations. No Firestore schema/Worker changes or production user-data mutation.
 
+## Binder page relocation and reserved empty pockets (2026-11-13)
+- The owner-only 3×3 binder editor can move the entire displayed page to any other page number. Pages are reordered as nine-pocket blocks; a partially filled final page is padded with reserved empty pockets whenever it moves before another page.
+- An explicit empty pocket is persisted as a unique `__binder_empty__:<uuid>` string in the existing `binderOrder` array. Older collections/backups without markers remain unchanged; Firestore data shape and security rules do not need a migration. Normalization keeps marker entries while filtering invalid card IDs; tab counts still count only actual cards.
+- The compact page controls open mobile-friendly number/slot dialogs. Reserving a pocket inserts a gap (shifting following cards), while removing a reserved gap closes it. Moving a card into an existing reserved pocket swaps the gap to its previous position.
+- Share documents keep pocket positions: the existing share-snapshot mapper converts reserved markers into `null` slots for the read-only viewer. No live user Firestore records are changed in tests. Tests cover page relocation, incomplete last pages, gap persistence and mocked authenticated mobile flows.
+- Cloudflare Worker and public-reader schema are unchanged.
+
 ## Open questions / backlog
 - The remaining `js/binder.js` IIFE coordinates UI modules; state/hydration, cloud-save notification, JSON backup/import, CSV and clipboard export have moved into `js/collection-state.js` and `js/collection-backup.js`; Firestore schema, Google login and persistence continue to live in `js/firebase-cloud.js`. Further decomposition should keep these interfaces stable and remain test-driven.
 
