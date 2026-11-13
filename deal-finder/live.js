@@ -200,7 +200,17 @@
     return true;
    });
   const trustFirst=(a,b)=>(a.score.verification.status==='strong'?0:1)-(b.score.verification.status==='strong'?0:1);
-  if(sort==='recommended')enriched.sort((a,b)=>trustFirst(a,b)||a.score.group-b.score.group||b.score.score-a.score.score||b.item.matchConfidence-a.item.matchConfidence);
+  if(sort==='recommended')enriched.sort((a,b)=>{
+   const trust=trustFirst(a,b),group=a.score.group-b.score.group;
+   if(trust||group)return trust||group;
+   // Both offers are above the market price: rank the smaller overpayment first.
+   // Do not let auction urgency or Buy It Now bonuses outrank the actual gap.
+   if(a.score.group===4){
+    const overpayment=(b.score.discount??-Infinity)-(a.score.discount??-Infinity);
+    if(overpayment)return overpayment;
+   }
+   return b.score.score-a.score.score||b.item.matchConfidence-a.item.matchConfidence;
+  });
   if(sort==='discount')enriched.sort((a,b)=>trustFirst(a,b)||(b.score.discount??-999)-(a.score.discount??-999)||b.item.matchConfidence-a.item.matchConfidence);
   if(sort==='closing')enriched.sort((a,b)=>{
    const at=a.item.format==='AUCTION'?new Date(a.item.endTime).getTime():Infinity;
@@ -221,6 +231,9 @@
   if(state.preserveGradeOrder){
    const positions=new Map(state.lastRenderedOrder.map((key,index)=>[key,index]));
    enriched.sort((a,b)=>(positions.get(keyFor(a.item))??Infinity)-(positions.get(keyFor(b.item))??Infinity)||0);
+   // Preserve order for this single grade/AI interaction, not for every future
+   // re-render (currency changes, new prices and more listings must re-rank).
+   state.preserveGradeOrder=false;
   }
   state.lastRenderedOrder=enriched.map(({item})=>keyFor(item));
   const strongCount=enriched.filter(x=>x.score.verification.status==='strong').length;
