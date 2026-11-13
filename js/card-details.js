@@ -5,8 +5,9 @@ function syncModalActions(id){
  const owned=!!state.owned[id],wished=!!state.wish[id];
  const ownButton=$('modalOwned');
  if(!ownButton)return;
- ownButton.classList.toggle('primary',!owned);
- ownButton.textContent=owned?'✓ יש לי — הסר':'✓ יש לי';
+ ownButton.classList.toggle('primary',owned);
+ ownButton.setAttribute('aria-pressed',String(owned));
+ ownButton.textContent=owned?'✓ יש לי — הסר':'＋ יש לי';
  ownButton.onclick=()=>{toggleOwned(id);syncModalActions(id);};
  let wishButton=$('modalWish');
  if(owned){wishButton?.remove();}
@@ -42,7 +43,7 @@ function syncModalActions(id){
 }
 function showModal(id){const c=state.cards.find(c=>c.id===id);if(!c)return;const s=MAP.get(c.set);$('modalContent').innerHTML=`<div class="modal-main"><div class="modal-photo-column"><div class="modal-media"><img class="modal-img" src="${esc(c.large)}" alt="${esc(c.name)}" decoding="async" fetchpriority="high"><span class="modal-photo-fallback" aria-hidden="true">✦</span></div></div><div class="modal-data"><div class="modal-meta-row"><span class="modal-set-name">${esc(s.name)} · ${s.year}</span><span class="modal-card-number card-sub">#${esc(cardNumber(c))}</span>${rarityHtml(c)}</div>
 <div class="modal-title-row"><h3>${esc(c.name)}</h3><div class="modal-collection-actions">
- <button type="button" class="btn ${state.owned[c.id]?'':'primary'}" id="modalOwned">${state.owned[c.id]?'✓ יש לי — הסר':'✓ יש לי'}</button>
+ <button type="button" class="btn ${state.owned[c.id]?'primary':''}" id="modalOwned" aria-pressed="${!!state.owned[c.id]}">${state.owned[c.id]?'✓ יש לי — הסר':'＋ יש לי'}</button>
  ${!state.owned[c.id]?`<button type="button" class="btn" id="modalWish">${state.wish[c.id]?'★ Wishlist':'☆ Wishlist'}</button>`:''}
 </div></div><div class="modal-own-row">
  ${state.owned[c.id]||state.wish[c.id]?`<button type="button" class="btn" id="modalMove">${state.binderOrder.includes(c.id)?'📍 העבר':'＋ לבינדר'}</button>`:''}
