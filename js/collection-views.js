@@ -13,7 +13,7 @@ function renderCollections({skipHidden=false}={}){if(!state.ready)return;normali
  const list=binderVisible();const pageCount=Math.max(1,Math.ceil(list.length/9));state.binderPage=Math.min(Math.max(0,state.binderPage),pageCount-1);
  const cardLookup=new Map(state.cards.map(c=>[c.id,c]));
  const binderMarkup=Array.from({length:9},(_,slot)=>{const idx=state.binderPage*9+slot,id=list[idx];if(!id)return `<div class="binder-pocket empty" aria-label="כיס ריק"></div>`;
- if(isEmptyPocket(id))return `<div class="binder-pocket empty binder-pocket-reserved" aria-label="כיס ${slot+1} שמור כריק"><span>כיס שמור כריק</span></div>`;
+ if(isEmptyPocket(id))return `<div class="binder-pocket empty binder-pocket-reserved" aria-label="כיס ${slot+1} שמור כריק"><span>כיס ריק</span><button type="button" data-binder-clear-empty="${idx}" aria-label="בטל רווח בכיס ${slot+1}">✕ בטל רווח</button></div>`;
  const c=cardLookup.get(id);if(!c)return '<div class="binder-pocket empty"></div>';
  const owned=!!state.owned[id],muted=!owned&&!state.binderIncludeWish;
  return `<article class="binder-pocket ${owned?'':'wish'} ${muted?'wish-muted':''}" role="listitem" data-order-kind="binder" data-order-index="${idx}" data-card-id="${esc(id)}">

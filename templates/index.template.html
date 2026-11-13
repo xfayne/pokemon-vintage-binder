@@ -41,7 +41,7 @@
 @media(max-width:650px){.static-img{height:121px;}}
 
 </style></noscript>
-<link rel="stylesheet" href="css/app.css?v=20261113-binder-pages1">
+<link rel="stylesheet" href="css/app.css?v=20261113-inline-empty1">
 <link rel="stylesheet" href="deal-finder/live.css?v=20261113-deals-sort1">
 </head>
 <body>
@@ -113,8 +113,9 @@
     <details class="binder-place" aria-label="העברת קלף למיקום בבינדר">
       <summary class="binder-place-title">📖 העברת קלף למיקום בבינדר</summary>
       <div class="binder-place-body">
-      <div class="binder-place-hint">חפש אותו כאן, ואז בחר עמוד וכיס (1–9). הקלפים האחרים יזוזו מקום אחד — שום קלף לא יימחק.</div>
+      <div class="binder-place-hint">בחר קלף או כיס ריק, ואז עמוד וכיס (1–9). הקלפים האחרים יזוזו בהתאם.</div>
       <input id="binderFind" class="binder-place-search" type="search" placeholder="חפש קלף שיש לך או ברשימת המשאלות..." autocomplete="off" aria-label="חיפוש קלף בבינדר">
+      <button id="binderSelectEmpty" type="button" class="binder-empty-choice" aria-pressed="false">＋ כיס ריק</button>
       <div id="binderMatches" class="binder-matches" role="listbox" aria-label="תוצאות חיפוש בבינדר"></div>
       <div id="binderSelected" class="binder-selected" role="status"></div>
       <div class="binder-place-targets">
@@ -127,7 +128,7 @@
     <div id="binderEmpty" class="no-cards" hidden>הבינדר שלך עדיין ריק. אפשר להוסיף קלפים מהקטלוג, מרשימת המשאלות או מלשונית ״הקלפים שלי״. <button class="btn sm primary" type="button" data-view-btn="catalog">לקטלוג</button></div>
     <div class="binder-book" id="binderBook"><div class="binder-grid" id="binderGrid" role="list" aria-label="תשעת הקלפים בעמוד"></div></div>
     <div class="pager" id="binderPager"><button type="button" id="binderPrev">❮ עמוד קודם</button><span id="binderPageLabel"></span><button type="button" id="binderNext">עמוד הבא ❯</button></div>
-    <div class="binder-page-tools" id="binderPageTools" hidden><button type="button" class="btn sm" id="binderMovePage">↗ העבר עמוד</button><button type="button" class="btn sm" id="binderManagePockets">▦ ניהול כיסים ריקים</button></div>
+    <div class="binder-page-tools" id="binderPageTools" hidden><button type="button" class="btn sm" id="binderMovePage">↗ העבר עמוד</button></div>
     <div class="subtle" style="margin-top:13px">הקלפים שבבעלותך מסומנים בירוק. כאשר מסתירים משאלות הן נשארות כצללית חלשה באותו הכיס — בלי לשנות את סדר הבינדר.</div>
   </div>
 </section>
@@ -220,18 +221,6 @@
  <div class="wish-move-actions"><button type="button" class="btn primary" id="binderMovePageConfirm">העבר עמוד</button></div>
  <button type="button" class="wish-move-cancel" id="binderMovePageCancel">ביטול</button>
 </dialog>
-<dialog id="binderPocketDialog" class="wish-move-dialog binder-pocket-dialog" aria-labelledby="binderPocketTitle">
- <h3 id="binderPocketTitle">ניהול כיסים ריקים</h3>
- <p class="wish-move-summary" id="binderPocketPage"></p>
- <label for="binderPocketPosition">בחר כיס בעמוד</label>
- <select id="binderPocketPosition" aria-label="מספר הכיס"><option value="1">כיס 1</option><option value="2">כיס 2</option><option value="3">כיס 3</option><option value="4">כיס 4</option><option value="5">כיס 5</option><option value="6">כיס 6</option><option value="7">כיס 7</option><option value="8">כיס 8</option><option value="9">כיס 9</option></select>
- <p class="binder-pocket-status" id="binderPocketStatus"></p>
- <div class="wish-move-actions">
-  <button type="button" class="btn primary" id="binderPocketMark">השאר כיס ריק</button>
-  <button type="button" class="btn" id="binderPocketClear">בטל כיס ריק</button>
- </div>
- <button type="button" class="wish-move-cancel" id="binderPocketCancel">ביטול</button>
-</dialog>
 <dialog id="wishMoveDialog" class="wish-move-dialog" aria-labelledby="wishMoveTitle">
  <h3 id="wishMoveTitle">העברת קלף ברשימת המשאלות</h3>
  <p id="wishMoveCurrent" class="wish-move-summary"></p>
@@ -302,7 +291,7 @@
 <script src="js/currency.js?v=20261113-deals-sort1"></script>
 <script src="js/image-stable-dom.js?v=20261113-audit1"></script>
 <script src="js/shipments.js?v=20261113-audit1"></script>
-<script src="js/collection-views.js?v=20261113-binder-pages1"></script>
+<script src="js/collection-views.js?v=20261113-inline-empty1"></script>
 <script src="js/owned-cards.js?v=20261113-currency1"></script>
 <script src="js/collection-drag.js?v=20261109-drag1"></script>
 <script src="js/collection-ordering.js?v=20261113-binder-pages1"></script>
@@ -313,7 +302,7 @@
 <script src="js/collection-state.js?v=20261113-layout2"></script>
 <script src="js/collection-backup.js?v=20261110-backup1"></script>
 <script src="js/smooth-details.js?v=20261113-layout2"></script>
-<script src="js/binder.js?v=20261113-binder-pages1"></script>
+<script src="js/binder.js?v=20261113-inline-empty1"></script>
 
 
 <script src="js/market-prices.js?v=20261113-currency1"></script>

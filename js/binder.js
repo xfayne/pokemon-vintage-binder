@@ -51,6 +51,7 @@ const {showModal}=window.VintageCardDetails.create({state,MAP,$,esc,cardNumber,r
 const {backup,copyWishlist,exportCSV,importBackup}=window.VintageCollectionBackup.create({state,MAP,cardNumber,toast,getProgress,normalizeOrders:()=>normalizeOrders(),sortedOwnedCards:()=>sortedOwnedCards(),ensureCloudEdit,save,renderAll,normalizeShipment});
 const orderingController=window.VintageCollectionOrdering.create({state,ensureCloudEdit,save});
 const {normalizeOrders,binderVisible,binderPageCount,reorder,markEmptyPocket,clearEmptyPocket,movePage}=orderingController;
+const EMPTY_BINDER_CHOICE='__binder_select_empty__';
 let binderSelectedId=null;
 
 function refreshPlacementTargets(){
@@ -69,12 +70,32 @@ function searchBinder(){
  const markup=matching.length?matching.slice(0,12).map(c=>`<button type="button" class="binder-match ${c.id===binderSelectedId?'selected':''}" data-pick-binder="${esc(c.id)}" role="option" aria-selected="${c.id===binderSelectedId}"><img src="${esc(c.image)}" alt="" loading="lazy"><span class="binder-match-label"><b>${esc(c.name)}</b><small>${esc(MAP.get(c.set)?.name||'')} · #${esc(cardNumber(c))}${state.owned[c.id]?' · ✓ שלי':' · ☆ משאלה'}</small></span><span aria-hidden="true">בחר ←</span></button>`).join(''):`<span class="binder-place-hint">לא נמצא קלף באוסף או במשאלות. הוסף אותו קודם בקטלוג.</span>`;
  window.VintageStableDOM.reconcileHTML(box,markup,'data-pick-binder');
 }
-function selectBinder(id){const c=state.cards.find(x=>x.id===id);if(!c||!state.binderOrder.includes(id))return;
- binderSelectedId=id;$('binderSelected').textContent='נבחר: '+c.name+' · '+(MAP.get(c.set)?.name||'');$('binderPlaceSelected').disabled=false;
+function selectBinder(id){
+ const isEmpty=id===EMPTY_BINDER_CHOICE;
+ const c=isEmpty?null:state.cards.find(x=>x.id===id);
+ if(!isEmpty&&(!c||!state.binderOrder.includes(id)))return;
+ binderSelectedId=id;
+ $('binderSelected').textContent=isEmpty?'נבחר: כיס ריק':'נבחר: '+c.name+' · '+(MAP.get(c.set)?.name||'');
+ $('binderPlaceSelected').disabled=false;
+ $('binderPlaceSelected').textContent=isEmpty?'השאר כיס ריק':'📖 העבר למיקום שבחרתי';
+ $('binderSelectEmpty').classList.toggle('selected',isEmpty);
+ $('binderSelectEmpty').setAttribute('aria-pressed',String(isEmpty));
  for(const option of $('binderMatches').querySelectorAll('[data-pick-binder]')){
   const active=option.dataset.pickBinder===id;
   option.classList.toggle('selected',active);
   option.setAttribute('aria-selected',String(active));
+ }
+}
+function placeEmptyPocket(page,slot){
+ if(!ensureCloudEdit())return;
+ const index=(page-1)*9+slot-1;
+ if(window.VintageCollectionOrdering.isEmptyPocket(binderVisible()[index])){
+  toast('הכיס כבר שמור כריק');return;
+ }
+ if(markEmptyPocket(index)){
+  state.binderPage=Math.floor(index/9);
+  renderCollections();
+  toast('כיס '+slot+' בעמוד '+page+' נשמר כריק');
  }
 }
 function placeBinder(id,page,slot){
@@ -107,32 +128,6 @@ function applyPageMove(){
  const changed=movePage(from,target);
  $('binderMovePageDialog').close();
  if(changed)toast('עמוד '+from+' הועבר למקום '+target+' בבינדר');
-}
-function updatePocketDialog(){
- const index=state.binderPage*9+Number($('binderPocketPosition').value)-1;
- const slot=binderVisible()[index],reserved=window.VintageCollectionOrdering.isEmptyPocket(slot);
- const card=state.cards.find(c=>c.id===slot),position=Number($('binderPocketPosition').value);
- $('binderPocketStatus').textContent=reserved
-  ?'כיס '+position+' שמור כריק. אפשר לבטל את הרווח.'
-  :card
-  ?'בכיס '+position+' נמצא '+card.name+'. פינוי הכיס יזיז אותו ואת הקלפים שאחריו.'
-  :'כיס '+position+' פנוי כרגע. שמירתו כריק תשמור עליו גם כשיתווספו קלפים.';
- $('binderPocketMark').disabled=reserved;
- $('binderPocketClear').disabled=!reserved;
-}
-function openPocketDialog(){
- if(!ensureCloudEdit())return;
- $('binderPocketPage').textContent='עמוד '+(state.binderPage+1);
- $('binderPocketPosition').value='1';
- updatePocketDialog();
- $('binderPocketDialog').showModal();
-}
-function applyPocketChange(clear){
- const index=state.binderPage*9+Number($('binderPocketPosition').value)-1;
- const changed=clear?clearEmptyPocket(index):markEmptyPocket(index);
- if(!changed)return;
- $('binderPocketDialog').close();
- toast(clear?'הרווח בוטל והקלפים התקרבו':'הכיס נשמר כריק והקלפים הבאים זזו');
 }
 const {renderShipments,refreshShipments}=window.VintageShipments.create({state,MAP,cardNumber,esc,$,ensureCloudEdit,save,toast});
 function showView(view,doScroll=true,dealsCardId=null){if(!['catalog','owned','binder','wishlist','shipments','deals','analysis'].includes(view))return;
@@ -232,6 +227,7 @@ function attachCollections(){
    return;
   }
   const pick=e.target.closest('[data-pick-binder]');if(pick){selectBinder(pick.dataset.pickBinder);return;}
+  const clearPocket=e.target.closest('[data-binder-clear-empty]');if(clearPocket){if(clearEmptyPocket(Number(clearPocket.dataset.binderClearEmpty)))toast('הרווח בוטל');return;}
   const moveBinder=e.target.closest('[data-binder-move]');if(moveBinder){openMovePicker(moveBinder.dataset.binderMove);return;}
   const removeBinder=e.target.closest('[data-binder-remove]');if(removeBinder){removeFromBinder(removeBinder.dataset.binderRemove);return;}
   const addBinder=e.target.closest('[data-owned-binder]');if(addBinder){openMovePicker(addBinder.dataset.ownedBinder);return;}
@@ -249,7 +245,8 @@ function attachCollections(){
   $('wishSort').addEventListener('change',renderCollections);
   $('ownedSort').addEventListener('change',renderOwnedList);
   $('copyWishlist').addEventListener('click',copyWishlist);
- $('binderPlaceSelected').onclick=()=>{if(!binderSelectedId)return;placeBinder(binderSelectedId,Number($('binderTargetPage').value)||1,Number($('binderTargetSlot').value)||1);};
+ $('binderSelectEmpty').onclick=()=>selectBinder(EMPTY_BINDER_CHOICE);
+ $('binderPlaceSelected').onclick=()=>{if(!binderSelectedId)return;const page=Number($('binderTargetPage').value)||1,slot=Number($('binderTargetSlot').value)||1;if(binderSelectedId===EMPTY_BINDER_CHOICE)placeEmptyPocket(page,slot);else placeBinder(binderSelectedId,page,slot);};
  $('binderIncludeWish').onchange=e=>{if(!ensureCloudEdit()){e.target.checked=state.binderIncludeWish;return;}state.binderIncludeWish=e.target.checked;save();};
  $('binderPrev').onclick=()=>{state.binderPage=Math.max(0,state.binderPage-1);renderCollections();};
  $('binderNext').onclick=()=>{state.binderPage++;renderCollections();};
@@ -258,11 +255,6 @@ function attachCollections(){
  $('binderMovePageCancel').onclick=()=>$('binderMovePageDialog').close();
  for(const name of ['binderMovePageSource','binderMovePagePosition'])
   $(name).addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();applyPageMove();}});
- $('binderManagePockets').onclick=openPocketDialog;
- $('binderPocketPosition').addEventListener('change',updatePocketDialog);
- $('binderPocketMark').onclick=()=>applyPocketChange(false);
- $('binderPocketClear').onclick=()=>applyPocketChange(true);
- $('binderPocketCancel').onclick=()=>$('binderPocketDialog').close();
  window.VintageCollectionDrag.attach({reorder,toast});
 }
 

@@ -351,17 +351,30 @@ try {
     assert.deepEqual(moved.binderOrder.slice(0,2),['base1-19','base1-20']);
     assert.equal(moved.binderOrder.slice(2,9).every(id=>id.startsWith('__binder_empty__:')),true);
     assert.equal(await bp.locator('#binderGrid .binder-pocket-reserved').count(),7);
-    await bp.locator('#binderManagePockets').click();
-    await bp.locator('#binderPocketPosition').selectOption('2');
-    assert.match(await bp.locator('#binderPocketStatus').textContent(),/base1|בכיס 2/);
-    await bp.locator('#binderPocketMark').click();
+    // The existing placement accordion can now select an empty pocket.
+    await bp.locator('.binder-place > summary').click();
+    await bp.locator('#binderSelectEmpty').click();
+    assert.equal(await bp.locator('#binderSelectEmpty').getAttribute('aria-pressed'),'true');
+    assert.equal(await bp.locator('#binderPlaceSelected').textContent(),'השאר כיס ריק');
+    await bp.locator('#binderTargetPage').selectOption('1');
+    await bp.locator('#binderTargetSlot').selectOption('2');
+    await bp.locator('#binderPlaceSelected').click();
     const reserved=await getState(bp);
     assert.ok(reserved.binderOrder[1].startsWith('__binder_empty__:'));
     assert.equal(await bp.locator('#binderGrid .binder-pocket-reserved').count(),7);
-    await bp.locator('#binderManagePockets').click();
-    await bp.locator('#binderPocketPosition').selectOption('2');
-    await bp.locator('#binderPocketClear').click();
+    assert.equal(await bp.locator('#binderManagePockets').count(),0);
+    assert.equal(await bp.locator('#binderPocketDialog').count(),0);
+
+    // One tap on the empty pocket cancels it, without opening another editor.
+    await bp.locator('#binderGrid [data-binder-clear-empty="1"]').click();
     assert.equal((await getState(bp)).binderOrder[1],'base1-20');
+    assert.equal(await bp.locator('#binderGrid .binder-pocket-reserved').count(),7);
+
+    // Normal card placement still works after selecting the empty-pocket mode.
+    await bp.locator('#binderFind').fill('base1-20');
+    await bp.locator('[data-pick-binder="base1-20"]').click();
+    assert.equal(await bp.locator('#binderSelectEmpty').getAttribute('aria-pressed'),'false');
+    assert.match(await bp.locator('#binderPlaceSelected').textContent(),/העבר למיקום/);
     await bp.waitForFunction(()=>window.__cloudTest.writes.length>0);
     await bp.waitForFunction(()=>document.querySelector('#cloudStatus').textContent.includes('נשמר בענן'));
     assert.equal((await bp.evaluate(path=>window.__cloudTest.docs[path].progress.binderOrder,savedDoc()))[0],'base1-19');

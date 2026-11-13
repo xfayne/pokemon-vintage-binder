@@ -105,8 +105,7 @@
 .binder-pocket-reserved{display:flex;justify-content:center;align-items:center;background:linear-gradient(140deg,#243957,#2d4565);border:1px dashed #bdcbe0}
 .binder-pocket.empty.binder-pocket-reserved::after{display:none}
 .binder-pocket-reserved span{max-width:90%;font-size:11px;line-height:1.4;text-align:center;color:#dde9ff;font-weight:750}
-.binder-pocket-dialog select{display:block;box-sizing:border-box;width:100%;min-height:45px;font-size:16px;border:1px solid #bfcde2;background:#fff;color:#203150;border-radius:10px;padding:8px}
-.binder-pocket-status{min-height:40px;margin:12px 0 0;color:#52637c;font-size:13px;line-height:1.55}
+.binder-pocket-reserved button{max-width:100%;padding:6px 7px;min-height:28px;border:1px solid #b5c6e3;border-radius:8px;background:#d9e5fa;color:#243752;font-size:11px;font-weight:750;cursor:pointer}
 @media(max-width:650px){.binder-page-tools .btn{font-size:12px;padding:8px 11px}.binder-pocket-reserved span{font-size:10px}}
 
 .no-cards{padding:35px 16px;text-align:center;color:#576987;line-height:1.8;border:1px dashed #c9d4e5;background:#f8faff;border-radius:12px}
@@ -157,6 +156,8 @@
 .binder-match-label small{display:block;font-size:11px;color:#6c7b94;margin-top:3px}
 .binder-selected{font-size:13px;color:#3b4e6e;font-weight:700;min-height:20px}
 .binder-selected:empty{display:none}
+.binder-empty-choice{display:inline-flex;align-items:center;justify-content:center;min-height:38px;margin:8px 0 0;padding:8px 13px;border:1px solid #cbd6eb;background:#fff;border-radius:10px;color:#405272;font-size:13px;font-weight:750;cursor:pointer}
+.binder-empty-choice.selected{border-color:#566bd1;background:#edf1ff;color:#2a3fa0;box-shadow:0 0 0 1px #566bd122}
 .binder-place-targets{display:flex;gap:8px;align-items:end;flex-wrap:wrap;margin-top:10px}
 .binder-place-targets label{display:flex;flex-direction:column;gap:5px;font-size:12px;color:#4c6080;font-weight:700}
 .binder-place-targets select{min-width:88px}
