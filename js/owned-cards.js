@@ -37,7 +37,7 @@ function renderOwnedTotalValue(cards){
   else if(price===undefined)pending++;
  }
  const all=cards.length;
- const usd=new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(total);
+ const usd=window.VintageCurrency.format(total,'USD');
  label.textContent=all===0?usd:priced===0&&pending?'טוען מחירים…':priced===0?'—':usd;
  label.title='שווי שוק משוער של '+priced+' מתוך '+all+' קלפים לפי מצב והדפסה'+(pending?' · '+pending+' מחירים בטעינה':'')+'.';
 }
@@ -51,7 +51,7 @@ function renderOwnedList(){
  const markup=matched.length?matched.map(c=>{
   const inBinder=state.binderOrder.includes(c.id),condition=state.conditions[c.id]||'';
   const market=condition?window.VintageMarketPrices?.getOwnedPrice?.(c,MAP.get(c.set)?.name||'',condition,!!state.firstEdition[c.id]):null;
-  const amount=typeof market==='number'?new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(market):'';
+  const amount=typeof market==='number'?window.VintageCurrency.format(market,'USD'):'';
   return `<article class="owned-item" role="listitem" tabindex="0" data-open-owned="${esc(c.id)}" aria-label="פרטים על ${esc(c.name)}">
    <img loading="lazy" decoding="async" src="${esc(c.image)}" alt="${esc(c.name)}">
    <div class="owned-copy"><strong>${esc(c.name)}</strong><small>${esc(MAP.get(c.set)?.name||'')} · #${esc(cardNumber(c))}</small><div class="badges">${rarityHtml(c)}</div></div>

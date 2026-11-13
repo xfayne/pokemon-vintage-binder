@@ -33,6 +33,8 @@ const normalizeUnchangedLayout = html => normalizeScripts(html)
   .replace(/^  <button type="button" data-view-btn="analysis"[^\n]*\n/gm, '')
   .replace(/<section class="collection-page" id="analysisPage"[\s\S]*?<\/section>\n/, '')
   .replace(/deal-finder\/live\.css\?v=[^"]+/g, 'deal-finder/live.css?v=VERSION')
+  // Currency chooser is an intentional user-menu addition, not a catalog layout change.
+  .replace(/   <div class="account-currency"[^]*?   <\/div>\n   <div class="account-separator"><\/div>\n/, '')
   .replace(/<section class="collection-page" id="binderPage"[\s\S]*?<\/section>/,
     '<!-- intentionally updated binder controls and placement accordion -->')
   .replace(/<section class="collection-page" id="wishPage"[\s\S]*?<\/section>/,
