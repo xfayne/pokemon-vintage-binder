@@ -41,7 +41,7 @@
 @media(max-width:650px){.static-img{height:121px;}}
 
 </style></noscript>
-<link rel="stylesheet" href="css/app.css?v=20261113-inline-empty1">
+<link rel="stylesheet" href="css/app.css?v=20261113-inline-empty2">
 <link rel="stylesheet" href="deal-finder/live.css?v=20261113-deals-sort1">
 </head>
 <body>
@@ -114,8 +114,10 @@
       <summary class="binder-place-title">📖 העברת קלף למיקום בבינדר</summary>
       <div class="binder-place-body">
       <div class="binder-place-hint">בחר קלף או כיס ריק, ואז עמוד וכיס (1–9). הקלפים האחרים יזוזו בהתאם.</div>
-      <input id="binderFind" class="binder-place-search" type="search" placeholder="חפש קלף שיש לך או ברשימת המשאלות..." autocomplete="off" aria-label="חיפוש קלף בבינדר">
-      <button id="binderSelectEmpty" type="button" class="binder-empty-choice" aria-pressed="false">＋ כיס ריק</button>
+      <div class="binder-place-search-row">
+        <input id="binderFind" class="binder-place-search" type="search" placeholder="חפש קלף שיש לך או ברשימת המשאלות..." autocomplete="off" aria-label="חיפוש קלף בבינדר">
+        <button id="binderSelectEmpty" type="button" class="binder-empty-choice" aria-pressed="false">＋ כיס ריק</button>
+      </div>
       <div id="binderMatches" class="binder-matches" role="listbox" aria-label="תוצאות חיפוש בבינדר"></div>
       <div id="binderSelected" class="binder-selected" role="status"></div>
       <div class="binder-place-targets">
