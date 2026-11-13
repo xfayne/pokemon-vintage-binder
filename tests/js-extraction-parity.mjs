@@ -1074,13 +1074,15 @@ async function exercise(version, viewport) {
   // Intentional binder UI change: the placement form is collapsed until requested,
   // both viewing controls remain on a single row, and card actions open the panel.
   if (version === 'updated') {
-    const binderUi = await page.evaluate(() => {
+    const binderUi = await page.evaluate(async() => {
+      const pause=()=>new Promise(resolve=>setTimeout(resolve,350));
       const panel = document.querySelector('.binder-place');
       const summary = panel.querySelector('summary');
       const search = document.querySelector('#binderFind');
       const wish = document.querySelector('.binder-controls .switch-line').getBoundingClientRect();
       const reader = document.querySelector('#openReader').getBoundingClientRect();
       const openedFromDetailsEarlier = panel.open;
+      await pause(); // The earlier programmatic expansion completes before this reset.
       panel.open = false;
       const collapsedBeforeToggle = !panel.open && search.getClientRects().length === 0;
       const sameRow = Math.abs((wish.top + wish.height / 2) - (reader.top + reader.height / 2)) < 4;
@@ -1088,11 +1090,14 @@ async function exercise(version, viewport) {
       const resetRemoved = !document.querySelector('#binderResetOrder');
       summary.click();
       const expanded = panel.open && search.getClientRects().length > 0;
+      await pause();
       summary.click();
+      await pause(); // Native details stays open until its exit animation finishes.
       const collapsedAgain = !panel.open && search.getClientRects().length === 0;
       window.VintageCloud = {canEdit:()=>true,onChange:()=>{}};
       const moveButton = document.querySelector('[data-binder-move]');
       moveButton.click();
+      await pause();
       const openedFromCard = panel.open && search.getClientRects().length > 0 &&
         !document.querySelector('#binderPlaceSelected').disabled;
       window.VintageCloud = {canEdit:()=>false,onChange:()=>{}};
