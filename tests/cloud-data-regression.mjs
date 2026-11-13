@@ -328,6 +328,46 @@ try {
     console.log('PASS cloud persistence, remote revisions, retry, backup/CSV/legacy import and re-login');
   } finally { await context.close(); }
 
+  // Page management and reserved pockets run against disposable in-memory Firestore.
+  const binderFixture=await openFixture();
+  try {
+    const {page:bp}=binderFixture;
+    await bp.evaluate(()=>{
+      const progress=window.VintageBinder.getProgress();
+      progress.owned=Object.fromEntries(Array.from({length:20},(_,i)=>['base1-'+(i+1),true]));
+      progress.wish={};progress.wishOrder=[];progress.binderExcluded={};
+      progress.binderOrder=Array.from({length:20},(_,i)=>'base1-'+(i+1));
+      window.VintageBinder.adoptProgress(progress);
+      document.querySelector('[data-view-btn="binder"]').click();
+    });
+    await bp.waitForFunction(()=>document.querySelector('#binderPageLabel').textContent.includes('1 מתוך 3'));
+    await bp.locator('#binderMovePage').click();
+    assert.match(await bp.locator('#binderMovePageCurrent').textContent(),/עמוד 1 מתוך 3/);
+    await bp.locator('#binderMovePagePosition').fill('3');
+    await bp.locator('#binderMovePageConfirm').click();
+    await bp.waitForFunction(()=>document.querySelector('#binderPageLabel').textContent.includes('3 מתוך 3'));
+    const moved=await getState(bp);
+    assert.deepEqual(moved.binderOrder.slice(18,27),Array.from({length:9},(_,i)=>'base1-'+(i+1)));
+    assert.equal(moved.binderOrder.slice(11,18).every(id=>id.startsWith('__binder_empty__:')),true);
+    assert.equal(await bp.locator('#binderGrid .binder-pocket-reserved').count(),0);
+    await bp.locator('#binderManagePockets').click();
+    await bp.locator('#binderPocketPosition').selectOption('2');
+    assert.match(await bp.locator('#binderPocketStatus').textContent(),/base1|בכיס 2/);
+    await bp.locator('#binderPocketMark').click();
+    const reserved=await getState(bp);
+    assert.ok(reserved.binderOrder[19].startsWith('__binder_empty__:'));
+    assert.equal(await bp.locator('#binderGrid .binder-pocket-reserved').count(),1);
+    await bp.locator('#binderManagePockets').click();
+    await bp.locator('#binderPocketPosition').selectOption('2');
+    await bp.locator('#binderPocketClear').click();
+    assert.equal((await getState(bp)).binderOrder[19],'base1-2');
+    await bp.waitForFunction(()=>window.__cloudTest.writes.length>0);
+    await bp.waitForFunction(()=>document.querySelector('#cloudStatus').textContent.includes('נשמר בענן'));
+    assert.equal((await bp.evaluate(path=>window.__cloudTest.docs[path].progress.binderOrder,savedDoc()))[18],'base1-1');
+    assert.deepEqual(binderFixture.errors,[],'Binder dialogs must not throw browser errors');
+    console.log('PASS mobile binder page moves, persistent empty pockets and mocked cloud sync');
+  } finally {await binderFixture.context.close();}
+
   // Read failure: editing must be disabled; never silently fall back to cache.
   const failure=await openFixture({failInitialRead:true});
   try {
