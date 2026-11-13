@@ -1,7 +1,7 @@
 (()=>{'use strict';
 // Animate the actual measured height of native <details>, not just its content.
 // The <summary> remains a real keyboard-accessible disclosure control.
-const selector='details.catalog-advanced,details.binder-place';
+const selector='details.catalog-advanced,details.binder-place,details.live-advanced';
 const active=new WeakMap();
 function setOpen(details,targetOpen){
  const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;

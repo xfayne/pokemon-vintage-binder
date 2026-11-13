@@ -108,9 +108,16 @@ if (updated.includes('js/collection-views.js')) {
     const searchStart=" const wishQuery=";
     const afterWishlist=" renderOwnedList();";
     assert.ok(views.includes(searchStart), 'Wishlist search logic missing');
-    assert.equal(views.slice(0,views.indexOf(searchStart)),
+    // Preserve the original renderer byte-for-byte except for its intentional
+    // catalog-only fast path, which avoids hidden list regeneration.
+    const currentPrefix=views.slice(0,views.indexOf(searchStart));
+    const normalizedPrefix=currentPrefix
+      .replace("function renderCollections({skipHidden=false}={}){if(!state.ready)return;normalizeOrders();if(!skipHidden||state.view==='shipments')renderShipments();",
+        "function renderCollections(){if(!state.ready)return;normalizeOrders();renderShipments();")
+      .replace(" // Catalog actions need updated nav badges, not several off-screen image grids.\n // Every destination is rendered normally on showView before it becomes visible.\n if(skipHidden&&state.view==='catalog')return;\n","");
+    assert.equal(normalizedPrefix,
       previousViews.slice(0,previousViews.indexOf(searchStart)),
-      'Binder rendering changed outside the Wishlist search feature');
+      'Binder rendering changed outside the documented catalog fast path');
     assert.equal(views.slice(views.indexOf(afterWishlist)),
       previousViews.slice(previousViews.indexOf(afterWishlist)),
       'Post-Wishlist collection behavior changed unexpectedly');
@@ -118,7 +125,7 @@ if (updated.includes('js/collection-views.js')) {
     assert.equal(newBinder.replace(call,()=>extracted),oldBinder,
       'The extracted collection renderer differs from old binder code');
   }
-  const viewScript='<script src="js/collection-views.js?v=20261111-wishsort1"></script>';
+  const viewScript='<script src="js/collection-views.js?v=20261113-layout2"></script>';
   const binderScript='<script src="js/binder.js?v=20261113-layout2"></script>';
   assert.ok(updated.indexOf(viewScript)>0 && updated.indexOf(viewScript)<updated.indexOf(binderScript),
     'View renderer script must load before binder');
@@ -320,7 +327,7 @@ if(updated.includes('js/catalog-loader.js')){
 if(updated.includes('js/collection-state.js')){
   const module=readFileSync('js/collection-state.js','utf8');
   assert.ok(module.includes('window.VintageCollectionState={create('),'Missing collection-state factory');
-  const stateTag='<script src="js/collection-state.js?v=20261112-catalogmulti1"></script>';
+  const stateTag='<script src="js/collection-state.js?v=20261113-layout2"></script>';
   const binderTag='<script src="js/binder.js?v=20261113-layout2"></script>';
   assert.ok(updated.indexOf(stateTag)>0 && updated.indexOf(stateTag)<updated.indexOf(binderTag),
     'Collection state must load before binder');

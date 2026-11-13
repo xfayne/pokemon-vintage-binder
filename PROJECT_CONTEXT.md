@@ -60,7 +60,7 @@ Collector preference: English vintage Unlimited, ungraded/raw cards; prioritize 
 ## Layout stability and disclosure animation (2026-11-13)
 - Catalog filtering and sorting now reconcile keyed card nodes, preserving <img> elements for cards that remain visible. Sidebar series buttons also update in place. The fast path for catalog edits/search updates live navigation counts without rebuilding hidden binder, Wishlist, owned and shipment lists; each view still renders fully on entry. The cloud snapshot and initial data hydration continue through existing server-first paths.
 - Card-details media reserves a portrait 63:88 box before the full-size artwork loads; decoded images fade over the reserved background and failed requests retain the same footprint.
-- Native catalog advanced filters and binder placement <details> use a measured-height Web Animations API disclosure, including programmatic placement opening; reduced-motion visitors retain native immediate details toggling. The binder body has its own padded wrapper so the summary never jumps horizontally when expanded.
+- Native catalog advanced filters, Deals advanced filters and binder placement <details> use a measured-height Web Animations API disclosure, including programmatic placement opening; reduced-motion visitors retain native immediate details toggling. The binder body has its own padded wrapper so the summary never jumps horizontally when expanded.
 - Browser parity tests assert catalog art node identity across searches, stable modal photo geometry without network imagery, and expanding/collapsing panels on mobile/desktop.
 
 ## Open questions / backlog
