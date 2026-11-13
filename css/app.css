@@ -815,3 +815,14 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
 @media(prefers-reduced-motion:reduce){
  .shipment-timeline-region,.binder-match{transition:none!important}
 }
+
+/* Currency preference in the account menu. */
+.account-menu{min-width:240px}
+.account-currency{padding:9px 8px 6px}
+.account-currency-title{display:block;color:#384766;font-size:12px;font-weight:750;margin-bottom:7px}
+.account-currency-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+.account-menu .account-currency-options button{border:1px solid #dce4f1;text-align:center;padding:8px 4px;font-size:11px;min-width:0;white-space:nowrap}
+.account-menu .account-currency-options button.selected{background:#1b2b48;border-color:#1b2b48;color:white}
+#currencyRateStatus{display:block;color:#768499;font-size:10px;line-height:1.5;margin-top:8px}
+.live-item-numbers b,.live-single-price b{direction:ltr;unicode-bidi:isolate}
+.live-fx-status{font-size:11px;color:#75849a;margin:7px 0 9px}
