@@ -193,7 +193,7 @@
   if(!url){message('הדבק קישור למודעת eBay.',true);return;}
   clearImages();
   const serial=state.serial;state.busy=true;
-  const button=$('analysisLoadEbay');button.disabled=true;button.textContent='טוען…';
+  const button=$('analysisLoadEbay');button.disabled=true;button.textContent='טוען…';status.classList.add('is-busy');
   message('מביא את תמונות המודעה מ־eBay…');
   try{
    const cloud=cloudAccess(),token=await cloud.getIdToken();
@@ -214,7 +214,7 @@
    listing.appendChild(anchor);listing.hidden=false;
    renderImages();message('התמונות נטענו. אפשר לדפדף בהן ולנתח את מצב הקלף.');
   }catch(e){if(serial===state.serial)message(String(e.message||e),true)}
-  finally{state.busy=false;button.disabled=false;button.textContent='טען תמונות'}
+  finally{state.busy=false;button.disabled=false;button.textContent='טען תמונות';status.classList.remove('is-busy')}
  }
  $('analysisLoadEbay').addEventListener('click',()=>void loadEbay());
  $('analysisEbayUrl').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();void loadEbay();}});
@@ -289,7 +289,7 @@
   if(state.busy||!state.images.length)return;
   const serial=state.serial;state.busy=true;
   run.disabled=true;run.classList.add('is-loading');run.setAttribute('aria-busy','true');
-  run.textContent='✨ מנתח תמונות…';message('בודק פינות, קצוות, משטחים ופגמים…');
+  run.textContent='✨ מנתח תמונות…';status.classList.add('is-busy');message('בודק פינות, קצוות, משטחים ופגמים…');
   try{
    const cloud=cloudAccess();
    if(state.analysis&&!force){showResult(true);message('מוצגת התוצאה הקודמת ללא חיוב נוסף.');return;}
@@ -329,7 +329,7 @@
   }catch(e){if(serial===state.serial)message(String(e.message||e),true);}
   finally{
    state.busy=false;run.disabled=!state.images.length;run.classList.remove('is-loading');
-   run.removeAttribute('aria-busy');run.textContent='✨ נתח מצב ב־AI';
+   run.removeAttribute('aria-busy');run.textContent='✨ נתח מצב ב־AI';status.classList.remove('is-busy');
   }
  }
  run.addEventListener('click',()=>void analyze());
