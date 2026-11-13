@@ -1277,6 +1277,11 @@ async function exercise(version, viewport) {
     const beforeEditPhoto=document.querySelector('[data-shipment-id="shipment_demo_01"] .shipment-card-images img');
     document.querySelector('[data-ship-edit="shipment_demo_01"]').click();
     if(isUpdated){
+      // Shipment-linked cards need not also be Owned or Wishlist; search the
+      // full offline catalog so the deterministic fixture is available.
+      const pickerSearch=document.querySelector('#shipmentCardSearch');
+      pickerSearch.value='Alakazam';
+      pickerSearch.dispatchEvent(new Event('input',{bubbles:true}));
       const option=document.querySelector('#shipmentCardResults [data-ship-pick="base1-1"]');
       if(!option)throw Error('Shipment editor choice fixture missing');
       const photo=option.querySelector('img');
