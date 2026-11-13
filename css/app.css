@@ -712,13 +712,13 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
 }
 /* Tab entrance applies only to a newly selected view, never each catalog rerender. */
 .js-ready .collection-page.view-enter:not([hidden]),
-.js-ready .shell.view-enter:not([hidden]){animation:page-soft-enter .19s cubic-bezier(.18,.75,.3,1) both}
+.js-ready .shell.view-enter:not([hidden]){animation:page-soft-enter .19s cubic-bezier(.18,.75,.3,1)}
 @keyframes page-soft-enter{
  from{opacity:.83;transform:translateY(7px)}
  to{opacity:1;transform:translateY(0)}
 }
 /* Dialog/accordion content stays inside its existing flow and dimensions. */
-.dialog[open] .modal-inner,.wish-move-dialog[open]{animation:dialog-soft-enter .19s cubic-bezier(.2,.8,.3,1) both}
+.dialog[open] .modal-inner,.wish-move-dialog[open]{animation:dialog-soft-enter .19s cubic-bezier(.2,.8,.3,1)}
 @keyframes dialog-soft-enter{
  from{opacity:.65;transform:translateY(7px) scale(.985)}
  to{opacity:1;transform:translateY(0) scale(1)}
@@ -740,7 +740,7 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
  border-radius:50%;animation:analysis-status-spin .75s linear infinite;
 }
 @keyframes analysis-status-spin{to{transform:rotate(360deg)}}
-.analysis-result:not([hidden]){animation:dialog-soft-enter .25s ease-out both}
+.analysis-result:not([hidden]){animation:dialog-soft-enter .25s ease-out}
 @media(prefers-reduced-motion:reduce){
  .main-nav button,.sticky-sitebar .main-nav button,.btn,.own-btn,.wish-btn,.set-btn,
  .small-link,.pager button,.wish-move-action,.analysis-thumbs button,.poke-card{transition:none!important}
