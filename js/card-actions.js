@@ -1,5 +1,5 @@
 (()=>{'use strict';
-window.VintageCardActions={create({state,$,ensureCloudEdit,normalizeOrders,save,renderAll,toast,showModal}){
+window.VintageCardActions={create({state,$,ensureCloudEdit,normalizeOrders,save,refreshCard,toast,showModal}){
 function toggleOwned(id){
  if(!ensureCloudEdit())return;
  if(state.owned[id]){
@@ -16,7 +16,7 @@ function toggleOwned(id){
    state.removedWish[id]=Date.now();
   }
  }
- normalizeOrders();save(true);renderAll();
+ normalizeOrders();save(true);refreshCard(id);
 }
 function removeWish(id){
  if(!ensureCloudEdit())return;
@@ -25,14 +25,14 @@ function removeWish(id){
  state.removedWish[id]=Date.now(); // Persist a tombstone to prevent stale snapshots resurrecting a deleted wishlist entry.
  state.wishOrder=state.wishOrder.filter(x=>x!==id);
  if(!state.owned[id])state.binderOrder=state.binderOrder.filter(x=>x!==id);
- normalizeOrders();save(true);renderAll();toast('הקלף הוסר מרשימת המשאלות ונשלח למחיקה בענן.');
+ normalizeOrders();save(true);refreshCard(id);toast('הקלף הוסר מרשימת המשאלות ונשלח למחיקה בענן.');
 }
 function toggleWish(id){
  if(!ensureCloudEdit())return;
  if(state.owned[id]){toast('הקלף כבר נמצא באוסף שלך');return;}
  if(state.wish[id]){removeWish(id);return;}
  state.wish[id]=true;delete state.removedWish[id];
- normalizeOrders();save(true);renderAll();
+ normalizeOrders();save(true);refreshCard(id);
 }
 function updatePurchasePrice(id){
  if(!ensureCloudEdit()){showModal(id);return;}
