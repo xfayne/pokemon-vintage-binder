@@ -134,7 +134,7 @@ if (updated.includes('js/collection-views.js')) {
     assert.equal(newBinder.replace(call,()=>extracted),oldBinder,
       'The extracted collection renderer differs from old binder code');
   }
-  const viewScript='<script src="js/collection-views.js?v=20261113-reorder1"></script>';
+  const viewScript='<script src="js/collection-views.js?v=20261113-currency1"></script>';
   const binderScript='<script src="js/binder.js?v=20261113-audit1"></script>';
   assert.ok(updated.indexOf(viewScript)>0 && updated.indexOf(viewScript)<updated.indexOf(binderScript),
     'View renderer script must load before binder');
@@ -157,7 +157,7 @@ if (updated.includes('js/owned-cards.js')) {
     assert.equal(after.replace(call,()=>module.slice(i+begin.length,j)),before,
       'Owned-cards extraction changed binder logic beyond this exact block');
   }
-  const ownedTag='<script src="js/owned-cards.js?v=20261113-audit1"></script>';
+  const ownedTag='<script src="js/owned-cards.js?v=20261113-currency1"></script>';
   const binderTag='<script src="js/binder.js?v=20261113-audit1"></script>';
   assert.ok(updated.indexOf(ownedTag)>0&&updated.indexOf(ownedTag)<updated.indexOf(binderTag),
     'Owned cards controller must load before binder');
