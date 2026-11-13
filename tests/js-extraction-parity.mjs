@@ -84,7 +84,7 @@ if (updated.includes('js/shipments.js')) {
       'Shipment extraction changed any other binder behavior');
   }
   const shipmentsTag = '<script src="js/shipments.js?v=20261109-ship1"></script>';
-  const binderTag = '<script src="js/binder.js?v=20261113-ux-flow1"></script>';
+  const binderTag = '<script src="js/binder.js?v=20261113-layout2"></script>';
   assert.ok(updated.indexOf(shipmentsTag) > 0 && updated.indexOf(shipmentsTag) < updated.indexOf(binderTag),
     'Shipment controller must be loaded before binder.js');
 }
@@ -119,7 +119,7 @@ if (updated.includes('js/collection-views.js')) {
       'The extracted collection renderer differs from old binder code');
   }
   const viewScript='<script src="js/collection-views.js?v=20261111-wishsort1"></script>';
-  const binderScript='<script src="js/binder.js?v=20261113-ux-flow1"></script>';
+  const binderScript='<script src="js/binder.js?v=20261113-layout2"></script>';
   assert.ok(updated.indexOf(viewScript)>0 && updated.indexOf(viewScript)<updated.indexOf(binderScript),
     'View renderer script must load before binder');
 }
@@ -142,7 +142,7 @@ if (updated.includes('js/owned-cards.js')) {
       'Owned-cards extraction changed binder logic beyond this exact block');
   }
   const ownedTag='<script src="js/owned-cards.js?v=20261109-owned1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261113-ux-flow1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261113-layout2"></script>';
   assert.ok(updated.indexOf(ownedTag)>0&&updated.indexOf(ownedTag)<updated.indexOf(binderTag),
     'Owned cards controller must load before binder');
 }
@@ -165,7 +165,7 @@ if (updated.includes('js/collection-drag.js')) {
       'Drag extraction modified unrelated collection logic or listeners');
   }
   const dragTag='<script src="js/collection-drag.js?v=20261109-drag1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261113-ux-flow1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261113-layout2"></script>';
   assert.ok(updated.indexOf(dragTag)>0&&updated.indexOf(dragTag)<updated.indexOf(binderTag),
     'Drag module must be available before the binder controller');
 }
@@ -199,7 +199,7 @@ if (updated.includes('js/collection-ordering.js')) {
     assert.equal(ordering,module,'Collection order implementation was changed during extraction');
   }
   const tag='<script src="js/collection-ordering.js?v=20261109-order1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261113-ux-flow1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261113-layout2"></script>';
   assert.ok(updated.indexOf(tag)>0&&updated.indexOf(tag)<updated.indexOf(binderTag),
     'Collection order module must load before binder');
 }
@@ -228,7 +228,7 @@ if(updated.includes('js/card-actions.js')){
       'Extracted card action function bodies changed unexpectedly');
   }
   const actionTag='<script src="js/card-actions.js?v=20261113-ux-flow1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261113-ux-flow1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261113-layout2"></script>';
   assert.ok(updated.indexOf(actionTag)>0&&updated.indexOf(actionTag)<updated.indexOf(binderTag),
     'Card actions script must load before binder');
 }
@@ -253,8 +253,8 @@ if(updated.includes('js/card-details.js')){
       code+'\nreturn {showModal};\n}};\n})();\n';
     assert.equal(modal,expected,'Card details dialog markup or handlers changed');
   }
-  const modalTag='<script src="js/card-details.js?v=20261113-ux-flow1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261113-ux-flow1"></script>';
+  const modalTag='<script src="js/card-details.js?v=20261113-layout2"></script>';
+  const binderTag='<script src="js/binder.js?v=20261113-layout2"></script>';
   assert.ok(updated.indexOf(modalTag)>0&&updated.indexOf(modalTag)<updated.indexOf(binderTag),
     'Details module must load before binder');
 }
@@ -280,8 +280,8 @@ if(updated.includes('js/catalog-ui.js')){
       block+'\nreturn {catalog,relevantSetCards,showHolo,searchKey,searchText,visible,groups,renderSide,renderStats,rarityHtml,cardHTML,renderCards,renderAll};\n}};\n})();\n';
     assert.equal(movedModule,expected,'Catalog UI function bodies changed');
   }
-  const uiTag='<script src="js/catalog-ui.js?v=20261113-ux-flow1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261113-ux-flow1"></script>';
+  const uiTag='<script src="js/catalog-ui.js?v=20261113-layout2"></script>';
+  const binderTag='<script src="js/binder.js?v=20261113-layout2"></script>';
   assert.ok(updated.indexOf(uiTag)>0&&updated.indexOf(uiTag)<updated.indexOf(binderTag),
     'Catalog UI must load before binder app');
 }
@@ -312,7 +312,7 @@ if(updated.includes('js/catalog-loader.js')){
     assert.equal(loader,expectedModule,'Offline dataset decoder or bootstrap logic changed');
   }
   const loaderTag='<script src="js/catalog-loader.js?v=20261110-loader1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261113-ux-flow1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261113-layout2"></script>';
   assert.ok(updated.indexOf(loaderTag)>0&&updated.indexOf(loaderTag)<updated.indexOf(binderTag),
     'Catalog loader must load before binder entrypoint');
 }
@@ -321,7 +321,7 @@ if(updated.includes('js/collection-state.js')){
   const module=readFileSync('js/collection-state.js','utf8');
   assert.ok(module.includes('window.VintageCollectionState={create('),'Missing collection-state factory');
   const stateTag='<script src="js/collection-state.js?v=20261112-catalogmulti1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261113-ux-flow1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261113-layout2"></script>';
   assert.ok(updated.indexOf(stateTag)>0 && updated.indexOf(stateTag)<updated.indexOf(binderTag),
     'Collection state must load before binder');
   assert.ok(readFileSync('js/binder.js','utf8').includes('window.VintageCollectionState.create('),
@@ -356,7 +356,7 @@ if(updated.includes('js/collection-backup.js')){
   const factory='const {backup,copyWishlist,exportCSV,importBackup}=window.VintageCollectionBackup.create({state,MAP,cardNumber,toast,getProgress,normalizeOrders:()=>normalizeOrders(),sortedOwnedCards:()=>sortedOwnedCards(),ensureCloudEdit,save,renderAll,normalizeShipment});\n';
   const start=before.indexOf('function download(content,type,filename){');
   const backupTag='<script src="js/collection-backup.js?v=20261110-backup1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261113-ux-flow1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261113-layout2"></script>';
   assert.ok(updated.indexOf(backupTag)>0&&updated.indexOf(backupTag)<updated.indexOf(binderTag),
     'Backup controller must be loaded before binder');
   assert.ok(after.includes(factory),'Binder backup factory is not wired');
@@ -442,6 +442,50 @@ async function exercise(version, viewport) {
     assert.equal(catalogDefaults.advancedOpen,false,'Advanced filters should start closed');
     assert.equal(catalogDefaults.pokemonOnly,true,'Only Pokémon should be enabled initially');
     assert.ok(catalogDefaults.summary.includes('פוקימון'),'Collapsed panel should describe the active default');
+    // Old catalog searches replaced all card images, even for a card that remained
+    // visible throughout the search. Identity must survive filtered updates.
+    const stableArt=await page.evaluate(()=>{
+      const before=document.querySelector('#cards [data-id="base1-1"] .card-img');
+      const search=document.getElementById('search');
+      search.value='Alakazam';search.dispatchEvent(new Event('input',{bubbles:true}));
+      const during=document.querySelector('#cards [data-id="base1-1"] .card-img');
+      search.value='';search.dispatchEvent(new Event('input',{bubbles:true}));
+      const after=document.querySelector('#cards [data-id="base1-1"] .card-img');
+      return !!before&&before===during&&during===after;
+    });
+    assert.equal(stableArt,true,'Catalog search remounted an unchanged card image');
+    // Native details must animate their actual height, in both directions.
+    const disclosureMotion=await page.evaluate(async()=>{
+      const panel=document.getElementById('catalogAdvanced');
+      const summary=panel.querySelector('summary');
+      const closedHeight=panel.getBoundingClientRect().height;
+      summary.click();
+      const opening=panel.open&&panel.getAnimations().some(a=>a.playState==='running');
+      await new Promise(resolve=>setTimeout(resolve,380));
+      const expandedHeight=panel.getBoundingClientRect().height;
+      summary.click();
+      const closing=panel.open&&panel.getAnimations().some(a=>a.playState==='running');
+      await new Promise(resolve=>setTimeout(resolve,380));
+      return {opening,closing,closed:!panel.open,closedHeight,expandedHeight};
+    });
+    assert.ok(disclosureMotion.opening&&disclosureMotion.closing&&disclosureMotion.closed,
+      'Advanced filters must smoothly expand and collapse');
+    assert.ok(disclosureMotion.expandedHeight>disclosureMotion.closedHeight+20,
+      'Advanced filters did not expand to reveal their controls');
+    const binderDisclosure=await page.evaluate(async()=>{
+      document.querySelector('[data-view-btn="binder"]').click();
+      const panel=document.querySelector('details.binder-place');
+      panel.querySelector('summary').click();
+      const animating=panel.getAnimations().some(a=>a.playState==='running');
+      await new Promise(resolve=>setTimeout(resolve,380));
+      const expanded=panel.open&&panel.querySelector('.binder-place-body').getBoundingClientRect().height>50;
+      panel.querySelector('summary').click();
+      await new Promise(resolve=>setTimeout(resolve,380));
+      document.querySelector('[data-view-btn="catalog"]').click();
+      return {animating,expanded,closed:!panel.open};
+    });
+    assert.ok(binderDisclosure.animating&&binderDisclosure.expanded&&binderDisclosure.closed,
+      'Binder placement panel must smoothly expand and collapse');
   }
   const initial = await page.evaluate(() => ({
     cards: document.querySelectorAll('#cards .poke-card').length,
@@ -770,6 +814,16 @@ async function exercise(version, viewport) {
     card.click();
     const modal=document.querySelector('#modal');
     const details=document.querySelector('#modalContent');
+    if(isUpdated){
+      const frame=details.querySelector('.modal-media');
+      const image=details.querySelector('.modal-img');
+      if(!frame||!image)throw Error('Details image frame is missing');
+      const rect=frame.getBoundingClientRect();
+      if(rect.height<100||Math.abs(rect.width/rect.height-63/88)>.035)
+        throw Error('Card image loading did not reserve a stable portrait aspect ratio');
+      if(getComputedStyle(image).position!=='absolute')
+        throw Error('Card artwork must not change modal height after loading');
+    }
     const opening={
       open:modal.open,
       title:details.querySelector('h3')?.textContent,

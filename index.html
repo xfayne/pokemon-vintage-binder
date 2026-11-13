@@ -41,7 +41,7 @@
 @media(max-width:650px){.static-img{height:121px;}}
 
 </style></noscript>
-<link rel="stylesheet" href="css/app.css?v=20261113-ux-flow1">
+<link rel="stylesheet" href="css/app.css?v=20261113-layout2">
 <link rel="stylesheet" href="deal-finder/live.css?v=20261113-ux-flow1">
 </head>
 <body>
@@ -103,6 +103,7 @@
     <div class="binder-controls"><label class="switch-line"><input id="binderIncludeWish" type="checkbox" checked> הצג משאלות בצבע מלא</label><button class="btn primary sm" type="button" id="openReader" title="פתח בלשונית חדשה, עם קישור שאפשר לשתף">👁 מצב צפייה ↗</button></div>
     <details class="binder-place" aria-label="העברת קלף למיקום בבינדר">
       <summary class="binder-place-title">📖 העברת קלף למיקום בבינדר</summary>
+      <div class="binder-place-body">
       <div class="binder-place-hint">חפש אותו כאן, ואז בחר עמוד וכיס (1–9). הקלפים האחרים יזוזו מקום אחד — שום קלף לא יימחק.</div>
       <input id="binderFind" class="binder-place-search" type="search" placeholder="חפש קלף שיש לך או ברשימת המשאלות..." autocomplete="off" aria-label="חיפוש קלף בבינדר">
       <div id="binderMatches" class="binder-matches" role="listbox" aria-label="תוצאות חיפוש בבינדר"></div>
@@ -111,6 +112,7 @@
         <label>עמוד<select id="binderTargetPage" aria-label="עמוד יעד"></select></label>
         <label>כיס<select id="binderTargetSlot" aria-label="מיקום בעמוד"></select></label>
         <button class="btn primary" type="button" id="binderPlaceSelected" disabled>📖 העבר למיקום שבחרתי</button>
+      </div>
       </div>
     </details>
     <div id="binderEmpty" class="no-cards" hidden>הבינדר שלך עדיין ריק. אפשר להוסיף קלפים מהקטלוג, מרשימת המשאלות או מלשונית ״הקלפים שלי״. <button class="btn sm primary" type="button" data-view-btn="catalog">לקטלוג</button></div>
@@ -1564,17 +1566,18 @@
 
 <script src="js/catalog-data.js?v=20261109-data1"></script>
 <script src="js/shipments.js?v=20261109-ship1"></script>
-<script src="js/collection-views.js?v=20261111-wishsort1"></script>
+<script src="js/collection-views.js?v=20261113-layout2"></script>
 <script src="js/owned-cards.js?v=20261109-owned1"></script>
 <script src="js/collection-drag.js?v=20261109-drag1"></script>
 <script src="js/collection-ordering.js?v=20261109-order1"></script>
 <script src="js/card-actions.js?v=20261113-ux-flow1"></script>
-<script src="js/card-details.js?v=20261113-ux-flow1"></script>
-<script src="js/catalog-ui.js?v=20261113-ux-flow1"></script>
+<script src="js/card-details.js?v=20261113-layout2"></script>
+<script src="js/catalog-ui.js?v=20261113-layout2"></script>
 <script src="js/catalog-loader.js?v=20261110-loader1"></script>
-<script src="js/collection-state.js?v=20261112-catalogmulti1"></script>
+<script src="js/collection-state.js?v=20261113-layout2"></script>
 <script src="js/collection-backup.js?v=20261110-backup1"></script>
-<script src="js/binder.js?v=20261113-ux-flow1"></script>
+<script src="js/smooth-details.js?v=20261113-layout2"></script>
+<script src="js/binder.js?v=20261113-layout2"></script>
 
 
 <script src="js/market-prices.js?v=20261109-js1"></script>
