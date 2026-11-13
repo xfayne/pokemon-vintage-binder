@@ -1,5 +1,45 @@
 (()=>{'use strict';
 window.VintageCardDetails={create({state,MAP,$,esc,cardNumber,rarityHtml,dealAuctionUrl,openDealsForCard,toggleOwned,toggleWish,ensureCloudEdit,openMovePicker,save,renderCards,updatePurchasePrice}){
+// Keep the open dialog and card photo mounted while updating only ownership controls.
+function syncModalActions(id){
+ const owned=!!state.owned[id],wished=!!state.wish[id];
+ const ownButton=$('modalOwned');
+ if(!ownButton)return;
+ ownButton.classList.toggle('primary',!owned);
+ ownButton.textContent=owned?'✓ יש לי — הסר':'✓ יש לי';
+ ownButton.onclick=()=>{toggleOwned(id);syncModalActions(id);};
+ let wishButton=$('modalWish');
+ if(owned){wishButton?.remove();}
+ else{
+  if(!wishButton){
+   wishButton=document.createElement('button');
+   wishButton.type='button';wishButton.className='btn';wishButton.id='modalWish';
+   ownButton.after(wishButton);
+  }
+  wishButton.textContent=wished?'★ Wishlist':'☆ Wishlist';
+  wishButton.onclick=()=>{toggleWish(id);syncModalActions(id);};
+ }
+ let moveButton=$('modalMove');
+ if(!owned&&!wished){moveButton?.remove();}
+ else{
+  if(!moveButton){
+   moveButton=document.createElement('button');
+   moveButton.type='button';moveButton.className='btn';moveButton.id='modalMove';
+   $('modalDeals').before(moveButton);
+  }
+  moveButton.textContent=state.binderOrder.includes(id)?'📍 העבר':'＋ לבינדר';
+  moveButton.onclick=()=>{
+   if(!ensureCloudEdit())return;
+   $('modal').close();openMovePicker(id);
+  };
+ }
+ const purchase=$('modalPurchaseBox');
+ purchase.hidden=!owned;
+ if(owned){
+  $('modalPurchaseAmount').onchange=()=>updatePurchasePrice(id);
+  $('modalPurchaseCurrency').onchange=()=>updatePurchasePrice(id);
+ }
+}
 function showModal(id){const c=state.cards.find(c=>c.id===id);if(!c)return;const s=MAP.get(c.set);$('modalContent').innerHTML=`<div class="modal-main"><div><img class="modal-img" src="${esc(c.large)}" alt="${esc(c.name)}"></div><div class="modal-data"><div class="modal-meta-row"><span class="modal-set-name">${esc(s.name)} · ${s.year}</span><span class="modal-card-number card-sub">#${esc(cardNumber(c))}</span>${rarityHtml(c)}</div>
 <div class="modal-title-row"><h3>${esc(c.name)}</h3><div class="modal-collection-actions">
  <button type="button" class="btn ${state.owned[c.id]?'':'primary'}" id="modalOwned">${state.owned[c.id]?'✓ יש לי — הסר':'✓ יש לי'}</button>
@@ -27,15 +67,7 @@ function showModal(id){const c=state.cards.find(c=>c.id===id);if(!c)return;const
   </div>
  </div>
 </div></div></div>`;
- $('modalOwned').onclick=()=>{toggleOwned(c.id);showModal(c.id)};
- const wishAction=$('modalWish');
- if(wishAction)wishAction.onclick=()=>{toggleWish(c.id);showModal(c.id)};
- const moveAction=$('modalMove');
- if(moveAction)moveAction.onclick=()=>{
-  if(!ensureCloudEdit())return;
-  $('modal').close();
-  openMovePicker(c.id);
- };
+ syncModalActions(c.id);
  $('modalDeals').onclick=()=>{$('modal').close();openDealsForCard(c.id);};
  $('modalCondition').onchange=e=>{
   const v=e.target.value;
@@ -52,10 +84,6 @@ function showModal(id){const c=state.cards.find(c=>c.id===id);if(!c)return;const
   }
   window.VintageMarketPrices?.refresh();
  };
- if(state.owned[c.id]){
-  $('modalPurchaseAmount').onchange=()=>updatePurchasePrice(c.id);
-  $('modalPurchaseCurrency').onchange=()=>updatePurchasePrice(c.id);
- }
  window.VintageMarketPrices?.show(c,s);
  if(!$('modal').open)$('modal').showModal();}
 
