@@ -7,13 +7,17 @@ import { chromium } from 'playwright';
 // eBay network calls are replaced with deterministic item fixtures, never real bids.
 const fixtureHtml = '<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"></head><body>'+
   '<section id="dealsPage"><div class="collection-panel"><div class="collection-heading"><div><h2>🔎 מציאות</h2><div class="subtle">Wishlist deals</div></div></div></div></section>'+
-  '<script src="/js/image-stable-dom.js"></script><script src="/deal-finder/live.js"></script></body></html>';
+  '<script src="/js/currency.js"></script><script src="/js/image-stable-dom.js"></script><script src="/deal-finder/live.js"></script></body></html>';
 const liveScript=readFileSync('deal-finder/live.js','utf8');
 const stableDomScript=readFileSync('js/image-stable-dom.js','utf8');
+const currencyScript=readFileSync('js/currency.js','utf8');
 const server=createServer((request,response)=>{
   if(request.url==='/'){
     response.writeHead(200,{'content-type':'text/html; charset=utf-8'});
     response.end(fixtureHtml);
+  }else if(request.url==='/js/currency.js'){
+    response.writeHead(200,{'content-type':'text/javascript; charset=utf-8'});
+    response.end(currencyScript);
   }else if(request.url==='/js/image-stable-dom.js'){
     response.writeHead(200,{'content-type':'text/javascript; charset=utf-8'});
     response.end(stableDomScript);
@@ -49,6 +53,8 @@ try{
   const context=await browser.newContext({viewport:{width:390,height:844},
     locale:'he-IL',serviceWorkers:'block'});
   await context.addInitScript(()=>{
+    // Existing fixture assertions use USD; this also verifies persistence on load.
+    localStorage.setItem('pokemon-vintage-display-currency','USD');
     window.VintageDealBridge={
       getWishlistCards:()=>[{id:'neo1-14',name:'Slowking',setName:'Neo Genesis',
         number:'14/111',finish:'holo',firstEdition:false}],
@@ -72,6 +78,13 @@ try{
       }
     };
   });
+  await context.route('https://api.frankfurter.dev/v2/rates?base=USD',route=>route.fulfill({
+    status:200,contentType:'application/json',
+    body:JSON.stringify([
+      {base:'USD',quote:'EUR',rate:0.9,date:'2026-11-12'},
+      {base:'USD',quote:'ILS',rate:3.5,date:'2026-11-12'}
+    ])
+  }));
   let galleryCalls=0,analysisCalls=0;
   const requestedCardIds=[];
   const galleryPhotos=['https://i.ebayimg.com/fixture-primary.jpg',
@@ -136,6 +149,14 @@ try{
   assert.ok(!initial.some(key=>key.startsWith('case-')));
   assert.match(await page.locator('#liveCount').textContent(),/מתוך 52 מודעות/,
     'Accessories must be excluded from the full candidate count');
+  await page.waitForFunction(()=>window.VintageCurrency?.getFxDate()==='2026-11-12');
+  await page.evaluate(()=>window.VintageCurrency.setCurrency('ILS'));
+  const shekelRow=await page.locator('[data-listing-key="item-0"] .live-item-numbers').innerText();
+  assert.match(shekelRow,/₪/,'Bid, shipping and total must follow ILS');
+  assert.doesNotMatch(shekelRow,/\$[0-9]/,'Mixed USD prices must not leak into ILS');
+  const shekelMarket=await page.locator('[data-listing-key="item-0"] .live-single-price').innerText();
+  assert.match(shekelMarket,/₪/,'Market price must follow the selected currency');
+  await page.evaluate(()=>window.VintageCurrency.setCurrency('USD'));
 
   assert.equal(galleryCalls,0,'Gallery photos were fetched during search');
   assert.equal(await page.locator('#liveGallery').evaluate(el=>el.open),false);
