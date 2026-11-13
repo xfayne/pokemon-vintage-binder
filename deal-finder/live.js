@@ -137,7 +137,7 @@
   const total=state.scanTotal||list().length;
   const badge=$('liveBadge');
   badge.textContent=state.status==='awaiting-keys'?'ממתין למפתחות eBay':state.status==='error'?'שגיאת חיבור':state.loading&&state.status==='ready'?'סורק מודעות…':state.status==='ready'?'eBay · API':state.status==='loading'?'מתחבר…':'טרם חובר';
-  badge.className='live-badge'+(state.status==='ready'?' ready':'');
+  badge.className='live-badge'+(state.status==='ready'?' ready':'')+(state.loading&&state.status==='ready'?' scanning':'');
   $('liveReload').disabled=state.loading||!state.endpoint||state.status==='awaiting-keys';
   $('liveReload').textContent=scopedCardId?'↻ סרוק מחדש את הקלף':'↻ סרוק מחדש את כל הקלפים';
   $('liveProgress').setAttribute('aria-label',scopedCardId?'התקדמות סריקת הקלף':'התקדמות סריקת קלפי ה־Wishlist');
@@ -148,6 +148,7 @@
   $('liveAdvanced').hidden=state.status!=='ready';
   const progress=$('liveProgress');
   progress.hidden=state.status!=='ready'||!total;
+  progress.classList.toggle('is-scanning',state.loading&&state.status==='ready');
   const pct=total?Math.min(100,Math.round(state.searched/total*100)):0;
   progress.setAttribute('aria-valuenow',String(pct));
   progress.setAttribute('aria-valuetext',state.searched+' מתוך '+total+' קלפים');

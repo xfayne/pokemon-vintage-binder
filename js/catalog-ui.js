@@ -39,6 +39,44 @@ function cardHTML(c){const set=MAP.get(c.set);const isOwned=!!state.owned[c.id];
  <button class="own-btn ${isOwned?'on':''}" data-own="${esc(c.id)}" aria-label="${isOwned?'הסר מהאוסף':'יש לי קלף זה'}" title="${isOwned?'יש לי ✓':'סמן שיש לי'}">${isOwned?'✓':'+'}</button></article>`;}
 function renderCards(){const arr=visible();const slice=arr.slice(0,state.limit);$('cards').innerHTML=slice.length?slice.map(cardHTML).join(''):`<div class="empty" style="grid-column:1/-1"><strong>${state.ready?'לא נמצאו קלפים מתאימים':'רשימת הקלפים נטענת...'}</strong>${state.ready?'נסה לשנות את הסינון או החיפוש.':'מעט סבלנות, הרשימה כוללת יותר מאלף קלפים.'}</div>`;
  $('resultsCount').textContent=state.ready?`מציג ${nf(slice.length)} מתוך ${nf(arr.length)} קלפים`:'ממתין לנתונים';$('loadMore').hidden=arr.length<=state.limit;}
+// A single ownership/Wishlist tap should not recreate the entire catalog grid.
+ // Keep the card image, pressed button and scroll position mounted when no filter depends on ownership.
+function refreshCard(id){
+ const c=state.cards.find(card=>card.id===id);
+ if(!c)return;
+ renderSide();
+ const relevant=relevantSetCards();
+ $('sectionSub').textContent=state.ready?`${nf(relevant.filter(card=>state.owned[card.id]).length)} מתוך ${nf(relevant.length)} קלפים ברשותך`:'רשימות קלפים מקוריות באנגלית';
+ if(state.status!=='all'){renderCards();return;}
+ const node=Array.from($('cards').querySelectorAll('.poke-card')).find(card=>card.dataset.id===id);
+ if(!node)return; // A filtered-out or not-yet-loaded card has no visible DOM to update.
+ const owned=!!state.owned[id],wished=!!state.wish[id];
+ node.classList.toggle('owned',owned);
+ const ownButton=node.querySelector('[data-own]');
+ if(ownButton){
+  ownButton.classList.toggle('on',owned);
+  ownButton.textContent=owned?'✓':'+';
+  ownButton.setAttribute('aria-label',owned?'הסר מהאוסף':'יש לי קלף זה');
+  ownButton.title=owned?'יש לי ✓':'סמן שיש לי';
+ }
+ let wishButton=node.querySelector('[data-wish]');
+ if(owned){wishButton?.remove();}
+ else{
+  if(!wishButton){
+   wishButton=document.createElement('button');
+   wishButton.className='wish-btn';
+   wishButton.dataset.wish=id;
+   wishButton.setAttribute('aria-label','Wishlist');
+   wishButton.title='Wishlist';
+   node.querySelector('.card-actions')?.prepend(wishButton);
+  }
+  wishButton.classList.toggle('on',wished);
+  wishButton.textContent=wished?'★':'☆';
+ }
+ node.classList.remove('card-updated');
+ void node.offsetWidth; // Replay just the tiny feedback effect, without replacing the image.
+ node.classList.add('card-updated');
+}
 function renderFilterSummary(){
  const selected=[];
  if(state.pokemonOnly)selected.push('פוקימון בלבד');
@@ -57,6 +95,6 @@ function renderAll(){
  $('sectionSub').textContent=state.ready?`${nf(owned)} מתוך ${nf(arr.length)} קלפים ברשותך`:'רשימות קלפים מקוריות באנגלית';
 }
 
-return {catalog,relevantSetCards,showHolo,searchKey,searchText,visible,groups,renderSide,renderStats,rarityHtml,cardHTML,renderCards,renderAll};
+return {catalog,relevantSetCards,showHolo,searchKey,searchText,visible,groups,renderSide,renderStats,rarityHtml,cardHTML,renderCards,renderAll,refreshCard};
 }};
 })();

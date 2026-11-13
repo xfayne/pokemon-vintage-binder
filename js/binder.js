@@ -44,9 +44,9 @@ function simplify(raw,set){const n=String(raw.number||'');const kind=raw.superty
 function cardNumber(c){return c.number+(c.total?'/'+c.total:'')}
 function normalNum(x){const n=parseInt(x.number,10);return Number.isFinite(n)?n:9999;}
 const {loadEmbeddedData}=window.VintageCatalogLoader.create({SETS,OFFLINE_PACKS,state,$,renderAll:()=>renderAll()});
-const {catalog,relevantSetCards,showHolo,searchKey,searchText,visible,groups,renderSide,renderStats,rarityHtml,cardHTML,renderCards,renderAll}=window.VintageCatalogUI.create({state,MAP,SETS,$,esc,nf,cardNumber,normalNum,renderCollections:()=>renderCollections()});
+const {catalog,relevantSetCards,showHolo,searchKey,searchText,visible,groups,renderSide,renderStats,rarityHtml,cardHTML,renderCards,renderAll,refreshCard}=window.VintageCatalogUI.create({state,MAP,SETS,$,esc,nf,cardNumber,normalNum,renderCollections:()=>renderCollections()});
 function toast(msg){const e=$('toast');e.textContent=msg;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',2800)}
-const {toggleOwned,removeWish,toggleWish,updatePurchasePrice}=window.VintageCardActions.create({state,$,ensureCloudEdit,normalizeOrders:()=>normalizeOrders(),save,renderAll,toast,showModal:id=>showModal(id)});
+const {toggleOwned,removeWish,toggleWish,updatePurchasePrice}=window.VintageCardActions.create({state,$,ensureCloudEdit,normalizeOrders:()=>normalizeOrders(),save,refreshCard,toast,showModal:id=>showModal(id)});
 const {showModal}=window.VintageCardDetails.create({state,MAP,$,esc,cardNumber,rarityHtml,dealAuctionUrl,openDealsForCard,toggleOwned,toggleWish,ensureCloudEdit,openMovePicker,save,renderCards,updatePurchasePrice});
 const {backup,copyWishlist,exportCSV,importBackup}=window.VintageCollectionBackup.create({state,MAP,cardNumber,toast,getProgress,normalizeOrders:()=>normalizeOrders(),sortedOwnedCards:()=>sortedOwnedCards(),ensureCloudEdit,save,renderAll,normalizeShipment});
 const {normalizeOrders,binderVisible,binderPageCount,reorder}=window.VintageCollectionOrdering.create({state,ensureCloudEdit,save});
@@ -81,10 +81,16 @@ function placeBinder(id,page,slot){
 }
 
 const {renderShipments,refreshShipments}=window.VintageShipments.create({state,MAP,cardNumber,esc,$,ensureCloudEdit,save,toast});
-function showView(view,doScroll=true,dealsCardId=null){if(!['catalog','owned','binder','wishlist','shipments','deals','analysis'].includes(view))return;state.view=view;
+function showView(view,doScroll=true,dealsCardId=null){if(!['catalog','owned','binder','wishlist','shipments','deals','analysis'].includes(view))return;
+ const previousView=state.view;state.view=view;
  $('catalogShell').hidden=view!=='catalog';$('ownedPage').hidden=view!=='owned';$('binderPage').hidden=view!=='binder';$('wishPage').hidden=view!=='wishlist';$('dealsPage').hidden=view!=='deals';$('shipmentsPage').hidden=view!=='shipments';$('analysisPage').hidden=view!=='analysis';
  document.querySelectorAll('[data-view-btn]').forEach(b=>{const a=b.dataset.viewBtn===view;b.classList.toggle('active',a);b.setAttribute('aria-pressed',String(a));});
- if(view!=='catalog')renderCollections();if(view==='deals'){if(dealsCardId)window.VintageEbayLive?.openCard?.(dealsCardId);else window.VintageEbayLive?.open?.();}if(view==='shipments')refreshShipments();if(doScroll)window.scrollTo({top:0,behavior:'smooth'});
+ if(previousView!==view){
+  document.querySelectorAll('.view-enter').forEach(page=>page.classList.remove('view-enter'));
+  const nextPage=view==='catalog'?$('catalogShell'):$({owned:'ownedPage',binder:'binderPage',wishlist:'wishPage',shipments:'shipmentsPage',deals:'dealsPage',analysis:'analysisPage'}[view]);
+  nextPage?.classList.add('view-enter');
+ }
+ if(view!=='catalog')renderCollections();if(view==='deals'){if(dealsCardId)window.VintageEbayLive?.openCard?.(dealsCardId);else window.VintageEbayLive?.open?.();}if(view==='shipments')refreshShipments();if(doScroll&&previousView!==view)window.scrollTo({top:0,behavior:'instant'});
 }
 function openDealsForCard(id){
  if(!state.cards.some(card=>card.id===id))return;

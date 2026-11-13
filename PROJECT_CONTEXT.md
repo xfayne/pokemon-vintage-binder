@@ -51,6 +51,12 @@ Collector preference: English vintage Unlimited, ungraded/raw cards; prioritize 
 - Remove unused Value tab; show collection totals in My Cards.
 - Deal discovery should aggressively reject junk listings (including keyring/keychain) without falsely treating uncertain matches as confirmed deals.
 
+## Interaction responsiveness (2026-11-13)
+- Collection ownership/Wishlist taps preserve the mounted catalog card where possible. `VintageCatalogUI.refreshCard(id)` updates its buttons, a small confirmation effect, sidebar totals and collection subtitle instead of recreating the visible grid; ownership-dependent filters still use a full `renderCards()` to keep filtered results accurate.
+- `VintageCardActions` continues immediate Firestore save/tombstone semantics, but drops the redundant `renderAll()` call after `save()`; `save()` still refreshes collection lists once. `VintageCardDetails.syncModalActions` updates ownership/Wishlist/move/purchase controls without replacing the open card image/dialog.
+- Tab changes have a short entrance and instantly reset long page scroll (instead of slowly animating thousands of pixels); buttons, dialogs and expanded panels have subtle feedback. eBay scan activity and AI analysis display in-progress motion without staging fake results or creating new backend calls.
+- New motion respects `prefers-reduced-motion: reduce` and uses light opacity/transform effects rather than animating large lists. Browser parity includes node-identity checks for catalog ownership taps and open card details to prevent reintroducing full rerenders.
+
 ## Open questions / backlog
 - The remaining `js/binder.js` IIFE coordinates UI modules; state/hydration, cloud-save notification, JSON backup/import, CSV and clipboard export have moved into `js/collection-state.js` and `js/collection-backup.js`; Firestore schema, Google login and persistence continue to live in `js/firebase-cloud.js`. Further decomposition should keep these interfaces stable and remain test-driven.
 
