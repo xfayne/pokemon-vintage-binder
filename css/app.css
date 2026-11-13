@@ -127,13 +127,13 @@
 
 /* Easier iPhone drag & direct placement into any binder page */
 .binder-place{border:1px solid #d9e0f2;background:linear-gradient(125deg,#f8faff,#f0f4ff);border-radius:15px;padding:0;margin:2px 0 18px}
-.binder-place[open]{padding:0 14px 14px}
+.binder-place-body{padding:0 14px 14px}
 .binder-place:not([open]) > :not(summary){display:none}
 .binder-place-title{display:block;position:relative;cursor:pointer;list-style:none;font-weight:800;color:#1a2b4d;font-size:15px;margin:0;padding:13px 15px;padding-inline-end:40px}
 .binder-place-title::-webkit-details-marker{display:none}
 .binder-place-title::marker{content:''}
-.binder-place-title::after{content:'▾';position:absolute;inset-inline-end:15px;top:50%;transform:translateY(-50%);font-size:17px;color:#51648b}
-.binder-place[open]>.binder-place-title{margin:0 -14px 9px}
+.binder-place-title::after{content:'▾';position:absolute;inset-inline-end:15px;top:50%;transform:translateY(-50%);font-size:17px;color:#51648b;transition:transform .22s ease}
+ .binder-place-title{transition:background-color .18s ease}.binder-place-title:hover{background:#eaf0ff}
 .binder-place[open]>.binder-place-title::after{transform:translateY(-50%) rotate(180deg)}
 .binder-place-title:focus-visible{outline:2px solid #586bd1;outline-offset:-3px;border-radius:14px}
 .binder-place-hint{font-size:12px;color:#586b87;line-height:1.5;margin-bottom:10px}
@@ -160,7 +160,7 @@
 .drag-ghost small{color:#71819b;font-size:10px}
 body.dragging-card{user-select:none;-webkit-user-select:none}
 body.dragging-card .wish-item{touch-action:auto}
-@media(max-width:650px){.binder-controls{gap:6px}.binder-controls .switch-line{padding:9px 8px;gap:5px;font-size:12px}.binder-place{padding:0;margin-bottom:13px}.binder-place[open]{padding:0 10px 10px}.binder-place-title{padding:11px 12px;padding-inline-end:36px}.binder-place[open]>.binder-place-title{margin:0 -10px 9px}.binder-place-targets{gap:6px}.binder-place-targets label{flex:1;min-width:70px}.binder-place-targets select{width:100%;min-width:0}.binder-place-targets .btn{flex:1 1 100%}.binder-pocket .quick-front{font-size:9px;padding:5px 3px}.wish-item .drag-handle{min-width:68px}.wish-item img[data-drag-kind]{border:1px solid #bbc7e4}}
+@media(max-width:650px){.binder-controls{gap:6px}.binder-controls .switch-line{padding:9px 8px;gap:5px;font-size:12px}.binder-place{padding:0;margin-bottom:13px}.binder-place-body{padding:0 10px 10px}.binder-place-title{padding:11px 12px;padding-inline-end:36px}.binder-place-targets{gap:6px}.binder-place-targets label{flex:1;min-width:70px}.binder-place-targets select{width:100%;min-width:0}.binder-place-targets .btn{flex:1 1 100%}.binder-pocket .quick-front{font-size:9px;padding:5px 3px}.wish-item .drag-handle{min-width:68px}.wish-item img[data-drag-kind]{border:1px solid #bbc7e4}}
 
 /* Compact, readable wishlist cards on iPhone: details above a dedicated controls row. */
 @media(max-width:650px){
@@ -276,7 +276,7 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
 .market-footer{margin-top:10px;font-size:12px;color:#667892;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .market-footer a{font-weight:720}
 .wish-item img[data-preview]{cursor:pointer}
-@media(max-width:650px){.modal-main{grid-template-columns:1fr;gap:13px}.modal-img{max-width:180px;display:block;margin:auto}.purchase-controls select{max-width:112px}}
+@media(max-width:650px){.modal-main{grid-template-columns:1fr;gap:13px}.modal-media{max-width:180px;margin-inline:auto}.purchase-controls select{max-width:112px}}
 
 /* v14: concise card details, one condition-based market price */
 .modal-main{align-items:start}
@@ -753,4 +753,27 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
  .wish-move-dialog[open],.catalog-advanced[open] .catalog-advanced-body,
  .binder-place[open] .binder-place-body,.toast[style*="display: block"],
  .analysis-status.is-busy::before,.analysis-result:not([hidden]){animation:none!important}
+}
+
+/* Layout stability: card photos occupy their full card-shaped footprint before
+   a high-resolution image loads or decodes. No late changes to dialog height. */
+.modal-media{
+ position:relative;width:100%;aspect-ratio:63/88;overflow:hidden;border-radius:10px;
+ background:linear-gradient(115deg,#e8edf5 30%,#f7f9fd 49%,#e8edf5 68%);
+ background-size:220% 100%;box-shadow:0 7px 25px #24324c28;
+}
+.modal-media:not(.is-ready):not(.has-error){animation:modal-image-skeleton 1.4s ease-in-out infinite}
+@keyframes modal-image-skeleton{to{background-position-x:-220%}}
+.modal-media .modal-img{
+ position:absolute;inset:0;width:100%;height:100%;object-fit:contain;
+ opacity:0;box-shadow:none;border-radius:0;transition:opacity .22s ease;
+}
+.modal-media .modal-img.is-ready{opacity:1}
+.modal-photo-fallback{display:none;position:absolute;inset:0;place-items:center;font-size:38px;color:#94a1b6}
+.modal-media.has-error .modal-photo-fallback{display:grid}
+.catalog-advanced.is-closing .catalog-advanced-body,
+.binder-place.is-closing .binder-place-body{opacity:0;transition:opacity .16s ease}
+@media(prefers-reduced-motion:reduce){
+ .modal-media:not(.is-ready):not(.has-error){animation:none}
+ .modal-media .modal-img,.binder-place-title::after{transition:none}
 }

@@ -40,7 +40,7 @@ function syncModalActions(id){
   $('modalPurchaseCurrency').onchange=()=>updatePurchasePrice(id);
  }
 }
-function showModal(id){const c=state.cards.find(c=>c.id===id);if(!c)return;const s=MAP.get(c.set);$('modalContent').innerHTML=`<div class="modal-main"><div><img class="modal-img" src="${esc(c.large)}" alt="${esc(c.name)}"></div><div class="modal-data"><div class="modal-meta-row"><span class="modal-set-name">${esc(s.name)} · ${s.year}</span><span class="modal-card-number card-sub">#${esc(cardNumber(c))}</span>${rarityHtml(c)}</div>
+function showModal(id){const c=state.cards.find(c=>c.id===id);if(!c)return;const s=MAP.get(c.set);$('modalContent').innerHTML=`<div class="modal-main"><div class="modal-photo-column"><div class="modal-media"><img class="modal-img" src="${esc(c.large)}" alt="${esc(c.name)}" decoding="async" fetchpriority="high"><span class="modal-photo-fallback" aria-hidden="true">✦</span></div></div><div class="modal-data"><div class="modal-meta-row"><span class="modal-set-name">${esc(s.name)} · ${s.year}</span><span class="modal-card-number card-sub">#${esc(cardNumber(c))}</span>${rarityHtml(c)}</div>
 <div class="modal-title-row"><h3>${esc(c.name)}</h3><div class="modal-collection-actions">
  <button type="button" class="btn ${state.owned[c.id]?'':'primary'}" id="modalOwned">${state.owned[c.id]?'✓ יש לי — הסר':'✓ יש לי'}</button>
  ${!state.owned[c.id]?`<button type="button" class="btn" id="modalWish">${state.wish[c.id]?'★ Wishlist':'☆ Wishlist'}</button>`:''}
@@ -67,6 +67,13 @@ function showModal(id){const c=state.cards.find(c=>c.id===id);if(!c)return;const
   </div>
  </div>
 </div></div></div>`;
+ // Aspect-ratio reserves the exact media footprint before network/decode finishes.
+ const photo=$('modalContent').querySelector('.modal-img'),frame=photo.parentElement;
+ const reveal=()=>{frame.classList.add('is-ready');photo.classList.add('is-ready');};
+ const failed=()=>frame.classList.add('has-error');
+ photo.addEventListener('load',reveal,{once:true});
+ photo.addEventListener('error',failed,{once:true});
+ if(photo.complete){if(photo.naturalWidth>0)reveal();else failed();}
  syncModalActions(c.id);
  $('modalDeals').onclick=()=>{$('modal').close();openDealsForCard(c.id);};
  $('modalCondition').onchange=e=>{

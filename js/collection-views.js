@@ -1,10 +1,13 @@
 (()=>{'use strict';
 window.VintageCollectionViews={create({state,MAP,$,esc,cardNumber,normalizeOrders,renderShipments,binderPageCount,refreshPlacementTargets,binderVisible,renderOwnedList,renderDeals}){
-function renderCollections(){if(!state.ready)return;normalizeOrders();renderShipments();
+function renderCollections({skipHidden=false}={}){if(!state.ready)return;normalizeOrders();if(!skipHidden||state.view==='shipments')renderShipments();
  $('binderCountTab').textContent=state.binderOrder.length+' קלפים';$('wishCountTab').textContent=state.wishOrder.length;
  $('binderCount').textContent=state.binderOrder.filter(id=>state.owned[id]).length+' באוסף · '+state.binderOrder.filter(id=>!state.owned[id]&&state.wish[id]).length+' משאלות';
  $('wishCount').textContent=state.wishOrder.length+' משאלות';
  $('binderIncludeWish').checked=state.binderIncludeWish;
+ // Catalog actions need updated nav badges, not several off-screen image grids.
+ // Every destination is rendered normally on showView before it becomes visible.
+ if(skipHidden&&state.view==='catalog')return;
  if($('binderTargetPage').options.length!==binderPageCount()||!$('binderTargetSlot').options.length)refreshPlacementTargets();
  const list=binderVisible();const pageCount=Math.max(1,Math.ceil(list.length/9));state.binderPage=Math.min(Math.max(0,state.binderPage),pageCount-1);
  const cardLookup=new Map(state.cards.map(c=>[c.id,c]));

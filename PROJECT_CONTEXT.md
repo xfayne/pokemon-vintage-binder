@@ -57,6 +57,12 @@ Collector preference: English vintage Unlimited, ungraded/raw cards; prioritize 
 - Tab changes have a short entrance and instantly reset long page scroll (instead of slowly animating thousands of pixels); buttons, dialogs and expanded panels have subtle feedback. eBay scan activity and AI analysis display in-progress motion without staging fake results or creating new backend calls.
 - New motion respects `prefers-reduced-motion: reduce` and uses light opacity/transform effects rather than animating large lists. Browser parity includes node-identity checks for catalog ownership taps and open card details to prevent reintroducing full rerenders.
 
+## Layout stability and disclosure animation (2026-11-13)
+- Catalog filtering and sorting now reconcile keyed card nodes, preserving <img> elements for cards that remain visible. Sidebar series buttons also update in place. The fast path for catalog edits/search updates live navigation counts without rebuilding hidden binder, Wishlist, owned and shipment lists; each view still renders fully on entry. The cloud snapshot and initial data hydration continue through existing server-first paths.
+- Card-details media reserves a portrait 63:88 box before the full-size artwork loads; decoded images fade over the reserved background and failed requests retain the same footprint.
+- Native catalog advanced filters, Deals advanced filters and binder placement <details> use a measured-height Web Animations API disclosure, including programmatic placement opening; reduced-motion visitors retain native immediate details toggling. The binder body has its own padded wrapper so the summary never jumps horizontally when expanded.
+- Browser parity tests assert catalog art node identity across searches, stable modal photo geometry without network imagery, and expanding/collapsing panels on mobile/desktop.
+
 ## Open questions / backlog
 - The remaining `js/binder.js` IIFE coordinates UI modules; state/hydration, cloud-save notification, JSON backup/import, CSV and clipboard export have moved into `js/collection-state.js` and `js/collection-backup.js`; Firestore schema, Google login and persistence continue to live in `js/firebase-cloud.js`. Further decomposition should keep these interfaces stable and remain test-driven.
 

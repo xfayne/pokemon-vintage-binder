@@ -20,11 +20,29 @@ function visible(){
 function groups(){return [['Base','sideBase'],['Gym','sideGym'],['Neo','sideNeo'],['Extra','sideExtra']];}
 function renderSide(){
  for(const [g,id] of groups()){
-  $(id).innerHTML=SETS.filter(s=>s.group===g).map(s=>{
+  const html=SETS.filter(s=>s.group===g).map(s=>{
    const own=state.cards.filter(c=>c.set===s.id&&state.owned[c.id]).length;
    const isSelected=selectedSet(s.id);
    return `<button class="set-btn ${isSelected?'active':''}" data-set="${s.id}" aria-pressed="${isSelected}" ${g==='Extra'&&!state.extras?'title="לחיצה תציג גם אוספים נוספים"':''}><span>${esc(s.name)}</span><small>${own}/${s.count}</small><span class="mini-track"><i style="width:${(own/s.count*100).toFixed(1)}%"></i></span></button>`;
   }).join('');
+  // Keep the sidebar buttons mounted: replacing them during a Wishlist tap
+  // makes their selected state and their surrounding content visibly flash.
+  const buttons=Array.from($(id).querySelectorAll(':scope > .set-btn'));
+  const series=SETS.filter(s=>s.group===g);
+  if(buttons.length!==series.length||buttons.some((button,i)=>button.dataset.set!==series[i].id)){
+   $(id).innerHTML=html;
+  }else{
+   series.forEach((set,i)=>{
+    const button=buttons[i],own=state.cards.filter(c=>c.set===set.id&&state.owned[c.id]).length;
+    const active=selectedSet(set.id);
+    button.classList.toggle('active',active);
+    button.setAttribute('aria-pressed',String(active));
+    button.querySelector('small').textContent=own+'/'+set.count;
+    button.querySelector('.mini-track i').style.width=(own/set.count*100).toFixed(1)+'%';
+    if(g==='Extra'&&!state.extras)button.title='לחיצה תציג גם אוספים נוספים';
+    else button.removeAttribute('title');
+   });
+  }
  }
  const allSelected=!state.selectedSets.length;
  $('side').querySelector('[data-set="all"]').classList.toggle('active',allSelected);
@@ -37,20 +55,9 @@ function cardHTML(c){const set=MAP.get(c.set);const isOwned=!!state.owned[c.id];
  <div class="card-img-wrap" data-preview="${esc(c.id)}" title="תמונה ופרטים"><img class="card-img" loading="lazy" decoding="async" src="${esc(c.image)}" alt="${esc(c.name)}" onerror="this.style.display='none';this.nextElementSibling.hidden=false"><span class="img-placeholder" hidden>✦</span></div>
  <div class="card-data"><div class="card-name" title="${esc(c.name)}">${esc(c.name)}</div><div class="card-sub">${esc(set.name)} · #${esc(cardNumber(c))}</div><div class="badges">${rarityHtml(c)}</div><div class="card-actions">${!isOwned?`<button class="wish-btn ${state.wish[c.id]?'on':''}" data-wish="${esc(c.id)}" aria-label="Wishlist" title="Wishlist">${state.wish[c.id]?'★':'☆'}</button>`:''}<button class="small-link" data-preview="${esc(c.id)}">פרטים</button><a class="small-link" href="${esc(c.image)}" target="_blank" rel="noopener">תמונה ↗</a>${state.conditions[c.id]?`<span class="info-pill">${esc(state.conditions[c.id])}</span>`:''}</div></div>
  <button class="own-btn ${isOwned?'on':''}" data-own="${esc(c.id)}" aria-label="${isOwned?'הסר מהאוסף':'יש לי קלף זה'}" title="${isOwned?'יש לי ✓':'סמן שיש לי'}">${isOwned?'✓':'+'}</button></article>`;}
-function renderCards(){const arr=visible();const slice=arr.slice(0,state.limit);$('cards').innerHTML=slice.length?slice.map(cardHTML).join(''):`<div class="empty" style="grid-column:1/-1"><strong>${state.ready?'לא נמצאו קלפים מתאימים':'רשימת הקלפים נטענת...'}</strong>${state.ready?'נסה לשנות את הסינון או החיפוש.':'מעט סבלנות, הרשימה כוללת יותר מאלף קלפים.'}</div>`;
- $('resultsCount').textContent=state.ready?`מציג ${nf(slice.length)} מתוך ${nf(arr.length)} קלפים`:'ממתין לנתונים';$('loadMore').hidden=arr.length<=state.limit;}
-// A single ownership/Wishlist tap should not recreate the entire catalog grid.
- // Keep the card image, pressed button and scroll position mounted when no filter depends on ownership.
-function refreshCard(id){
- const c=state.cards.find(card=>card.id===id);
- if(!c)return;
- renderSide();
- const relevant=relevantSetCards();
- $('sectionSub').textContent=state.ready?`${nf(relevant.filter(card=>state.owned[card.id]).length)} מתוך ${nf(relevant.length)} קלפים ברשותך`:'רשימות קלפים מקוריות באנגלית';
- if(state.status!=='all'){renderCards();return;}
- const node=Array.from($('cards').querySelectorAll('.poke-card')).find(card=>card.dataset.id===id);
- if(!node)return; // A filtered-out or not-yet-loaded card has no visible DOM to update.
- const owned=!!state.owned[id],wished=!!state.wish[id];
+// Update metadata without destroying a mounted image (including filtered views).
+function patchCardNode(node,c){
+ const id=c.id,owned=!!state.owned[id],wished=!!state.wish[id];
  node.classList.toggle('owned',owned);
  const ownButton=node.querySelector('[data-own]');
  if(ownButton){
@@ -59,22 +66,57 @@ function refreshCard(id){
   ownButton.setAttribute('aria-label',owned?'הסר מהאוסף':'יש לי קלף זה');
   ownButton.title=owned?'יש לי ✓':'סמן שיש לי';
  }
+ const actions=node.querySelector('.card-actions');
  let wishButton=node.querySelector('[data-wish]');
  if(owned){wishButton?.remove();}
  else{
   if(!wishButton){
    wishButton=document.createElement('button');
-   wishButton.className='wish-btn';
-   wishButton.dataset.wish=id;
-   wishButton.setAttribute('aria-label','Wishlist');
-   wishButton.title='Wishlist';
-   node.querySelector('.card-actions')?.prepend(wishButton);
+   wishButton.className='wish-btn';wishButton.dataset.wish=id;
+   wishButton.setAttribute('aria-label','Wishlist');wishButton.title='Wishlist';
+   actions?.prepend(wishButton);
   }
   wishButton.classList.toggle('on',wished);
   wishButton.textContent=wished?'★':'☆';
  }
+ let condition=actions?.querySelector('.info-pill');
+ if(state.conditions[id]){
+  if(!condition){condition=document.createElement('span');condition.className='info-pill';actions?.append(condition);}
+  condition.textContent=state.conditions[id];
+ }else condition?.remove();
+}
+function renderCards(){
+ const arr=visible(),slice=arr.slice(0,state.limit),container=$('cards');
+ if(!slice.length){
+  container.innerHTML=`<div class="empty" style="grid-column:1/-1"><strong>${state.ready?'לא נמצאו קלפים מתאימים':'רשימת הקלפים נטענת...'}</strong>${state.ready?'נסה לשנות את הסינון או החיפוש.':'מעט סבלנות, הרשימה כוללת יותר מאלף קלפים.'}</div>`;
+ }else{
+  // Reuse keyed cards and their <img> nodes across filtering and sorting.
+  // Moving existing DOM nodes also preserves decoded art and scroll context.
+  const existing=new Map(Array.from(container.querySelectorAll(':scope > .poke-card')).map(node=>[node.dataset.id,node]));
+  const nodes=slice.map(c=>{
+   let node=existing.get(c.id);
+   if(node){patchCardNode(node,c);return node;}
+   const template=document.createElement('template');template.innerHTML=cardHTML(c).trim();
+   return template.content.firstElementChild;
+  });
+  nodes.forEach((node,i)=>{if(container.children[i]!==node)container.insertBefore(node,container.children[i]||null);});
+  while(container.children.length>nodes.length)container.lastElementChild.remove();
+ }
+ $('resultsCount').textContent=state.ready?`מציג ${nf(slice.length)} מתוך ${nf(arr.length)} קלפים`:'ממתין לנתונים';
+ $('loadMore').hidden=arr.length<=state.limit;
+}
+function refreshCard(id){
+ const c=state.cards.find(card=>card.id===id);
+ if(!c)return;
+ renderSide();
+ const relevant=relevantSetCards();
+ $('sectionSub').textContent=state.ready?`${nf(relevant.filter(card=>state.owned[card.id]).length)} מתוך ${nf(relevant.length)} קלפים ברשותך`:'רשימות קלפים מקוריות באנגלית';
+ if(state.status!=='all'){renderCards();return;}
+ const node=Array.from($('cards').querySelectorAll('.poke-card')).find(card=>card.dataset.id===id);
+ if(!node)return;
+ patchCardNode(node,c);
  node.classList.remove('card-updated');
- void node.offsetWidth; // Replay just the tiny feedback effect, without replacing the image.
+ void node.offsetWidth;
  node.classList.add('card-updated');
 }
 function renderFilterSummary(){
@@ -86,8 +128,8 @@ function renderFilterSummary(){
  if(state.sort!=='num')selected.push(state.sort==='name'?'מיון לפי שם':'Holo קודם');
  $('catalogFilterSummary').textContent=selected.join(' · ')||'ללא סינון נוסף';
 }
-function renderAll(){
- renderSide();renderStats();renderCards();renderCollections();renderFilterSummary();
+function renderAll(skipHidden=false){
+ renderSide();renderStats();renderCards();renderCollections(skipHidden?{skipHidden:true}:undefined);renderFilterSummary();
  const selected=state.selectedSets;
  $('sectionTitle').textContent=!selected.length?'כל הסדרות':selected.length===1?(MAP.get(selected[0])?.name||'כל הסדרות'):`${nf(selected.length)} סדרות נבחרו`;
  const arr=relevantSetCards();
