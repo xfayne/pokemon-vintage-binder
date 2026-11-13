@@ -353,6 +353,21 @@ try {
     assert.equal(await bp.locator('#binderGrid .binder-pocket-reserved').count(),7);
     // The existing placement accordion can now select an empty pocket.
     await bp.locator('.binder-place > summary').click();
+    // Search and empty-pocket action share a row without horizontal overflow on phones.
+    for(const width of [390,320]){
+      await bp.setViewportSize({width,height:844});
+      const layout=await bp.evaluate(()=>{
+        const row=document.querySelector('.binder-place-search-row').getBoundingClientRect();
+        const input=document.querySelector('#binderFind').getBoundingClientRect();
+        const button=document.querySelector('#binderSelectEmpty').getBoundingClientRect();
+        return {sameLine:Math.abs(input.top-button.top)<2,
+          fits:input.left>=row.left-1&&button.right<=row.right+1,
+          usableInput:input.width>=100};
+      });
+      assert.deepEqual(layout,{sameLine:true,fits:true,usableInput:true},
+        'Binder search and empty-pocket button should fit side by side at '+width+'px');
+    }
+    await bp.setViewportSize({width:390,height:844});
     await bp.locator('#binderSelectEmpty').click();
     assert.equal(await bp.locator('#binderSelectEmpty').getAttribute('aria-pressed'),'true');
     assert.equal(await bp.locator('#binderPlaceSelected').textContent(),'השאר כיס ריק');

@@ -147,7 +147,8 @@
 .binder-place-title:focus-visible{outline:2px solid #586bd1;outline-offset:-3px;border-radius:14px}
 .binder-place-hint{font-size:12px;color:#586b87;line-height:1.5;margin-bottom:10px}
 .binder-place input,.binder-place select{border:1px solid #cbd6eb;background:#fff;color:#203150;border-radius:9px;padding:10px;font-size:15px;min-height:42px;max-width:100%}
-.binder-place-search{width:100%;display:block;box-sizing:border-box;direction:auto;text-align:start}
+.binder-place-search-row{display:flex;align-items:center;gap:8px;min-width:0}
+.binder-place-search{flex:1 1 0;min-width:0;width:auto;display:block;box-sizing:border-box;direction:auto;text-align:start}
 .binder-matches{display:grid;gap:6px;margin:8px 0 10px;max-height:230px;overflow:auto}
 .binder-match{border:1px solid #d5dff0;background:white;color:#1a2c4b;border-radius:10px;padding:9px 11px;display:flex;align-items:center;text-align:start;gap:9px;font:inherit;cursor:pointer;min-width:0}
 .binder-match.selected{border-color:#566bd1;background:#edf1ff}
@@ -156,7 +157,7 @@
 .binder-match-label small{display:block;font-size:11px;color:#6c7b94;margin-top:3px}
 .binder-selected{font-size:13px;color:#3b4e6e;font-weight:700;min-height:20px}
 .binder-selected:empty{display:none}
-.binder-empty-choice{display:inline-flex;align-items:center;justify-content:center;min-height:38px;margin:8px 0 0;padding:8px 13px;border:1px solid #cbd6eb;background:#fff;border-radius:10px;color:#405272;font-size:13px;font-weight:750;cursor:pointer}
+.binder-empty-choice{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;white-space:nowrap;min-height:42px;margin:0;padding:8px 12px;border:1px solid #cbd6eb;background:#fff;border-radius:10px;color:#405272;font-size:13px;font-weight:750;cursor:pointer}
 .binder-empty-choice.selected{border-color:#566bd1;background:#edf1ff;color:#2a3fa0;box-shadow:0 0 0 1px #566bd122}
 .binder-place-targets{display:flex;gap:8px;align-items:end;flex-wrap:wrap;margin-top:10px}
 .binder-place-targets label{display:flex;flex-direction:column;gap:5px;font-size:12px;color:#4c6080;font-weight:700}
