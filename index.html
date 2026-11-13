@@ -41,7 +41,7 @@
 @media(max-width:650px){.static-img{height:121px;}}
 
 </style></noscript>
-<link rel="stylesheet" href="css/app.css?v=20261113-deals-sort1">
+<link rel="stylesheet" href="css/app.css?v=20261113-binder-pages1">
 <link rel="stylesheet" href="deal-finder/live.css?v=20261113-deals-sort1">
 </head>
 <body>
@@ -127,6 +127,7 @@
     <div id="binderEmpty" class="no-cards" hidden>הבינדר שלך עדיין ריק. אפשר להוסיף קלפים מהקטלוג, מרשימת המשאלות או מלשונית ״הקלפים שלי״. <button class="btn sm primary" type="button" data-view-btn="catalog">לקטלוג</button></div>
     <div class="binder-book" id="binderBook"><div class="binder-grid" id="binderGrid" role="list" aria-label="תשעת הקלפים בעמוד"></div></div>
     <div class="pager" id="binderPager"><button type="button" id="binderPrev">❮ עמוד קודם</button><span id="binderPageLabel"></span><button type="button" id="binderNext">עמוד הבא ❯</button></div>
+    <div class="binder-page-tools" id="binderPageTools" hidden><button type="button" class="btn sm" id="binderMovePage">↗ העבר עמוד</button><button type="button" class="btn sm" id="binderManagePockets">▦ ניהול כיסים ריקים</button></div>
     <div class="subtle" style="margin-top:13px">הקלפים שבבעלותך מסומנים בירוק. כאשר מסתירים משאלות הן נשארות כצללית חלשה באותו הכיס — בלי לשנות את סדר הבינדר.</div>
   </div>
 </section>
@@ -209,6 +210,26 @@
 <section class="collection-page" id="dealsPage" hidden aria-label="מציאות ומכרזי eBay">
  <div class="collection-panel"><div class="collection-heading"><div><h2>🔎 מציאות</h2><div class="subtle">מכרזים אמיתיים על קלפים מרשימת הרצונות שלך</div></div></div></div>
 </section>
+<dialog id="binderMovePageDialog" class="wish-move-dialog" aria-labelledby="binderMovePageTitle">
+ <h3 id="binderMovePageTitle">העברת עמוד שלם</h3>
+ <p class="wish-move-summary" id="binderMovePageCurrent"></p>
+ <label for="binderMovePagePosition">למיקום איזה עמוד להעביר?</label>
+ <input id="binderMovePagePosition" type="number" min="1" step="1" inputmode="numeric" autocomplete="off">
+ <div class="wish-move-actions"><button type="button" class="btn primary" id="binderMovePageConfirm">העבר עמוד</button></div>
+ <button type="button" class="wish-move-cancel" id="binderMovePageCancel">ביטול</button>
+</dialog>
+<dialog id="binderPocketDialog" class="wish-move-dialog binder-pocket-dialog" aria-labelledby="binderPocketTitle">
+ <h3 id="binderPocketTitle">ניהול כיסים ריקים</h3>
+ <p class="wish-move-summary" id="binderPocketPage"></p>
+ <label for="binderPocketPosition">בחר כיס בעמוד</label>
+ <select id="binderPocketPosition" aria-label="מספר הכיס"><option value="1">כיס 1</option><option value="2">כיס 2</option><option value="3">כיס 3</option><option value="4">כיס 4</option><option value="5">כיס 5</option><option value="6">כיס 6</option><option value="7">כיס 7</option><option value="8">כיס 8</option><option value="9">כיס 9</option></select>
+ <p class="binder-pocket-status" id="binderPocketStatus"></p>
+ <div class="wish-move-actions">
+  <button type="button" class="btn primary" id="binderPocketMark">השאר כיס ריק</button>
+  <button type="button" class="btn" id="binderPocketClear">בטל כיס ריק</button>
+ </div>
+ <button type="button" class="wish-move-cancel" id="binderPocketCancel">ביטול</button>
+</dialog>
 <dialog id="wishMoveDialog" class="wish-move-dialog" aria-labelledby="wishMoveTitle">
  <h3 id="wishMoveTitle">העברת קלף ברשימת המשאלות</h3>
  <p id="wishMoveCurrent" class="wish-move-summary"></p>
@@ -1577,10 +1598,10 @@
 <script src="js/currency.js?v=20261113-deals-sort1"></script>
 <script src="js/image-stable-dom.js?v=20261113-audit1"></script>
 <script src="js/shipments.js?v=20261113-audit1"></script>
-<script src="js/collection-views.js?v=20261113-currency1"></script>
+<script src="js/collection-views.js?v=20261113-binder-pages1"></script>
 <script src="js/owned-cards.js?v=20261113-currency1"></script>
 <script src="js/collection-drag.js?v=20261109-drag1"></script>
-<script src="js/collection-ordering.js?v=20261109-order1"></script>
+<script src="js/collection-ordering.js?v=20261113-binder-pages1"></script>
 <script src="js/card-actions.js?v=20261113-ux-flow1"></script>
 <script src="js/card-details.js?v=20261113-nav-owned1"></script>
 <script src="js/catalog-ui.js?v=20261113-layout2"></script>
@@ -1588,7 +1609,7 @@
 <script src="js/collection-state.js?v=20261113-layout2"></script>
 <script src="js/collection-backup.js?v=20261110-backup1"></script>
 <script src="js/smooth-details.js?v=20261113-layout2"></script>
-<script src="js/binder.js?v=20261113-audit1"></script>
+<script src="js/binder.js?v=20261113-binder-pages1"></script>
 
 
 <script src="js/market-prices.js?v=20261113-currency1"></script>
