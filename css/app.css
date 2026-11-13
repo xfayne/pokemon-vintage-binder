@@ -685,3 +685,72 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
  .analysis-listing{flex-wrap:wrap}
  .analysis-submit .btn{width:100%}
 }
+
+/* Interaction polish: short, composited transitions instead of rebuilding visible cards. */
+.main-nav button,
+.sticky-sitebar .main-nav button{
+ transition:background-color .18s ease,border-color .18s ease,color .18s ease,box-shadow .18s ease,transform .13s ease;
+}
+.btn,.own-btn,.wish-btn,.set-btn,.small-link,.pager button,
+.wish-move-action,.analysis-thumbs button{
+ transition:background-color .16s ease,border-color .16s ease,color .16s ease,box-shadow .16s ease,transform .13s ease;
+}
+.main-nav button:not(:disabled):active,.btn:not(:disabled):active,
+.own-btn:not(:disabled):active,.wish-btn:not(:disabled):active,
+.set-btn:not(:disabled):active,.pager button:not(:disabled):active,
+.analysis-thumbs button:not(:disabled):active{transform:scale(.965)}
+.main-nav button:focus-visible,.btn:focus-visible,
+.own-btn:focus-visible,.wish-btn:focus-visible,.set-btn:focus-visible{
+ outline:3px solid #8b9cf4;outline-offset:2px;
+}
+.poke-card{transition:border-color .2s ease,background-color .2s ease,box-shadow .2s ease}
+.poke-card.card-updated{animation:card-tap-confirm .36s ease-out}
+@keyframes card-tap-confirm{
+ 0%{box-shadow:0 0 0 0 #687fd244}
+ 45%{box-shadow:0 0 0 4px #687fd21f}
+ 100%{box-shadow:0 0 0 0 #687fd200}
+}
+/* Tab entrance applies only to a newly selected view, never each catalog rerender. */
+.js-ready .collection-page.view-enter:not([hidden]),
+.js-ready .shell.view-enter:not([hidden]){animation:page-soft-enter .19s cubic-bezier(.18,.75,.3,1) both}
+@keyframes page-soft-enter{
+ from{opacity:.83;transform:translateY(7px)}
+ to{opacity:1;transform:translateY(0)}
+}
+/* Dialog/accordion content stays inside its existing flow and dimensions. */
+.dialog[open] .modal-inner,.wish-move-dialog[open]{animation:dialog-soft-enter .19s cubic-bezier(.2,.8,.3,1) both}
+@keyframes dialog-soft-enter{
+ from{opacity:.65;transform:translateY(7px) scale(.985)}
+ to{opacity:1;transform:translateY(0) scale(1)}
+}
+.catalog-advanced[open] .catalog-advanced-body,
+.binder-place[open] .binder-place-body{animation:accordion-soft-enter .18s ease-out}
+@keyframes accordion-soft-enter{
+ from{opacity:.55;transform:translateY(-4px)}
+ to{opacity:1;transform:translateY(0)}
+}
+.toast[style*="display: block"]{animation:toast-soft-enter .2s ease-out}
+@keyframes toast-soft-enter{
+ from{opacity:0;transform:translateY(8px)}
+ to{opacity:1;transform:translateY(0)}
+}
+.analysis-status.is-busy::before{
+ content:'';display:inline-block;width:11px;height:11px;margin-inline-end:7px;
+ vertical-align:-2px;border:2px solid #dae3f5;border-top-color:#566bc0;
+ border-radius:50%;animation:analysis-status-spin .75s linear infinite;
+}
+@keyframes analysis-status-spin{to{transform:rotate(360deg)}}
+.analysis-result:not([hidden]){animation:dialog-soft-enter .25s ease-out both}
+@media(prefers-reduced-motion:reduce){
+ .main-nav button,.sticky-sitebar .main-nav button,.btn,.own-btn,.wish-btn,.set-btn,
+ .small-link,.pager button,.wish-move-action,.analysis-thumbs button,.poke-card{transition:none!important}
+ .main-nav button:not(:disabled):active,.btn:not(:disabled):active,
+ .own-btn:not(:disabled):active,.wish-btn:not(:disabled):active,
+ .set-btn:not(:disabled):active,.pager button:not(:disabled):active,
+ .analysis-thumbs button:not(:disabled):active{transform:none}
+ .poke-card.card-updated,.js-ready .collection-page.view-enter:not([hidden]),
+ .js-ready .shell.view-enter:not([hidden]),.dialog[open] .modal-inner,
+ .wish-move-dialog[open],.catalog-advanced[open] .catalog-advanced-body,
+ .binder-place[open] .binder-place-body,.toast[style*="display: block"],
+ .analysis-status.is-busy::before,.analysis-result:not([hidden]){animation:none!important}
+}
