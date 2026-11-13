@@ -267,7 +267,7 @@ if(updated.includes('js/card-details.js')){
       code+'\nreturn {showModal};\n}};\n})();\n';
     assert.equal(modal,expected,'Card details dialog markup or handlers changed');
   }
-  const modalTag='<script src="js/card-details.js?v=20261113-layout2"></script>';
+  const modalTag='<script src="js/card-details.js?v=20261113-nav-owned1"></script>';
   const binderTag='<script src="js/binder.js?v=20261113-layout2"></script>';
   assert.ok(updated.indexOf(modalTag)>0&&updated.indexOf(modalTag)<updated.indexOf(binderTag),
     'Details module must load before binder');
@@ -556,6 +556,38 @@ async function exercise(version, viewport) {
         .map(e => e.dataset.view).slice(0, 8)
     }));
   }
+  if(version==='updated'){
+    const navTransition=await page.evaluate(async()=>{
+      const catalog=document.querySelector('.main-nav [data-view-btn="catalog"]');
+      const wishlist=document.querySelector('.main-nav [data-view-btn="wishlist"]');
+      const buttons=Array.from(document.querySelectorAll('.main-nav button'));
+      const paint=node=>Number(getComputedStyle(node,'::before').opacity);
+      catalog.click();
+      // Let any previous tab transition finish before taking measurements.
+      await new Promise(resolve=>setTimeout(resolve,360));
+      const before=paint(wishlist);
+      wishlist.click();
+      const immediately=paint(wishlist);
+      await new Promise(resolve=>setTimeout(resolve,115));
+      const midpoint=paint(wishlist);
+      await new Promise(resolve=>setTimeout(resolve,290));
+      const after=paint(wishlist);
+      const oldTab=paint(catalog);
+      const noReplace=buttons.every((button,i)=>document.querySelectorAll('.main-nav button')[i]===button);
+      const whiteBase=getComputedStyle(wishlist).backgroundColor==='rgb(255, 255, 255)';
+      const stableSize=getComputedStyle(wishlist).transform==='none';
+      const active=wishlist.classList.contains('active')&&wishlist.getAttribute('aria-pressed')==='true';
+      return {before,immediately,midpoint,after,oldTab,noReplace,whiteBase,stableSize,active};
+    });
+    assert.equal(navTransition.before,0,'Inactive tab should have no fill');
+    assert.ok(navTransition.immediately<.3,'Selected tab fill jumped instead of starting from transparent');
+    assert.ok(navTransition.midpoint>.05&&navTransition.midpoint<.98,
+      'Tab selection has no gradual fill during transition');
+    assert.equal(navTransition.after,1,'Selected tab did not finish filling');
+    assert.equal(navTransition.oldTab,0,'Previous tab fill did not fade out');
+    assert.ok(navTransition.noReplace&&navTransition.whiteBase&&navTransition.stableSize&&navTransition.active,
+      'Navigation buttons must stay mounted, stable in size and semantically active');
+  }
   await page.evaluate(() => document.querySelector('[data-view-btn="catalog"]').click());
   await page.locator('#search').fill('Pikachu');
   const filtered = await page.evaluate(() => ({
@@ -838,6 +870,11 @@ async function exercise(version, viewport) {
       if(getComputedStyle(image).position!=='absolute')
         throw Error('Card artwork must not change modal height after loading');
     }
+    if(isUpdated){
+      const own=details.querySelector('#modalOwned');
+      if(!own.classList.contains('primary')||own.getAttribute('aria-pressed')!=='true')
+        throw Error('Owned card must display a filled, pressed ownership button');
+    }
     const opening={
       open:modal.open,
       title:details.querySelector('h3')?.textContent,
@@ -858,6 +895,11 @@ async function exercise(version, viewport) {
     document.querySelector('#modalOwned').click();
     if(isUpdated&&details.querySelector('.modal-img')!==samePhoto)
       throw Error('Ownership tap rebuilt the open card photo');
+    if(isUpdated){
+      const own=details.querySelector('#modalOwned');
+      if(own.classList.contains('primary')||own.getAttribute('aria-pressed')!=='false')
+        throw Error('Removing ownership must clear the button fill and pressed state');
+    }
     const afterOwnedOff={
       owned:!!window.VintageBinder.getProgress().owned['base1-1'],
       wishActionVisible:!!document.querySelector('#modalWish'),
@@ -875,6 +917,19 @@ async function exercise(version, viewport) {
       binderVisible:!document.querySelector('#binderPage').hidden,
       targetName:document.querySelector('#binderSelected').textContent
     };
+    if(isUpdated){
+      // A fresh unowned card must also initialize neutral and turn filled on tap.
+      window.VintageBinder.adoptProgress({});
+      document.querySelector('[data-view-btn="catalog"]').click();
+      document.querySelector('#cards [data-preview="base1-1"]').click();
+      const own=document.querySelector('#modalOwned');
+      if(own.classList.contains('primary')||own.getAttribute('aria-pressed')!=='false')
+        throw Error('Unowned card opens with a filled ownership button');
+      own.click();
+      if(!own.classList.contains('primary')||own.getAttribute('aria-pressed')!=='true')
+        throw Error('Adding card did not fill the ownership button');
+      modal.close();
+    }
     window.VintageCloud={canEdit:()=>false,onChange:()=>{}};
     return {
       opening,

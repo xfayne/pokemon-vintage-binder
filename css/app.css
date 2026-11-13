@@ -695,7 +695,7 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
 .wish-move-action,.analysis-thumbs button{
  transition:background-color .16s ease,border-color .16s ease,color .16s ease,box-shadow .16s ease,transform .13s ease;
 }
-.main-nav button:not(:disabled):active,.btn:not(:disabled):active,
+.btn:not(:disabled):active,
 .own-btn:not(:disabled):active,.wish-btn:not(:disabled):active,
 .set-btn:not(:disabled):active,.pager button:not(:disabled):active,
 .analysis-thumbs button:not(:disabled):active{transform:scale(.965)}
@@ -776,4 +776,29 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
 @media(prefers-reduced-motion:reduce){
  .modal-media:not(.is-ready):not(.has-error){animation:none}
  .modal-media .modal-img,.binder-place-title::after{transition:none}
+}
+
+/* Stable tab fills: fade a dedicated paint layer instead of swapping the
+   button's background during navigation. No scale on tap (iOS flicker). */
+.js-ready .main-nav button{
+ position:relative;
+ isolation:isolate;
+ background:#fff;
+ transition:color .26s ease,border-color .26s ease,box-shadow .26s ease;
+}
+.js-ready .main-nav button.active{background:#fff}
+.js-ready .main-nav button::before{
+ content:'';
+ position:absolute;
+ inset:0;
+ z-index:-1;
+ border-radius:inherit;
+ background:#182541;
+ opacity:0;
+ pointer-events:none;
+ transition:opacity .26s cubic-bezier(.22,.65,.3,1);
+}
+.js-ready .main-nav button.active::before{opacity:1}
+@media(prefers-reduced-motion:reduce){
+ .js-ready .main-nav button::before{transition:none}
 }
