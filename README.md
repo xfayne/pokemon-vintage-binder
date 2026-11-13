@@ -8,7 +8,7 @@ A mobile-friendly web app for organizing a personal **vintage Pokémon TCG** col
 
 - **Catalog** — browse vintage sets and card artwork, including a static no-JavaScript fallback.
 - **My Cards** — track owned cards, condition, paid prices, estimated market values, and export to CSV.
-- **My Binder** — arrange cards in 3×3 binder pages and share a read-only binder view.
+- **My Binder** — arrange cards in 3×3 binder pages, move whole pages, reserve empty pockets, and share a read-only binder view.
 - **Wishlist** — prioritize and reorder wanted cards.
 - **Deals** — discover eBay listings for wishlist cards, compare condition-specific prices, and filter suspicious or irrelevant listings.
 - **AI condition analysis** — analyze an eBay listing from Deals or use the standalone **Condition Analysis** tab to take/select up to eight phone photos or paste an eBay listing link. Both paths use the same Gemini grading engine, distribution and defect markers. eBay results reuse the private Firestore cache; personal photo uploads are processed only on demand and are not stored. Owner sign-in is required.

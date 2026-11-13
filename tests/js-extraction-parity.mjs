@@ -86,7 +86,7 @@ if (updated.includes('js/shipments.js')) {
       'Shipment extraction changed any other binder behavior');
   }
   const shipmentsTag = '<script src="js/shipments.js?v=20261113-audit1"></script>';
-  const binderTag = '<script src="js/binder.js?v=20261113-audit1"></script>';
+  const binderTag = '<script src="js/binder.js?v=20261113-binder-pages1"></script>';
   assert.ok(updated.indexOf(shipmentsTag) > 0 && updated.indexOf(shipmentsTag) < updated.indexOf(binderTag),
     'Shipment controller must be loaded before binder.js');
 }
@@ -134,8 +134,8 @@ if (updated.includes('js/collection-views.js')) {
     assert.equal(newBinder.replace(call,()=>extracted),oldBinder,
       'The extracted collection renderer differs from old binder code');
   }
-  const viewScript='<script src="js/collection-views.js?v=20261113-currency1"></script>';
-  const binderScript='<script src="js/binder.js?v=20261113-audit1"></script>';
+  const viewScript='<script src="js/collection-views.js?v=20261113-binder-pages1"></script>';
+  const binderScript='<script src="js/binder.js?v=20261113-binder-pages1"></script>';
   assert.ok(updated.indexOf(viewScript)>0 && updated.indexOf(viewScript)<updated.indexOf(binderScript),
     'View renderer script must load before binder');
 }
@@ -158,7 +158,7 @@ if (updated.includes('js/owned-cards.js')) {
       'Owned-cards extraction changed binder logic beyond this exact block');
   }
   const ownedTag='<script src="js/owned-cards.js?v=20261113-currency1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261113-audit1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261113-binder-pages1"></script>';
   assert.ok(updated.indexOf(ownedTag)>0&&updated.indexOf(ownedTag)<updated.indexOf(binderTag),
     'Owned cards controller must load before binder');
 }
@@ -181,7 +181,7 @@ if (updated.includes('js/collection-drag.js')) {
       'Drag extraction modified unrelated collection logic or listeners');
   }
   const dragTag='<script src="js/collection-drag.js?v=20261109-drag1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261113-audit1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261113-binder-pages1"></script>';
   assert.ok(updated.indexOf(dragTag)>0&&updated.indexOf(dragTag)<updated.indexOf(binderTag),
     'Drag module must be available before the binder controller');
 }
@@ -190,13 +190,14 @@ if (updated.includes('js/collection-ordering.js')) {
   const before=execFileSync('git',['show','origin/main:js/binder.js'],{encoding:'utf8'});
   const after=readFileSync('js/binder.js','utf8');
   const ordering=readFileSync('js/collection-ordering.js','utf8');
-  const call='const {normalizeOrders,binderVisible,binderPageCount,reorder}=window.VintageCollectionOrdering.create({state,ensureCloudEdit,save});\n';
+  const call='const orderingController=window.VintageCollectionOrdering.create({state,ensureCloudEdit,save});\n';
   assert.ok(after.includes(call),'Collection ordering factory was removed from binder');
-  if (before.includes(call)) {
-    // The migration is already on main. Compare the standalone module itself,
-    // while allowing unrelated binder refactors in subsequent PRs.
-    assert.equal(ordering,execFileSync('git',['show','origin/main:js/collection-ordering.js'],
-      {encoding:'utf8'}),'Previously extracted collection ordering controller changed');
+  if (before.includes('window.VintageCollectionOrdering.create(')) {
+    // Extraction already landed on main. Its behavior can evolve in later
+    // feature PRs, so validate the entrypoint and new API rather than exact bytes.
+    assert.match(ordering,/function movePage\(/);
+    assert.match(ordering,/function markEmptyPocket\(/);
+    assert.match(ordering,/function clearEmptyPocket\(/);
   } else {
     // Only the migration PR should validate the precise source relocation.
     const i1=before.indexOf('// Collection organization:');
@@ -214,8 +215,8 @@ if (updated.includes('js/collection-ordering.js')) {
       '\nreturn {normalizeOrders,binderVisible,binderPageCount,reorder};\n}};\n})();\n';
     assert.equal(ordering,module,'Collection order implementation was changed during extraction');
   }
-  const tag='<script src="js/collection-ordering.js?v=20261109-order1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261113-audit1"></script>';
+  const tag='<script src="js/collection-ordering.js?v=20261113-binder-pages1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261113-binder-pages1"></script>';
   assert.ok(updated.indexOf(tag)>0&&updated.indexOf(tag)<updated.indexOf(binderTag),
     'Collection order module must load before binder');
 }
@@ -244,7 +245,7 @@ if(updated.includes('js/card-actions.js')){
       'Extracted card action function bodies changed unexpectedly');
   }
   const actionTag='<script src="js/card-actions.js?v=20261113-ux-flow1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261113-audit1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261113-binder-pages1"></script>';
   assert.ok(updated.indexOf(actionTag)>0&&updated.indexOf(actionTag)<updated.indexOf(binderTag),
     'Card actions script must load before binder');
 }
@@ -270,7 +271,7 @@ if(updated.includes('js/card-details.js')){
     assert.equal(modal,expected,'Card details dialog markup or handlers changed');
   }
   const modalTag='<script src="js/card-details.js?v=20261113-nav-owned1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261113-audit1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261113-binder-pages1"></script>';
   assert.ok(updated.indexOf(modalTag)>0&&updated.indexOf(modalTag)<updated.indexOf(binderTag),
     'Details module must load before binder');
 }
@@ -297,7 +298,7 @@ if(updated.includes('js/catalog-ui.js')){
     assert.equal(movedModule,expected,'Catalog UI function bodies changed');
   }
   const uiTag='<script src="js/catalog-ui.js?v=20261113-layout2"></script>';
-  const binderTag='<script src="js/binder.js?v=20261113-audit1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261113-binder-pages1"></script>';
   assert.ok(updated.indexOf(uiTag)>0&&updated.indexOf(uiTag)<updated.indexOf(binderTag),
     'Catalog UI must load before binder app');
 }
@@ -328,7 +329,7 @@ if(updated.includes('js/catalog-loader.js')){
     assert.equal(loader,expectedModule,'Offline dataset decoder or bootstrap logic changed');
   }
   const loaderTag='<script src="js/catalog-loader.js?v=20261110-loader1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261113-audit1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261113-binder-pages1"></script>';
   assert.ok(updated.indexOf(loaderTag)>0&&updated.indexOf(loaderTag)<updated.indexOf(binderTag),
     'Catalog loader must load before binder entrypoint');
 }
@@ -337,7 +338,7 @@ if(updated.includes('js/collection-state.js')){
   const module=readFileSync('js/collection-state.js','utf8');
   assert.ok(module.includes('window.VintageCollectionState={create('),'Missing collection-state factory');
   const stateTag='<script src="js/collection-state.js?v=20261113-layout2"></script>';
-  const binderTag='<script src="js/binder.js?v=20261113-audit1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261113-binder-pages1"></script>';
   assert.ok(updated.indexOf(stateTag)>0 && updated.indexOf(stateTag)<updated.indexOf(binderTag),
     'Collection state must load before binder');
   assert.ok(readFileSync('js/binder.js','utf8').includes('window.VintageCollectionState.create('),
@@ -372,7 +373,7 @@ if(updated.includes('js/collection-backup.js')){
   const factory='const {backup,copyWishlist,exportCSV,importBackup}=window.VintageCollectionBackup.create({state,MAP,cardNumber,toast,getProgress,normalizeOrders:()=>normalizeOrders(),sortedOwnedCards:()=>sortedOwnedCards(),ensureCloudEdit,save,renderAll,normalizeShipment});\n';
   const start=before.indexOf('function download(content,type,filename){');
   const backupTag='<script src="js/collection-backup.js?v=20261110-backup1"></script>';
-  const binderTag='<script src="js/binder.js?v=20261113-audit1"></script>';
+  const binderTag='<script src="js/binder.js?v=20261113-binder-pages1"></script>';
   assert.ok(updated.indexOf(backupTag)>0&&updated.indexOf(backupTag)<updated.indexOf(binderTag),
     'Backup controller must be loaded before binder');
   assert.ok(after.includes(factory),'Binder backup factory is not wired');

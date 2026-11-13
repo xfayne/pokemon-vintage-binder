@@ -39,6 +39,9 @@ const normalizeUnchangedLayout = html => normalizeScripts(html)
     '<!-- intentionally updated binder controls and placement accordion -->')
   .replace(/<section class="collection-page" id="wishPage"[\s\S]*?<\/section>/,
     '<!-- intentionally updated wishlist search -->')
+  // Binder-specific dialogs are new UI, not part of the unchanged catalog shell.
+  .replace(/<dialog id="binderMovePageDialog"[\s\S]*?<\/dialog>\n/, '')
+  .replace(/<dialog id="binderPocketDialog"[\s\S]*?<\/dialog>\n/, '')
   .replace(/<div class="toolbar">[\s\S]*?(?=<div class="list-header">)/,
     '<!-- intentionally updated catalog filter toolbar -->\n  ');
 assert.equal(normalizeUnchangedLayout(current), normalizeUnchangedLayout(baseline),
