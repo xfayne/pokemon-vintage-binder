@@ -23,7 +23,7 @@
 .live-card-text>span{font-size:11px;color:#70809b}
 .live-candidate{background:#e2f7ec;border:1px solid #a5dec2;color:#17694d;border-radius:7px;padding:5px 6px;white-space:nowrap;font-size:10px;font-weight:750;max-width:90px}
 .live-item-numbers{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:11px 0}
-.live-item-numbers span{background:#f5f7fc;border-radius:9px;padding:8px 7px;color:#6c7890;font-size:10px;display:grid;gap:4px}
+.live-item-numbers span{background:#f5f7fc;border-radius:9px;padding:8px 7px;color:#6c7890;font-size:10px;display:grid;gap:4px;text-align:center;justify-items:center;align-content:center}
 .live-item-numbers b{font-size:13px;color:#283c65;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 .live-item-numbers b.positive{color:#198361}
 .live-flags{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px}

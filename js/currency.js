@@ -35,8 +35,6 @@
    button.classList.toggle('selected',active);
    button.setAttribute('aria-pressed',String(active));
   });
-  const note=document.getElementById('currencyRateStatus');
-  if(note)note.textContent=getRateStatus();
  }
  function notify(){
   updateMenu();

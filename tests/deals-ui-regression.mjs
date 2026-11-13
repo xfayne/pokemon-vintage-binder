@@ -42,6 +42,9 @@ const single=(id,title,price)=>({
 const cards=Array.from({length:52},(_,i)=>single('item-'+i,
   'Slowking 14/111 Neo Genesis Holo Unlimited Pokemon Card '+i,
   i===0?3:10+i/10));
+// Two verified, overpriced offers: +593% must never outrank +42% by accident.
+cards[50].currentBid={value:693,currency:'USD'};
+cards[51].currentBid={value:142,currency:'USD'};
 const accessories=[
   single('case-space','Slowking 14/111 Neo Genesis Pokemon Art Case',2),
   single('case-hyphen','Slowking 14/111 Neo Genesis Pokemon Art-Case',2),
@@ -253,6 +256,22 @@ try{
   assert.equal(await page.locator('#liveScopeActions').isVisible(),false);
   assert.equal(await page.locator('#liveListings select.live-item-grade').count(),52,
     'Returning to Wishlist must restore the previously expanded result set without scoped listings');
+  // Recommended sorting: +42% is more attractive than +593% for the same
+  // verified card. A grade edit may freeze order for one interaction only.
+  await page.locator('#liveSort').selectOption('recommended');
+  await page.locator('#liveShowMore').click();
+  const overpriceOrder=await keys();
+  assert.ok(overpriceOrder.indexOf('item-51')<overpriceOrder.indexOf('item-50'),
+    'A +42% overpayment must rank before a +593% overpayment');
+  await page.locator('select.live-item-grade[data-item-key="item-51"]').selectOption('DMG');
+  const gradeOrder=await keys();
+  assert.ok(gradeOrder.indexOf('item-51')<gradeOrder.indexOf('item-50'),
+    'The listing must not jump while changing its comparison grade');
+  await page.evaluate(()=>window.VintageCurrency.setCurrency('ILS'));
+  const reRanked=await keys();
+  assert.ok(reRanked.indexOf('item-50')<reRanked.indexOf('item-51'),
+    'A later currency refresh must release the frozen order and re-rank the now much worse grade');
+  await page.evaluate(()=>window.VintageCurrency.setCurrency('USD'));
   await page.evaluate(()=>window.VintageEbayLive.openCard('base1-3'));
   await page.waitForFunction(()=>document.querySelectorAll('#liveListings article').length===1);
   await page.locator('#liveBackToCard').click();
