@@ -446,6 +446,9 @@ async function exercise(version, viewport) {
   });
   await page.goto(origin + '/' + version + '/', {waitUntil:'load'});
   await page.waitForFunction(() => window.VintageBinder && window.VintageReader && window.VintageMarketPrices);
+  // Keep pre-existing valuation assertions in USD; currency switching is tested separately.
+  // The fixture blocks external FX APIs, so ILS conversions correctly stay unavailable.
+  if(version==='updated')await page.evaluate(()=>window.VintageCurrency?.setCurrency('USD'));
   if (version === 'updated') {
     const initialPlacementClosed = await page.evaluate(() =>
       !document.querySelector('.binder-place').open);
