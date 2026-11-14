@@ -77,6 +77,31 @@ try {
     assert.equal(status.background, 'rgb(245, 247, 251)', 'App CSS was not applied');
     assert.ok(status.cards > 200, 'JS-free catalog fallback missing');
 
+    // iOS Safari and Chrome auto-zoom editable controls with fonts below 16px.
+    // Chromium cannot emulate this WebKit gesture; check the computed CSS
+    // across real app fields and Deals controls instead.
+    const inputSizes = await changedPage.evaluate(() => {
+      const excluded = new Set(['checkbox', 'radio', 'file', 'range', 'hidden', 'button', 'submit', 'reset']);
+      const appFields = [...document.querySelectorAll('input, select, textarea')]
+        .filter(el => !excluded.has(el.type))
+        .map(el => ({ id: el.id || el.tagName, size: parseFloat(getComputedStyle(el).fontSize) }));
+      const dealsControls = document.createElement('div');
+      dealsControls.className = 'live-filter-grid';
+      const dealsSelect = document.createElement('select');
+      dealsControls.append(dealsSelect);
+      document.body.append(dealsControls);
+      const dealsSize = parseFloat(getComputedStyle(dealsSelect).fontSize);
+      dealsControls.remove();
+      return { appFields, dealsSize };
+    });
+    assert.ok(inputSizes.appFields.length >= 10, 'Editable input coverage unexpectedly small');
+    if (viewport.width <= 650) {
+      for (const { id, size } of inputSizes.appFields) {
+        assert.ok(size >= 16, 'iOS focus zoom risk: '+id+' uses '+size+'px');
+      }
+      assert.ok(inputSizes.dealsSize >= 16, 'Deals select should not trigger iOS focus zoom');
+    }
+
     for (const scrollY of [0, 1100, 4700]) {
       await baselinePage.evaluate(y => window.scrollTo({ top: y, behavior: 'instant' }), scrollY);
       await changedPage.evaluate(y => window.scrollTo({ top: y, behavior: 'instant' }), scrollY);
