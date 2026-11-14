@@ -837,3 +837,11 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
 .account-menu .account-currency-options button.selected{background:#1b2b48;border-color:#1b2b48;color:white}
 .live-item-numbers b,.live-single-price b{direction:ltr;unicode-bidi:isolate}
 .live-fx-status{font-size:11px;color:#75849a;margin:7px 0 9px}
+
+/* iOS WebKit (Safari and Chrome) zooms the page on focus when editable
+   controls use text smaller than 16px. Keep mobile text inputs legible
+   without disabling pinch zoom or enlarging checkbox/radio controls. */
+@media (max-width:650px){
+ input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="hidden"]):not([type="button"]):not([type="submit"]):not([type="reset"]),
+ select,textarea{font-size:16px!important}
+}
