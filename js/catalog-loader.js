@@ -14,6 +14,8 @@ function embeddedCards(){
     if(set.id==='neo1'&&[19,104,105].includes(number))kind='Energy';
     if(set.id==='neo4'&&number===16)kind='Energy';
     if(set.id==='base6'&&[100,101].includes(number))kind='Energy';
+    // Secret Shining cards are Pokémon even though they follow the trainer/energy range.
+    if((set.id==='neo3'&&[65,66].includes(number))||(set.id==='neo4'&&number>=106&&number<=113))kind='Pokémon';
     if(set.id==='basep'&&[16,40,41,42].includes(number))kind='Trainer';
     let finish=type==='H'?'holo':type==='S'?'shining':type==='P'?'unknown':'normal';
     if(set.id==='si1'&&[1,4,7,11,14,17].includes(number))finish='holo';
