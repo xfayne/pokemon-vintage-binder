@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 
-const sandbox = { window: {} };
+const sandbox = { window: {}, document: { documentElement: { classList: { add() {} } } } };
 vm.runInNewContext(fs.readFileSync('js/catalog-data.js', 'utf8'), sandbox);
 vm.runInNewContext(fs.readFileSync('js/catalog-loader.js', 'utf8'), sandbox);
 const { SETS, OFFLINE_PACKS } = sandbox.window.VintageCatalogData;
