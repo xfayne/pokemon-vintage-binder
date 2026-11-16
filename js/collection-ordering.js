@@ -11,8 +11,8 @@ function normalizeOrders(){
  legacyIds.forEach((id,i)=>{if(!Number.isFinite(Number(state.ownedAddedAt[id]))||Number(state.ownedAddedAt[id])<=0)state.ownedAddedAt[id]=i+1;});
  for(const id of Object.keys(state.ownedAddedAt))if(!state.owned[id])delete state.ownedAddedAt[id];
  for(const id of Object.keys(state.removedWish||{}))delete state.wish[id];
- for(const id of Object.keys(state.owned))if(state.owned[id]){delete state.wish[id];delete state.pendingPurchase[id];}
- for(const id of Object.keys(state.pendingPurchase))delete state.wish[id];
+ for(const id of Object.keys(state.owned))if(state.owned[id]){delete state.wish[id];if(state.pendingPurchase)delete state.pendingPurchase[id];}
+ for(const id of Object.keys(state.pendingPurchase||{}))delete state.wish[id];
  const keys=new Set(state.cards.map(c=>c.id));
  const valid=(arr,predicate)=>[...new Set((Array.isArray(arr)?arr:[]).filter(id=>predicate(id)))];
  const bySet=state.cards.map(c=>c.id);
