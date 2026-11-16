@@ -356,7 +356,7 @@ try {
     await page.waitForFunction(()=>!!window.VintageBinder.getProgress().pendingPurchase['base2-4']);
 
     // A passive label and the existing paid-amount field are shown, not another button.
-    await page.locator('[data-view-btn="catalog"]').click();
+    await page.locator('.main-nav [data-view-btn="catalog"]').click();
     await page.locator('#search').fill(await page.evaluate(()=>window.VintageBinder.getCardInfo('base2-4').name));
     await page.locator('[data-id="base2-4"] [data-preview]').first().click();
     assert.equal(await page.locator('#modalPendingBadge').isVisible(),true);
