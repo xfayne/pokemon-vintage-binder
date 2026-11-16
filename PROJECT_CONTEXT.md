@@ -181,3 +181,8 @@ Collector preference: English vintage Unlimited, ungraded/raw cards; prioritize 
 - Pending metadata adds optional `binderIndex` and `wishIndex`, for defensive reinsertion and accurate wishlist-priority restoration on unlink. Reserved empty pockets are unchanged; existing Firestore clean and JSON backup permit these metadata keys.
 - Old positions already removed in a historical save are *not reconstructable* from `wasWish` and `removedWish`. Restore only from an authorized pre-incident backup or Firestore historical snapshot, carefully merging only `binderOrder`, not overwriting current purchases or prices.
 - Public share preserves pending pocket visibility without shipping metadata; browser tests use mock Firestore only.
+
+## Emergency binder-order recovery UI (2026-11-16)
+- Account menu includes "↶ שחזור סידור הבינדר". The tool performs authenticated READ-ONLY Firestore REST `documents.get?readTime` requests for recent historical versions of `progress.binderOrder`. REST uses the user's Firebase ID token and security rules; no privileged admin credentials are exposed. Historical reads may be unavailable if the retention window has elapsed or security rules reject readTime.
+- Older app JSON backups can be selected as an alternative source. The tool previews the order, and only on explicit confirmation backs up current progress locally, merges the selected historical binder order with currently valid cards, and invokes the existing Firestore save path.
+- Never restore the *full* historical progress document: retain current shipments, ownership, wishlists, purchase prices, notes and conditions. No automatic remote writes. The feature exists to fix the catastrophic loss introduced by PR #82, not as a scheduled history service.

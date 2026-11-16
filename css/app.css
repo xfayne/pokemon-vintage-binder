@@ -868,3 +868,12 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
 .binder-pocket.pending{border-color:#9faeed;border-style:solid}
 .binder-pocket .pocket-badge.pending{background:#dce6ff;color:#2d4f8e}
 .reader-pocket.pending::after{position:absolute;bottom:2px;right:3px;content:'📦';font-size:12px}
+
+/* Account-only, explicit binder-order recovery; safe-area friendly on iPhone. */
+.binder-recovery-dialog{width:min(94vw,520px);max-height:calc(100dvh - 24px);overflow-y:auto}
+.binder-recovery-dialog .modal-inner{display:grid;gap:12px}
+.binder-recovery-dialog p{font-size:13px;line-height:1.55;color:#5d6a83;margin:0}
+.binder-recovery-dialog label{display:grid;gap:6px;font-size:12px;font-weight:750}
+.binder-recovery-dialog select,.binder-recovery-dialog input[type=file]{width:100%;box-sizing:border-box;border:1px solid #d4ddec;border-radius:8px;padding:9px;font-size:16px;max-width:100%}
+.binder-recovery-dialog .binder-recovery-preview{border:1px solid #dce4f2;border-radius:10px;background:#f8faff;padding:12px;font-size:13px;line-height:1.6;overflow-wrap:anywhere}
+.binder-recovery-dialog #binderRecoveryStatus{min-height:18px}

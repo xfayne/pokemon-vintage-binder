@@ -33,6 +33,9 @@ const normalizeUnchangedLayout = html => normalizeScripts(html)
   .replace(/^  <button type="button" data-view-btn="analysis"[^\n]*\n/gm, '')
   .replace(/<section class="collection-page" id="analysisPage"[\s\S]*?<\/section>\n/, '')
   .replace(/deal-finder\/live\.css\?v=[^"]+/g, 'deal-finder/live.css?v=VERSION')
+  // Recovery is a separate account-only dialog and menu action.
+  .replace(/^   <button type="button" id="openBinderRecovery"[^\n]*\n/gm, '')
+  .replace(/<dialog id="binderRecoveryDialog"[\s\S]*?<\/dialog>\n/, '')
   // Tracking is optional in the editor; this does not change the offline catalog.
   .replace(/<label>מספר מעקב \(לא חובה\) <input id="shipmentNumber"[^>]*>/,
     '<label>מספר מעקב <input id="shipmentNumber" maxlength="50" required dir="ltr" placeholder="LA657049767NL" autocomplete="off" autocapitalize="characters" spellcheck="false">')
