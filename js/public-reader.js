@@ -18,7 +18,7 @@
   const book=document.createElement('div');book.className='reader-book';book.setAttribute('aria-label','עמוד '+(idx+1));
   const grid=document.createElement('div');grid.className='reader-grid';grid.setAttribute('role','list');
   for(let i=0;i<9;i++){
-   const slot=items[idx*9+i],p=document.createElement('div');p.className='reader-pocket'+(slot?.kind==='wish'?' wish':'')+(slot?.muted?' wish-muted':'');p.setAttribute('role','listitem');
+   const slot=items[idx*9+i],p=document.createElement('div');p.className='reader-pocket'+(slot?.kind==='wish'?' wish':slot?.kind==='pending'?' pending':'')+(slot?.muted?' wish-muted':'');p.setAttribute('role','listitem');
    if(slot?.id){const c=window.VintageBinder?.getCardInfo?.(slot.id);if(c){const img=document.createElement('img');img.src=c.image;img.alt=c.name+' · '+c.setName;img.loading='eager';img.decoding='async';img.draggable=false;p.append(img);p.title=c.name+' · '+c.setName;}}
    grid.append(p);
   }
@@ -35,7 +35,7 @@
  }
  function show(entries){
   if(loadTimer){clearTimeout(loadTimer);loadTimer=null;}
-  items=Array.isArray(entries)?entries.map(c=>c&&typeof c.id==='string'?{id:c.id,kind:c.kind==='wish'?'wish':'owned',muted:!!c.muted}:null):[];
+  items=Array.isArray(entries)?entries.map(c=>c&&typeof c.id==='string'?{id:c.id,kind:['wish','pending'].includes(c.kind)?c.kind:'owned',muted:!!c.muted}:null):[];
   page=0;document.body.classList.add('reader-open');render();
  }
  function next(){const jump=landscape()&&page>0?2:1;if(page+jump<total()){page+=jump;render('next');}}

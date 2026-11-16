@@ -863,3 +863,8 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
 /* Purchase date uses a local calendar day and avoids focus zoom on iPhone. */
 .shipment-form #shipmentPurchaseDate{box-sizing:border-box;min-height:44px;height:44px;font-size:16px;font-weight:500;color:#23334d;color-scheme:light}
 .shipment-purchase-date{display:block;margin-top:4px;font-weight:650}
+
+/* Purchased-in-transit cards hold their exact binder pocket. */
+.binder-pocket.pending{border-color:#9faeed;border-style:solid}
+.binder-pocket .pocket-badge.pending{background:#dce6ff;color:#2d4f8e}
+.reader-pocket.pending::after{position:absolute;bottom:2px;right:3px;content:'📦';font-size:12px}
