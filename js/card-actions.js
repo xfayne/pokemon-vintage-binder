@@ -43,7 +43,7 @@ function updatePurchasePrice(id){
  if(raw===''){delete state.purchasePrices[id];save();return;}
  const amount=Number(raw);
  if(!Number.isFinite(amount)||amount<0||amount>1000000000){toast('הכנס סכום רכישה תקין');return;}
- const currency=['ILS','EUR','USD'].includes(currencyField.value)?currencyField.value:'ILS';
+ const currency=['ILS','EUR','USD','GBP'].includes(currencyField.value)?currencyField.value:'ILS';
  state.purchasePrices[id]={amount:Math.round(amount*100)/100,currency};
  save();
 }
