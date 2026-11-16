@@ -38,12 +38,18 @@ function removeWishlist(id){
  if(!state.wish[id]&&!state.wishOrder.includes(id))return;
  delete state.wish[id];
  state.wishOrder=state.wishOrder.filter(x=>x!==id);
- state.binderOrder=state.binderOrder.filter(x=>x!==id);
+ // Linking a shipment must never move or remove a binder pocket.
  state.removedWish[id]=Date.now();
 }
-function markPending(id){
+function markPending(id,wishIndex){
  if(state.owned[id])return;
- if(!state.pendingPurchase[id])state.pendingPurchase[id]={wasWish:!!state.wish[id]};
+ if(!state.pendingPurchase[id]){
+  const binderIndex=state.binderOrder.indexOf(id);
+  const priorWishIndex=Number.isInteger(wishIndex)?wishIndex:state.wishOrder.indexOf(id);
+  state.pendingPurchase[id]={wasWish:!!state.wish[id],
+   ...(binderIndex>=0?{binderIndex}:{}),
+   ...(priorWishIndex>=0?{wishIndex:priorWishIndex}:{})};
+ }
  removeWishlist(id);
 }
 function markOwned(id){
@@ -57,13 +63,21 @@ function markOwned(id){
  }
 }
 function restoreUnlinked(ids){
- const restored=[];
+ const restored=[],wishRestores=[];
  for(const id of ids){
   const meta=state.pendingPurchase[id];
   if(!meta||state.owned[id]||state.shipments.some(s=>!s.deliveredAt&&s.cardIds.includes(id)))continue;
   delete state.pendingPurchase[id];
-  if(meta.wasWish){state.wish[id]=true;delete state.removedWish[id];}
+  if(meta.wasWish){
+   state.wish[id]=true;delete state.removedWish[id];
+   wishRestores.push({id,index:Number.isInteger(meta.wishIndex)?meta.wishIndex:state.wishOrder.length});
+  }
   restored.push(id);
+ }
+ // Preserve the prior Wishlist priority rather than appending unlinked cards.
+ wishRestores.sort((a,b)=>a.index-b.index);
+ for(const {id,index} of wishRestores){
+  if(!state.wishOrder.includes(id))state.wishOrder.splice(Math.min(Math.max(index,0),state.wishOrder.length),0,id);
  }
  return restored;
 }
@@ -243,9 +257,10 @@ $('shipmentForm').addEventListener('submit',e=>{
  if(purchaseDate)item.purchaseDate=purchaseDate;else delete item.purchaseDate;
  if(note)item.note=note;else delete item.note;
  const changed=new Set([...previousIds,...item.cardIds]);
+ const originalWishOrder=[...state.wishOrder];
  for(const id of item.cardIds){
   if(item.deliveredAt)markOwned(id);
-  else markPending(id);
+  else markPending(id,originalWishOrder.indexOf(id));
  }
  restoreUnlinked(previousIds);
  $('shipmentDialog').close();save(true);refreshCards(changed);
