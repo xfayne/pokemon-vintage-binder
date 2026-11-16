@@ -10,6 +10,15 @@ const SHIPMENT_STATUS={
  OutForDelivery:'יוצא למסירה',Delivered:'נמסר',DeliveryFailure:'בעיה במסירה',
  Exception:'חריגה במשלוח',Expired:'מעקב הסתיים',NotFound:'ממתין למידע',Unknown:'ממתין לעדכון'
 };
+function localPurchaseDate(){
+ const d=new Date();
+ return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
+}
+function validPurchaseDate(value){
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(value))return false;
+ const d=new Date(value+'T00:00:00Z');
+ return Number.isFinite(d.getTime())&&d.toISOString().slice(0,10)===value;
+}
 function shipmentStatus(status){return SHIPMENT_STATUS[status]||status||'ממתין לעדכון';}
 function shipmentEventTime(raw){
  if(!raw)return '';
@@ -89,7 +98,7 @@ function renderShipments(){
   const events=live?.events||[];
   const timeline=`<div class="shipment-timeline-region ${expanded?'is-expanded':''}" aria-hidden="${!expanded}"><div class="shipment-timeline-collapse"><div class="shipment-timeline">${live?.error?`<p class="shipment-label">${esc(live.error.message||'אין עדיין נתוני מעקב')}</p>`:events.length?events.map(event=>`<div class="shipment-event"><span class="shipment-dot" aria-hidden="true"></span><div class="shipment-event-main"><strong>${esc(event.description||shipmentStatus(event.stage))}</strong><small>${esc([shipmentEventTime(event.time),event.location].filter(Boolean).join(' · '))}</small></div></div>`).join(''):'<p class="shipment-label">עדיין אין אירועי מעקב זמינים. נסה לרענן בהמשך.</p>'}</div></div></div>`;
   return `<article class="shipment-entry ${unread?'is-new':''}" data-shipment-id="${esc(item.id)}">
-   <div class="shipment-entry-top"><div><h3 class="shipment-entry-title">${esc(item.title||'משלוח')}</h3><div class="shipment-tracking-number" ${item.number?'dir="ltr"':''}>${item.number?esc(item.number):"אין מספר מעקב"}</div><div class="shipment-label">${cards.length} קלפים משויכים</div></div><span class="shipment-status">${esc(status)}</span></div>
+   <div class="shipment-entry-top"><div><h3 class="shipment-entry-title">${esc(item.title||'משלוח')}</h3><div class="shipment-tracking-number" ${item.number?'dir="ltr"':''}>${item.number?esc(item.number):"אין מספר מעקב"}</div><div class="shipment-label">${cards.length} קלפים משויכים</div>${item.purchaseDate?`<time class="shipment-label shipment-purchase-date" datetime="${esc(item.purchaseDate)}">תאריך קנייה: ${esc(item.purchaseDate.split("-").reverse().join("."))}</time>`:""}</div><span class="shipment-status">${esc(status)}</span></div>
    ${latestContent}
    ${item.note?`<div class="shipment-private-note">📝 ${esc(item.note)}</div>`:""}
    <div class="shipment-actions-row">
@@ -114,6 +123,9 @@ function openShipmentEditor(id=null){
  $('shipmentDialogTitle').textContent=shipment?'עריכת משלוח':'משלוח חדש';
  $('shipmentName').value=shipment?.title||'';
  $('shipmentNumber').value=shipment?.number||'';
+ $('shipmentPurchaseDate').max=localPurchaseDate();
+ $('shipmentPurchaseDate').value=shipment?shipment.purchaseDate||'':localPurchaseDate();
+ $('shipmentPurchaseDate').required=!shipment;
  $('shipmentNote').value=shipment?.note||'';
  $('shipmentCardSearch').value='';
  renderShipmentPicker();
@@ -212,12 +224,14 @@ $('shipmentSelected').addEventListener('click',e=>{
 });
 $('shipmentForm').addEventListener('submit',e=>{
  e.preventDefault();if(!ensureCloudEdit())return;
- const number=$('shipmentNumber').value.trim().toUpperCase(),title=$('shipmentName').value.trim().slice(0,70),note=$('shipmentNote').value.trim().slice(0,1000);
+ const number=$('shipmentNumber').value.trim().toUpperCase(),title=$('shipmentName').value.trim().slice(0,70),note=$('shipmentNote').value.trim().slice(0,1000),purchaseDate=$('shipmentPurchaseDate').value;
  if(number&&!/^[A-Z0-9-]{5,50}$/.test(number)){toast('מספר המעקב אינו תקין');return;}
  if(!number&&!title){toast('למשלוח ללא מספר מעקב צריך לתת שם');return;}
+ if(purchaseDate&&(!validPurchaseDate(purchaseDate)||purchaseDate>localPurchaseDate())){toast('בחר תאריך קנייה תקין שאינו בעתיד');return;}
  if(number&&state.shipments.some(x=>x.number===number&&x.id!==shipmentEditingId)){toast('המשלוח כבר קיים');return;}
  let item=state.shipments.find(x=>x.id===shipmentEditingId),fresh=!item;
  const numberChanged=!fresh&&item.number!==number;
+ if(fresh&&!purchaseDate){toast('בחר תאריך קנייה');return;}
  if(fresh){
   item={id:crypto.randomUUID().replace(/-/g,''),number,title,cardIds:[],seenEventIds:[],initialized:false,carrier:0,createdAt:Date.now()};
   state.shipments.unshift(item);
@@ -226,6 +240,7 @@ $('shipmentForm').addEventListener('submit',e=>{
  }
  const previousIds=[...item.cardIds];
  item.title=title;item.cardIds=[...shipmentSelectedIds].slice(0,60);
+ if(purchaseDate)item.purchaseDate=purchaseDate;else delete item.purchaseDate;
  if(note)item.note=note;else delete item.note;
  const changed=new Set([...previousIds,...item.cardIds]);
  for(const id of item.cardIds){

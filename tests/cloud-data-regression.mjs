@@ -330,6 +330,8 @@ try {
     // The mocked Firebase SDK ensures this test never touches production data.
     await page.locator('[data-view-btn="shipments"]').click();
     await page.evaluate(()=>document.querySelector('[data-ship-edit="parcel_test_01"]').click());
+    assert.equal(await page.locator('#shipmentPurchaseDate').inputValue(),'',
+      'Existing shipments with unknown purchase dates must not be assigned today');
     await page.locator('#shipmentNote').fill('Combined shipping confirmed');
     await page.locator('#shipmentCardSearch').fill('base2-4');
     await page.locator('[data-ship-pick="base2-4"]').click();
@@ -341,6 +343,7 @@ try {
     assert.ok(!purchased.wishOrder.includes('base2-4'));
     assert.equal(purchased.pendingPurchase['base2-4'].wasWish,true);
     assert.equal(purchased.shipments[0].note,'Combined shipping confirmed');
+    assert.equal(purchased.shipments[0].purchaseDate,undefined);
     assert.match(await page.locator('#shipmentList').innerText(),/Combined shipping confirmed/);
 
     // Unlinking before delivery reverses Wishlist removal; linking again restores pending.
@@ -410,6 +413,18 @@ try {
     });
     await page.locator('#shipmentAdd').click();
     await page.locator('#shipmentName').fill('Untracked cards from seller');
+    const localToday=await page.evaluate(()=>{
+      const d=new Date();
+      return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
+    });
+    assert.equal(await page.locator('#shipmentPurchaseDate').inputValue(),localToday,
+      'New shipments must default to the local current day');
+    assert.equal(await page.locator('#shipmentPurchaseDate').getAttribute('max'),localToday);
+    assert.equal(await page.locator('#shipmentPurchaseDate').evaluate(el=>el.required),true);
+    await page.locator('#shipmentPurchaseDate').fill('2099-12-31');
+    assert.equal(await page.locator('#shipmentPurchaseDate').evaluate(el=>el.checkValidity()),false,
+      'A purchase date in the future must not be accepted');
+    await page.locator('#shipmentPurchaseDate').fill('2025-09-01');
     assert.equal(await page.locator('#shipmentNumber').evaluate(el=>el.required),false);
     await page.locator('#shipmentNote').fill('Tracking to follow in a week');
     await page.locator('#shipmentCardSearch').fill('base2-5');
@@ -420,6 +435,9 @@ try {
     const untracked=manual.shipments.find(x=>x.title==='Untracked cards from seller');
     assert.equal(untracked.number,'');
     assert.equal(untracked.note,'Tracking to follow in a week');
+    assert.equal(untracked.purchaseDate,'2025-09-01');
+    assert.match(await page.locator('[data-shipment-id="'+untracked.id+'"]').innerText(),
+      /תאריך קנייה: 01\.09\.2025/);
     assert.deepEqual(untracked.cardIds,['base2-5']);
     assert.equal(!!manual.wish['base2-5'],false);
     assert.equal(!!manual.owned['base2-5'],false);
@@ -432,9 +450,11 @@ try {
     // Multiple numberless purchases are distinct; they are identified by ID.
     await page.locator('#shipmentAdd').click();
     await page.locator('#shipmentName').fill('Second untracked purchase');
+    assert.equal(await page.locator('#shipmentPurchaseDate').inputValue(),localToday);
     await page.locator('#shipmentForm button[type="submit"]').click();
     await page.waitForFunction(()=>window.VintageBinder.getProgress().shipments.length===3);
     assert.equal((await getState(page)).shipments.filter(x=>!x.number).length,2);
+    assert.equal((await getState(page)).shipments.find(x=>x.title==='Second untracked purchase').purchaseDate,localToday);
     await page.locator('#shipmentRefresh').click();
     await page.waitForFunction(()=>!document.querySelector('#shipmentRefresh').disabled);
     const trackCalls=await page.evaluate(()=>window.__shipmentCalls.filter(x=>x.url.endsWith('/track')));
@@ -442,11 +462,14 @@ try {
 
     // The same purchase can be edited to add tracking (and later remove it).
     await page.evaluate(id=>document.querySelector('[data-ship-edit="'+id+'"]').click(),untracked.id);
+    assert.equal(await page.locator('#shipmentPurchaseDate').inputValue(),'2025-09-01');
+    await page.locator('#shipmentPurchaseDate').fill('2025-08-25');
     await page.locator('#shipmentNumber').fill('RR987654321IL');
     await page.locator('#shipmentForm button[type="submit"]').click();
     await page.waitForFunction(()=>window.__shipmentCalls.some(x=>x.url.endsWith('/register')&&x.body.number==='RR987654321IL'));
     let manualWithNumber=(await getState(page)).shipments.find(x=>x.id===untracked.id);
     assert.equal(manualWithNumber.number,'RR987654321IL');
+    assert.equal(manualWithNumber.purchaseDate,'2025-08-25');
     assert.deepEqual(manualWithNumber.cardIds,['base2-5']);
     await page.evaluate(id=>document.querySelector('[data-ship-edit="'+id+'"]').click(),untracked.id);
     await page.locator('#shipmentNumber').fill('');
@@ -457,6 +480,7 @@ try {
     // empty-number shipments; no live Firestore data is ever accessed.
     const manualBackup=JSON.parse(await clickDownload(page,'exportJSON'));
     assert.equal(manualBackup.shipments.find(x=>x.id===untracked.id).number,'');
+    assert.equal(manualBackup.shipments.find(x=>x.id===untracked.id).purchaseDate,'2025-08-25');
     await page.locator('[data-ship-deliver="'+untracked.id+'"]').click();
     await page.waitForFunction(id=>window.VintageBinder.getProgress().shipments.find(s=>s.id===id).deliveredAt>0,untracked.id);
     assert.equal((await getState(page)).owned['base2-5'],true);
@@ -467,8 +491,10 @@ try {
     await page.waitForFunction(()=>window.VintageCloud.canEdit()===true);
     const reloaded=await getState(page);
     assert.equal(reloaded.shipments.find(x=>x.id===untracked.id).number,'');
+    assert.equal(reloaded.shipments.find(x=>x.id===untracked.id).purchaseDate,'2025-08-25');
     assert.ok(reloaded.shipments.find(x=>x.id===untracked.id).deliveredAt>0);
     assert.equal(reloaded.shipments.find(x=>x.title==='Second untracked purchase').number,'');
+    assert.equal(reloaded.shipments.find(x=>x.title==='Second untracked purchase').purchaseDate,localToday);
     assert.equal(reloaded.owned['base2-5'],true);
     assert.deepEqual(errors,[],'Optional shipment tracking introduced page errors');
     console.log('PASS cloud persistence, remote revisions, retry, backup/CSV/legacy import, optional shipment tracking and re-login');
