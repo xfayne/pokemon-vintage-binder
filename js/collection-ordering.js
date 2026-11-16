@@ -54,6 +54,24 @@ function reorder(kind,from,to){
  else{state.binderOrder=arr;state.binderPage=Math.floor(to/9);}
  save();return true;
 }
+// Only an explicit placement action may reinsert a card lost from binderOrder.
+ // Never invent positions during normalization or while showing search results.
+function insertBinderCard(id,index){
+ if(!ensureCloudEdit())return false;
+ normalizeOrders();
+ const eligible=state.cards.some(c=>c.id===id)&&!!(state.owned[id]||state.wish[id]||state.pendingPurchase?.[id]);
+ const list=binderVisible();
+ if(!eligible||list.includes(id)||!Number.isInteger(index)||index<0||index>=binderPageCount()*9)return false;
+ // A selected empty slot past the last card must retain its page/slot index.
+ while(list.length<index)list.push(newEmptyPocket());
+ if(isEmptyPocket(list[index]))list[index]=id; // Fill an existing reserved gap.
+ else list.splice(index,0,id); // Insert before an occupied pocket.
+ delete state.binderExcluded[id];
+ state.binderOrder=list;
+ state.binderPage=Math.floor(index/9);
+ save();
+ return true;
+}
 function markEmptyPocket(index){
  if(!ensureCloudEdit())return false;
  const list=binderVisible(),max=binderPageCount()*9;
@@ -85,6 +103,6 @@ function movePage(from,to){
  state.binderPage=to-1;
  save();return true;
 }
-return {normalizeOrders,binderVisible,binderPageCount,reorder,markEmptyPocket,clearEmptyPocket,movePage};
+return {normalizeOrders,binderVisible,binderPageCount,reorder,insertBinderCard,markEmptyPocket,clearEmptyPocket,movePage};
 }};
 })();

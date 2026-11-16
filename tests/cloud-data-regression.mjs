@@ -645,7 +645,7 @@ try {
     await pp.evaluate(()=>{
       const p=window.VintageBinder.getProgress();
       p.owned={'base1-1':true,'base1-2':true};
-      p.pendingPurchase={'base1-3':{wasWish:true}};
+      p.pendingPurchase={'base1-3':{wasWish:true},'base1-4':{wasWish:true}};
       p.wish={};p.wishOrder=[];
       p.binderOrder=['base1-1','base1-2','__binder_empty__:reserved_keep'];
       window.VintageBinder.adoptProgress(p);
@@ -653,6 +653,52 @@ try {
     assert.deepEqual((await getState(pp)).binderOrder,
       ['base1-1','base1-2','__binder_empty__:reserved_keep'],
       'Never invent positions for older damaged purchases without a binder snapshot');
+    // Explicit manual recovery must find pending cards even when the old bug
+    // dropped their binder positions. Searching and selecting are READ-ONLY.
+    await pp.locator('[data-view-btn="binder"]').click();
+    await pp.locator('.binder-place > summary').click();
+    const beforeSearch=await getState(pp);
+    const writesBeforeSearch=await pp.evaluate(()=>window.__cloudTest.writes.length);
+    await pp.locator('#binderFind').fill('base1-3');
+    const missingOption=pp.locator('[data-pick-binder="base1-3"]');
+    assert.equal(await missingOption.count(),1,'Orphaned purchased card must be searchable');
+    assert.match(await missingOption.textContent(),/בדרך/);
+    assert.match(await missingOption.textContent(),/לא בבינדר/);
+    await missingOption.click();
+    assert.match(await pp.locator('#binderPlaceSelected').textContent(),/הוסף למיקום/);
+    assert.deepEqual((await getState(pp)).binderOrder,beforeSearch.binderOrder,
+      'Searching/selecting cannot mutate binder order');
+    assert.equal(await pp.evaluate(()=>window.__cloudTest.writes.length),writesBeforeSearch,
+      'Searching/selecting cannot trigger Firestore writes');
+    await pp.locator('#binderTargetPage').selectOption('1');
+    await pp.locator('#binderTargetSlot').selectOption('2');
+    await pp.locator('#binderPlaceSelected').click();
+    const afterInsert=await getState(pp);
+    assert.deepEqual(afterInsert.binderOrder,
+      ['base1-1','base1-3','base1-2','__binder_empty__:reserved_keep'],
+      'Explicit insertion must preserve relative order of existing cards');
+    assert.equal(afterInsert.pendingPurchase['base1-3'].wasWish,true,
+      'Manual reinsertion must not change purchase status');
+    assert.equal(!!afterInsert.wish['base1-3'],false);
+    assert.match(await pp.locator('[data-pick-binder="base1-3"]').textContent(),/בדרך/);
+    assert.doesNotMatch(await pp.locator('[data-pick-binder="base1-3"]').textContent(),/לא בבינדר/);
+    await pp.waitForFunction(()=>window.__cloudTest.docs['users/fixture-user']?.progress?.binderOrder?.[1]==='base1-3');
+
+    // A separate pending card should fill an explicitly reserved gap without
+    // shifting any of the other card positions.
+    await pp.locator('#binderFind').fill('base1-4');
+    await pp.locator('[data-pick-binder="base1-4"]').click();
+    await pp.locator('#binderTargetPage').selectOption('1');
+    await pp.locator('#binderTargetSlot').selectOption('4');
+    await pp.locator('#binderPlaceSelected').click();
+    const afterGap=await getState(pp);
+    assert.deepEqual(afterGap.binderOrder,['base1-1','base1-3','base1-2','base1-4']);
+    assert.deepEqual(afterGap.shipments,beforeSearch.shipments,
+      'Manual binder restoration must not edit shipments');
+    assert.deepEqual(afterGap.purchasePrices,beforeSearch.purchasePrices,
+      'Manual binder restoration must not edit purchases');
+    assert.equal(!!afterGap.pendingPurchase['base1-4'],true);
+    await pp.waitForFunction(()=>window.__cloudTest.docs['users/fixture-user']?.progress?.binderOrder?.[3]==='base1-4');
     assert.deepEqual(purchaseErrors,[],'Purchase preservation introduced browser errors');
     console.log('PASS shipment lifecycle preserves binder order and Wishlist priorities; old missing positions are not fabricated');
   }finally{await purchaseFixture.context.close();}

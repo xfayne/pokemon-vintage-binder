@@ -51,7 +51,7 @@ const {toggleOwned,removeWish,toggleWish,updatePurchasePrice}=window.VintageCard
 const {showModal}=window.VintageCardDetails.create({state,MAP,$,esc,cardNumber,rarityHtml,dealAuctionUrl,openDealsForCard,toggleOwned,toggleWish,ensureCloudEdit,openMovePicker,save,renderCards,updatePurchasePrice});
 const {backup,copyWishlist,exportCSV,importBackup}=window.VintageCollectionBackup.create({state,MAP,cardNumber,toast,getProgress,normalizeOrders:()=>normalizeOrders(),sortedOwnedCards:()=>sortedOwnedCards(),ensureCloudEdit,save,renderAll,normalizeShipment});
 const orderingController=window.VintageCollectionOrdering.create({state,ensureCloudEdit,save});
-const {normalizeOrders,binderVisible,binderPageCount,reorder,markEmptyPocket,clearEmptyPocket,movePage}=orderingController;
+const {normalizeOrders,binderVisible,binderPageCount,reorder,insertBinderCard,markEmptyPocket,clearEmptyPocket,movePage}=orderingController;
 const EMPTY_BINDER_CHOICE='__binder_select_empty__';
 let binderSelectedId=null;
 
@@ -66,19 +66,26 @@ function refreshPlacementTargets(){
 function searchBinder(){
  const box=$('binderMatches');const query=$('binderFind').value.trim().toLowerCase();
  if(!query){box.innerHTML='';return;}
- const matching=state.binderOrder.map(id=>state.cards.find(c=>c.id===id)).filter(Boolean).filter(c=>
-  (c.name+' '+c.id+' '+cardNumber(c)+' '+(MAP.get(c.set)?.name||'')).toLowerCase().includes(query));
- const markup=matching.length?matching.slice(0,12).map(c=>`<button type="button" class="binder-match ${c.id===binderSelectedId?'selected':''}" data-pick-binder="${esc(c.id)}" role="option" aria-selected="${c.id===binderSelectedId}"><img src="${esc(c.image)}" alt="" loading="lazy"><span class="binder-match-label"><b>${esc(c.name)}</b><small>${esc(MAP.get(c.set)?.name||'')} · #${esc(cardNumber(c))}${state.owned[c.id]?' · ✓ שלי':state.pendingPurchase[c.id]?' · 📦 בדרך':' · ☆ משאלה'}</small></span><span aria-hidden="true">בחר ←</span></button>`).join(''):`<span class="binder-place-hint">לא נמצא קלף בבינדר. הוסף אותו קודם בקטלוג.</span>`;
+ const inBinder=new Set(state.binderOrder);
+ // Search the collection statuses, not only the binder positions. Older
+ // purchased-in-transit cards can be missing from binderOrder after the bug.
+ const matching=state.cards.filter(c=>
+  (state.owned[c.id]||state.wish[c.id]||state.pendingPurchase[c.id])&&
+  (c.name+' '+c.id+' '+cardNumber(c)+' '+(MAP.get(c.set)?.name||'')).toLowerCase().includes(query)
+ ).sort((a,b)=>Number(inBinder.has(a.id))-Number(inBinder.has(b.id))||
+  Number(!!state.pendingPurchase[b.id])-Number(!!state.pendingPurchase[a.id]));
+ const markup=matching.length?matching.slice(0,12).map(c=>`<button type="button" class="binder-match ${c.id===binderSelectedId?'selected':''}" data-pick-binder="${esc(c.id)}" role="option" aria-selected="${c.id===binderSelectedId}"><img src="${esc(c.image)}" alt="" loading="lazy"><span class="binder-match-label"><b>${esc(c.name)}</b><small>${esc(MAP.get(c.set)?.name||'')} · #${esc(cardNumber(c))}${state.owned[c.id]?' · ✓ שלי':state.pendingPurchase[c.id]?' · 📦 בדרך':' · ☆ משאלה'}${inBinder.has(c.id)?'':' · לא בבינדר'}</small></span><span aria-hidden="true">בחר ←</span></button>`).join(''):`<span class="binder-place-hint">לא נמצא קלף באוסף, במשאלות או ברכישות בדרך.</span>`;
  window.VintageStableDOM.reconcileHTML(box,markup,'data-pick-binder');
 }
 function selectBinder(id){
  const isEmpty=id===EMPTY_BINDER_CHOICE;
  const c=isEmpty?null:state.cards.find(x=>x.id===id);
- if(!isEmpty&&(!c||!state.binderOrder.includes(id)))return;
+ if(!isEmpty&&(!c||!(state.owned[id]||state.wish[id]||state.pendingPurchase[id])))return;
  binderSelectedId=id;
- $('binderSelected').textContent=isEmpty?'נבחר: כיס ריק':'נבחר: '+c.name+' · '+(MAP.get(c.set)?.name||'');
+ const outside=!isEmpty&&!state.binderOrder.includes(id);
+ $('binderSelected').textContent=isEmpty?'נבחר: כיס ריק':'נבחר: '+c.name+' · '+(MAP.get(c.set)?.name||'')+(outside?' · לא בבינדר':'');
  $('binderPlaceSelected').disabled=false;
- $('binderPlaceSelected').textContent=isEmpty?'השאר כיס ריק':'📖 העבר למיקום שבחרתי';
+ $('binderPlaceSelected').textContent=isEmpty?'השאר כיס ריק':outside?'➕ הוסף למיקום שבחרתי':'📖 העבר למיקום שבחרתי';
  $('binderSelectEmpty').classList.toggle('selected',isEmpty);
  $('binderSelectEmpty').setAttribute('aria-pressed',String(isEmpty));
  for(const option of $('binderMatches').querySelectorAll('[data-pick-binder]')){
@@ -101,12 +108,15 @@ function placeEmptyPocket(page,slot){
 }
 function placeBinder(id,page,slot){
  if(!ensureCloudEdit())return;
- normalizeOrders();if(!state.binderOrder.includes(id))return;
- const list=binderVisible();const from=list.indexOf(id);if(from<0)return;
- const requested=Math.max(0,(page-1)*9+slot-1);const dest=Math.min(requested,list.length-1);
- reorder('binder',from,dest);
+ normalizeOrders();
+ if(!state.cards.some(c=>c.id===id)||!(state.owned[id]||state.wish[id]||state.pendingPurchase[id]))return;
+ const list=binderVisible(),from=list.indexOf(id),requested=Math.max(0,(page-1)*9+slot-1);
+ const existing=from>=0,dest=existing?Math.min(requested,list.length-1):requested;
+ const changed=existing?reorder('binder',from,dest):insertBinderCard(id,dest);
+ if(!changed)return;
  state.binderPage=Math.floor(dest/9);renderCollections();
- toast('הקלף הועבר לעמוד '+(state.binderPage+1)+', כיס '+((dest%9)+1));
+ selectBinder(id);searchBinder();
+ toast('הקלף '+(existing?'הועבר':'נוסף')+' לעמוד '+(state.binderPage+1)+', כיס '+((dest%9)+1));
 }
 
 function openPageMoveDialog(){
