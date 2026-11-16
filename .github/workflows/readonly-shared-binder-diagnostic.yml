@@ -1,0 +1,40 @@
+name: Read-only shared binder diagnostic
+on:
+  push:
+    branches:
+      - diag/readonly-shared-binder-20261116
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Read public sharedBinder summary (no writes)
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, urllib.request, urllib.error, collections
+          from urllib.parse import quote
+          project="pokemon-vintage-binder"
+          doc="5a111166-7373-42de-845f-cae58d9fe1e6"
+          url=f"https://firestore.googleapis.com/v1/projects/{project}/databases/(default)/documents/sharedBinders/{doc}"
+          try:
+              req=urllib.request.Request(url,headers={"Accept":"application/json"})
+              with urllib.request.urlopen(req,timeout=20) as response:
+                  data=json.load(response)
+              fields=data.get('fields',{})
+              items=fields.get('cards',{}).get('arrayValue',{}).get('values',[])
+              counts=collections.Counter(x.get('mapValue',{}).get('fields',{}).get('kind',{}).get('stringValue','unknown') for x in items)
+              print("DOCUMENT_EXISTS=true")
+              print("CARD_SLOTS="+str(len(items)))
+              print("KINDS="+json.dumps(counts,sort_keys=True))
+              print("UPDATED_AT="+str(fields.get('updatedAt',{}).get('timestampValue','missing')))
+              print("DOCUMENT_UPDATE_TIME="+str(data.get('updateTime','missing')))
+          except urllib.error.HTTPError as e:
+              print("DOCUMENT_EXISTS=UNVERIFIED")
+              print("HTTP_STATUS="+str(e.code))
+              print("ERROR_CODE="+e.read(350).decode('utf8','replace')[:250])
+          except Exception as e:
+              print("FETCH_ERROR="+type(e).__name__+": "+str(e)[:240])
+          PY
