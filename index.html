@@ -41,7 +41,7 @@
 @media(max-width:650px){.static-img{height:121px;}}
 
 </style></noscript>
-<link rel="stylesheet" href="css/app.css?v=20261116-purchase-date1">
+<link rel="stylesheet" href="css/app.css?v=20261116-shipment-footer1">
 <link rel="stylesheet" href="deal-finder/live.css?v=20261113-deals-sort1">
 </head>
 <body>
@@ -155,6 +155,7 @@
 <dialog id="shipmentDialog" class="shipment-dialog" aria-labelledby="shipmentDialogTitle">
  <form id="shipmentForm" class="shipment-form">
   <div class="shipment-dialog-head"><h3 id="shipmentDialogTitle">משלוח חדש</h3><button type="button" id="shipmentCancelTop" class="btn sm">✕</button></div>
+  <div class="shipment-form-body" id="shipmentFormBody">
   <label>שם המשלוח <input id="shipmentName" maxlength="70" placeholder="למשל: קלפים מגרמניה" autocomplete="off"></label>
   <label>מספר מעקב (לא חובה) <input id="shipmentNumber" maxlength="50" dir="ltr" placeholder="אפשר להוסיף מספר מעקב בהמשך" autocomplete="off" autocapitalize="characters" spellcheck="false"></label>
   <label>תאריך קנייה <input id="shipmentPurchaseDate" type="date" dir="ltr" aria-label="תאריך קנייה"></label>
@@ -163,6 +164,7 @@
   <input id="shipmentCardSearch" type="search" placeholder="חפש קלף לפי שם, סדרה או מספר…" autocomplete="off">
   <div id="shipmentSelected" class="shipment-selected"></div>
   <div id="shipmentCardResults" class="shipment-card-results"></div>
+  </div>
   <div class="shipment-form-actions"><button class="btn primary" type="submit">שמור משלוח</button><button class="btn" type="button" id="shipmentCancel">ביטול</button></div>
  </form>
 </dialog>

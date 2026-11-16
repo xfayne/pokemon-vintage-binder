@@ -330,6 +330,48 @@ try {
     // The mocked Firebase SDK ensures this test never touches production data.
     await page.locator('[data-view-btn="shipments"]').click();
     await page.evaluate(()=>document.querySelector('[data-ship-edit="parcel_test_01"]').click());
+    // The dialog header + Save/Cancel footer remain in view; only the fields
+    // scroll. Simulate both an iPhone viewport and a shorter keyboard viewport.
+    const originalViewport=page.viewportSize();
+    const dialogGeometry=()=>page.evaluate(()=>{
+      const dialog=document.querySelector('#shipmentDialog'),
+        form=document.querySelector('#shipmentForm'),
+        body=document.querySelector('#shipmentFormBody'),
+        actions=document.querySelector('.shipment-form-actions'),
+        header=document.querySelector('.shipment-dialog-head'),
+        save=form.querySelector('button[type="submit"]');
+      const d=dialog.getBoundingClientRect(),h=header.getBoundingClientRect(),
+        b=body.getBoundingClientRect(),f=actions.getBoundingClientRect(),
+        s=save.getBoundingClientRect();
+      return {viewportHeight:innerHeight,dialog:d.toJSON(),header:h.toJSON(),body:b.toJSON(),
+        footer:f.toJSON(),save:s.toJSON(),scrollHeight:body.scrollHeight,clientHeight:body.clientHeight,
+        dialogScrollTop:dialog.scrollTop,bodyScrollTop:body.scrollTop,
+        overflow:getComputedStyle(body).overflowY};
+    });
+    for(const viewport of [{width:390,height:844},{width:390,height:540}]){
+      await page.setViewportSize(viewport);
+      let before=await dialogGeometry();
+      assert.ok(before.dialog.top>=0&&before.dialog.bottom<=viewport.height+1,
+        'Shipment dialog must fit inside the visual viewport');
+      assert.ok(before.save.top>=before.dialog.top&&before.save.bottom<=before.dialog.bottom,
+        'Save button must remain visible inside the modal');
+      assert.ok(before.footer.bottom<=before.dialog.bottom&&before.header.top>=before.dialog.top,
+        'Fixed header/footer must stay inside the dialog');
+      assert.equal(before.overflow,'auto','Shipment body should be the scroll container');
+      await page.locator('#shipmentFormBody').evaluate(el=>{el.scrollTop=el.scrollHeight;});
+      let after=await dialogGeometry();
+      assert.ok(Math.abs(after.save.top-before.save.top)<1,
+        'Scrolling fields must not move Save button');
+      assert.ok(Math.abs(after.header.top-before.header.top)<1,
+        'Scrolling fields must not move the modal header');
+      assert.ok(after.bodyScrollTop>0||before.scrollHeight<=before.clientHeight+1,
+        'Long shipment content should scroll independently: '+
+        JSON.stringify({viewportHeight:viewport.height,scrollHeight:before.scrollHeight,
+          clientHeight:before.clientHeight,afterScrollTop:after.bodyScrollTop}));
+      assert.equal(after.dialogScrollTop,0,'The entire dialog should not scroll');
+      await page.locator('#shipmentFormBody').evaluate(el=>{el.scrollTop=0;});
+    }
+    await page.setViewportSize(originalViewport);
     assert.equal(await page.locator('#shipmentPurchaseDate').inputValue(),'',
       'Existing shipments with unknown purchase dates must not be assigned today');
     await page.locator('#shipmentNote').fill('Combined shipping confirmed');
