@@ -174,7 +174,27 @@ async function saveConditionAnalysis(source,analysis,photoIndices){
  if(uid!==user?.uid||!ready)throw Error('SESSION_CHANGED');
  return documentData;
 }
-window.VintageCloud={getConditionAnalysis,saveConditionAnalysis,conditionAnalysisKey,getUserUid:()=>user&&ready?user.uid:null,canEdit:()=>Boolean(user&&ready),getIdToken:async()=>user&&ready?await sdk.getIdToken(user):null,onChange:({immediate=false}={})=>{
+// Authenticated, read-only historical document lookup. The REST API supports
+// readTime even though the Web Firestore SDK does not. Never write here.
+async function getHistoricalBinderOrder(readTime){
+ if(!user||!ready)throw Error('יש להתחבר ל־Google תחילה.');
+ const at=new Date(readTime);
+ if(!Number.isFinite(at.getTime())||at.getTime()>=Date.now()-10000)
+  throw Error('זמן השחזור אינו תקין.');
+ const token=await sdk.getIdToken(user);
+ const url=new URL('https://firestore.googleapis.com/v1/projects/'+
+  encodeURIComponent(firebaseConfig.projectId)+'/databases/(default)/documents/users/'+encodeURIComponent(user.uid));
+ url.searchParams.set('readTime',at.toISOString());
+ url.searchParams.set('mask.fieldPaths','progress.binderOrder');
+ const response=await fetch(url.toString(),{headers:{authorization:'Bearer '+token},cache:'no-store'});
+ const data=await response.json().catch(()=>({}));
+ if(!response.ok)throw Error('לא ניתן לקרוא את הגרסה ההיסטורית ('+response.status+'): '+
+  String(data.error?.message||'הרשאות או חלון השחזור אינם זמינים').slice(0,180));
+ const values=data.fields?.progress?.mapValue?.fields?.binderOrder?.arrayValue?.values;
+ if(!Array.isArray(values))return [];
+ return [...new Set(values.filter(v=>typeof v?.stringValue==='string').map(v=>v.stringValue))].slice(0,1252);
+}
+window.VintageCloud={getHistoricalBinderOrder,getConditionAnalysis,saveConditionAnalysis,conditionAnalysisKey,getUserUid:()=>user&&ready?user.uid:null,canEdit:()=>Boolean(user&&ready),getIdToken:async()=>user&&ready?await sdk.getIdToken(user):null,onChange:({immediate=false}={})=>{
  if(!user||!ready)return;
  changeSeq++;pending=true;setStatus('☁️ ממתין לשמירה…',user.email||'Google');
  clearTimeout(flushTimer);flushTimer=setTimeout(flush,immediate?0:350);

@@ -74,3 +74,5 @@ Additional Playwright-based browser tests are run by the repository's GitHub Act
 - [Manual smoke-test checklist](tests/SMOKE_CHECKLIST.md)
 
 The README is the public-facing project entry point; `PROJECT_CONTEXT.md` retains the deeper, evolving implementation notes rather than duplicating them here.
+
+Emergency binder-order recovery is available from the account menu. It reads earlier Firestore document versions where retained, or accepts a JSON backup, and restores only `binderOrder` after explicit confirmation while retaining current purchases and other data.
