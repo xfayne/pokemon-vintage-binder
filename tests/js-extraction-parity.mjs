@@ -316,7 +316,7 @@ if(updated.includes('js/catalog-loader.js')){
     // The intentional Shining Pokémon correction is covered by a focused regression.
     const shiningFix="    // Secret Shining cards are Pokémon even though they follow the trainer/energy range.\n"+
       "    if((set.id==='neo3'&&[65,66].includes(number))||(set.id==='neo4'&&number>=106&&number<=113))kind='Pokémon';\n";
-    const expected=baseline.replace("    if(set.id==='base6'&&[100,101].includes(number))kind='Energy';\n",
+    const expected=baseline.includes(shiningFix)?baseline:baseline.replace("    if(set.id==='base6'&&[100,101].includes(number))kind='Energy';\n",
       match=>match+shiningFix);
     assert.equal(loader,expected,'Catalog loader changed beyond the Shining Pokémon correction');
   }else{
