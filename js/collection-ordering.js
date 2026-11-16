@@ -29,7 +29,12 @@ function normalizeOrders(){
   Number.isInteger(state.pendingPurchase[id]?.binderIndex)&&state.pendingPurchase[id].binderIndex>=0)
   .sort((a,b)=>state.pendingPurchase[a].binderIndex-state.pendingPurchase[b].binderIndex);
  for(const id of missing){state.binderOrder.splice(Math.min(state.pendingPurchase[id].binderIndex,state.binderOrder.length),0,id);bp.add(id);}
- for(const id of bySet)if(binder(id)&&!bp.has(id)){state.binderOrder.push(id);bp.add(id);}
+ // Do not invent positions for cards damaged by the previous release.
+ // Pending cards missing an original binderIndex must wait for historical
+ // recovery; silently appending them could corrupt the user's arranged pages.
+ for(const id of bySet)if(binder(id)&&!bp.has(id)&&(state.owned[id]||state.wish[id])){
+  state.binderOrder.push(id);bp.add(id);
+ }
 }
 function binderVisible(){normalizeOrders();return state.binderOrder.slice();}
 function binderPageCount(){return Math.max(1,Math.ceil(binderVisible().length/9));}
