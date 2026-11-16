@@ -85,7 +85,7 @@ if (updated.includes('js/shipments.js')) {
     assert.equal(newBinder.replace(call, () => extracted), oldBinder,
       'Shipment extraction changed any other binder behavior');
   }
-  const shipmentsTag = '<script src="js/shipments.js?v=20261116-optional-track1"></script>';
+  const shipmentsTag = '<script src="js/shipments.js?v=20261116-purchase-date1"></script>';
   const binderTag = '<script src="js/binder.js?v=20261116-purchase1"></script>';
   assert.ok(updated.indexOf(shipmentsTag) > 0 && updated.indexOf(shipmentsTag) < updated.indexOf(binderTag),
     'Shipment controller must be loaded before binder.js');
@@ -342,7 +342,7 @@ if(updated.includes('js/catalog-loader.js')){
 if(updated.includes('js/collection-state.js')){
   const module=readFileSync('js/collection-state.js','utf8');
   assert.ok(module.includes('window.VintageCollectionState={create('),'Missing collection-state factory');
-  const stateTag='<script src="js/collection-state.js?v=20261116-optional-track1"></script>';
+  const stateTag='<script src="js/collection-state.js?v=20261116-purchase-date1"></script>';
   const binderTag='<script src="js/binder.js?v=20261116-purchase1"></script>';
   assert.ok(updated.indexOf(stateTag)>0 && updated.indexOf(stateTag)<updated.indexOf(binderTag),
     'Collection state must load before binder');
