@@ -148,7 +148,7 @@ function create({state,MAP,$,save}){
     stat('סך רכישות מתועדות',s.missingPaidFx?'—':money(s.paidCost),s.purchasedCount+' קלפים')+
     stat('שווי הרכישות',money(s.purchasedValue),s.unpricedPurchased+' קלפים ללא מחיר שוק')+
     stat('פער על הנייר',s.missingPaidFx?'—':money(balance),roi===null?'לרכישות עם מחיר שוק ועלות':pct(roi)+' על עלות מתועדת',gapClass)+
-    stat('שווי האוסף הכולל',money(s.totalValue),s.pricedCount+' קלפים עם מחירון')+
+    stat('שווי הקלפים המתומחרים',money(s.totalValue),s.pricedCount+' קלפים עם מחירון')+
    '</div>'+
    '<div class="analytics-chart-panel"><div class="analytics-chart-header"><h3>ביצועי האוסף</h3><span class="analytics-muted">נתונים אמיתיים בלבד</span></div>'+
     '<div class="analytics-segments" role="group" aria-label="סוג מדד">'+
@@ -163,7 +163,7 @@ function create({state,MAP,$,save}){
     '<b>כיסוי נתונים:</b> '+s.pricedCount+' מתוך '+s.priceableCount+' קלפים עם מצב שנקבע ומחירון; '+s.purchasedCount+' עם מחיר רכישה.'+
     (s.pendingPrices?' '+s.pendingPrices+' מחירים עדיין בטעינה.':'')+
     (s.missingPaidFx?' שערי מטבע לחלק מהרכישות עדיין לא זמינים.':'')+
-    '<br>עלות משלוח לא נשמרת עדיין באפליקציה, ולכן אינה כלולה בנתון ההוצאה.'+
+    '<br>עלות משלוח לא נשמרת עדיין באפליקציה, ולכן אינה כלולה בנתון ההוצאה. המרת מטבע לצורך התצוגה משתמשת בשער ייחוס נוכחי ולא בהכרח בשער יום הקנייה.'+
     '<br>קלפים מהילדות ללא מחיר קנייה נכללים בשווי הכולל, אך לא בתשואה על עלות הרכישות.'+
     '<br>נשמרת מדידה לכל יום שבו פותחים את ״הקלפים שלי״ עם מחירים זמינים; אין כרגע איסוף בימים שבהם לא נכנסים לאפליקציה.'+
    '</div>'+
@@ -197,7 +197,7 @@ function create({state,MAP,$,save}){
  });
  function maybeSnapshot(s){
   if(!state.ready||!window.VintageCloud?.canEdit?.())return;
-  if(!s.priceableCount||s.pendingPrices||s.pricedCount!==s.priceableCount||s.missingPaidFx)return;
+  if(!s.pricedCount||s.pendingPrices||s.missingPaidFx)return;
   const today=latestDate();
   const rows=normalizeSnapshots(state.analyticsSnapshots);
   const prior=rows.filter(row=>row.date<today).at(-1);
@@ -214,7 +214,7 @@ function create({state,MAP,$,save}){
    const previous=newer.filter(row=>row.date<today).at(-1);
    const next=createSnapshot(current(),today,previous);
    const nextSummary=current();
-   if(nextSummary.pendingPrices||nextSummary.pricedCount!==nextSummary.priceableCount||nextSummary.missingPaidFx)return;
+   if(!nextSummary.pricedCount||nextSummary.pendingPrices||nextSummary.missingPaidFx)return;
    const updated=normalizeSnapshots([...newer.filter(row=>row.date!==today),next]);
    const old=JSON.stringify(state.analyticsSnapshots||[]);
    const now=JSON.stringify(updated);
