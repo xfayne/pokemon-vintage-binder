@@ -140,3 +140,11 @@ Collector preference: English vintage Unlimited, ungraded/raw cards; prioritize 
 - Recommended sorting now places all strong-identity listings with a known all-in, nonpositive discount (including assumed-MP comparisons) into the overpriced group (4), sorted by the actual percentage gap. Unknown-condition listings with a tentative positive gap remain in the provisional group (3), not trusted-discount groups. Identity-review listings still remain last.
 - The one-render stability behavior for manual grade changes/AI remains unchanged: it protects the tapped row only for the immediate interaction and permits subsequent sorting.
 - Regression fixture `tests/deals-ui-regression.mjs` reproduces the actual seller-LP +42% vs unknown-MP +593% comparison, including grade labels, in the browser. No changes to Worker, Firestore, or currency conversions.
+
+## Purchased-but-not-arrived shipment lifecycle (2026-11-16)
+- **One passive status**: "נרכש · בדרך" for unowned cards linked to a shipment. Only shipment linking sets purchased status; no new card-details action or purchase tab.
+- Saving a shipment moves newly linked unowned cards from Wishlist to `pendingPurchase` in one Firestore write, maintaining wishlist tombstones. Entries contain `{wasWish:boolean}` to restore Wishlist when removed from all undelivered shipments. Pending cards are absent from owned/binder and Wishlist/Deals.
+- A compact catalog/card-details badge displays pending status; the existing purchase-price control is enabled for pending cards and preserved on delivery.
+- Manual "✓ סמן כנמסר" records `deliveredAt`, moves all linked cards into `owned`, and clears their pending flag. External 17TRACK Delivered events do not automatically change ownership.
+- Private shipment `note` of up to 1000 characters is editable and displayed in shipment details. `note`/`deliveredAt` are optional for backwards compatibility; `pendingPurchase` is in existing private Firestore progress and JSON backup.
+- No production Firestore data is changed by regression tests; tests use in-memory Firebase.

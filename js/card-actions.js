@@ -7,6 +7,7 @@ function toggleOwned(id){
   delete state.ownedAddedAt[id];
  }else{
   state.owned[id]=true;
+  delete state.pendingPurchase[id];
   const max=Object.values(state.ownedAddedAt).reduce((n,t)=>Math.max(n,Number(t)||0),0);
   state.ownedAddedAt[id]=Math.max(Date.now(),max+1);
   // Owned and Wishlist are mutually exclusive. Persist the removal in the same cloud write.
@@ -30,6 +31,7 @@ function removeWish(id){
 function toggleWish(id){
  if(!ensureCloudEdit())return;
  if(state.owned[id]){toast('הקלף כבר נמצא באוסף שלך');return;}
+ if(state.pendingPurchase[id]){toast('הקלף כבר נרכש ומשויך למשלוח');return;}
  if(state.wish[id]){removeWish(id);return;}
  state.wish[id]=true;delete state.removedWish[id];
  normalizeOrders();save(true);refreshCard(id);

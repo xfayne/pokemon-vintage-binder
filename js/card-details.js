@@ -2,7 +2,8 @@
 window.VintageCardDetails={create({state,MAP,$,esc,cardNumber,rarityHtml,dealAuctionUrl,openDealsForCard,toggleOwned,toggleWish,ensureCloudEdit,openMovePicker,save,renderCards,updatePurchasePrice}){
 // Keep the open dialog and card photo mounted while updating only ownership controls.
 function syncModalActions(id){
- const owned=!!state.owned[id],wished=!!state.wish[id];
+ const owned=!!state.owned[id],wished=!!state.wish[id],pending=!!state.pendingPurchase[id];
+ const pendingTag=$('modalPendingBadge');if(pendingTag)pendingTag.hidden=!pending;
  const ownButton=$('modalOwned');
  if(!ownButton)return;
  ownButton.classList.toggle('primary',owned);
@@ -10,7 +11,7 @@ function syncModalActions(id){
  ownButton.textContent=owned?'✓ יש לי — הסר':'＋ יש לי';
  ownButton.onclick=()=>{toggleOwned(id);syncModalActions(id);};
  let wishButton=$('modalWish');
- if(owned){wishButton?.remove();}
+ if(owned||pending){wishButton?.remove();}
  else{
   if(!wishButton){
    wishButton=document.createElement('button');
@@ -35,16 +36,16 @@ function syncModalActions(id){
   };
  }
  const purchase=$('modalPurchaseBox');
- purchase.hidden=!owned;
- if(owned){
+ purchase.hidden=!owned&&!pending;
+ if(owned||pending){
   $('modalPurchaseAmount').onchange=()=>updatePurchasePrice(id);
   $('modalPurchaseCurrency').onchange=()=>updatePurchasePrice(id);
  }
 }
-function showModal(id){const c=state.cards.find(c=>c.id===id);if(!c)return;const s=MAP.get(c.set);$('modalContent').innerHTML=`<div class="modal-main"><div class="modal-photo-column"><div class="modal-media"><img class="modal-img" src="${esc(c.large)}" alt="${esc(c.name)}" decoding="async" fetchpriority="high"><span class="modal-photo-fallback" aria-hidden="true">✦</span></div></div><div class="modal-data"><div class="modal-meta-row"><span class="modal-set-name">${esc(s.name)} · ${s.year}</span><span class="modal-card-number card-sub">#${esc(cardNumber(c))}</span>${rarityHtml(c)}</div>
+function showModal(id){const c=state.cards.find(c=>c.id===id);if(!c)return;const s=MAP.get(c.set);$('modalContent').innerHTML=`<div class="modal-main"><div class="modal-photo-column"><div class="modal-media"><img class="modal-img" src="${esc(c.large)}" alt="${esc(c.name)}" decoding="async" fetchpriority="high"><span class="modal-photo-fallback" aria-hidden="true">✦</span></div></div><div class="modal-data"><div class="modal-meta-row"><span class="modal-set-name">${esc(s.name)} · ${s.year}</span><span class="modal-card-number card-sub">#${esc(cardNumber(c))}</span>${rarityHtml(c)}<span id="modalPendingBadge" class="purchase-pending-tag" ${state.pendingPurchase[c.id]?"":"hidden"}>📦 נרכש · בדרך</span></div>
 <div class="modal-title-row"><h3>${esc(c.name)}</h3><div class="modal-collection-actions">
  <button type="button" class="btn ${state.owned[c.id]?'primary':''}" id="modalOwned" aria-pressed="${!!state.owned[c.id]}">${state.owned[c.id]?'✓ יש לי — הסר':'＋ יש לי'}</button>
- ${!state.owned[c.id]?`<button type="button" class="btn" id="modalWish">${state.wish[c.id]?'★ Wishlist':'☆ Wishlist'}</button>`:''}
+ ${!state.owned[c.id]&&!state.pendingPurchase[c.id]?`<button type="button" class="btn" id="modalWish">${state.wish[c.id]?'★ Wishlist':'☆ Wishlist'}</button>`:''}
 </div></div><div class="modal-own-row">
  ${state.owned[c.id]||state.wish[c.id]?`<button type="button" class="btn" id="modalMove">${state.binderOrder.includes(c.id)?'📍 העבר':'＋ לבינדר'}</button>`:''}
  <button type="button" class="btn primary" id="modalDeals">🔎 מציאות</button>
@@ -58,7 +59,7 @@ function showModal(id){const c=state.cards.find(c=>c.id===id);if(!c)return;const
   </div>
  </div>
  <div class="compact-market" id="modalPricePanel" aria-live="polite"></div>
- <div class="purchase-field" id="modalPurchaseBox" ${state.owned[c.id]?'':'hidden'}>
+ <div class="purchase-field" id="modalPurchaseBox" ${state.owned[c.id]||state.pendingPurchase[c.id]?'':'hidden'}>
   <label class="purchase-heading" for="modalPurchaseAmount">💰 כמה שילמתי?</label>
   <div class="purchase-controls">
    <input type="number" id="modalPurchaseAmount" inputmode="decimal" min="0" max="1000000000" step="0.01" placeholder="סכום" value="${state.purchasePrices[c.id]?.amount??''}" aria-label="מחיר הרכישה">

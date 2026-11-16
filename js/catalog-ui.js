@@ -51,13 +51,13 @@ function renderSide(){
 }
 function renderStats(){/* Collection totals are shown only in the relevant tabs. */}
 function rarityHtml(c){const t=c.finish==='holo'?'✨ Holo':c.finish==='shining'?'🌟 Shining':c.finish==='reverse'?'✨ Reverse Holo':c.finish==='unknown'?'? Promo (משתנה)':c.rarity==='Rare'?'◆ Rare':c.rarity==='Uncommon'?'◇ Uncommon':c.rarity==='Common'?'● Common':c.rarity==='Rare Secret'?'◆ Secret Rare':c.rarity||'רגיל';const cls=c.finish==='holo'||c.finish==='reverse'?'holo':c.finish==='shining'?'shining':c.finish==='unknown'?'unknown':'';return `<span class="rarity-tag ${cls}">${esc(t)}</span>`;}
-function cardHTML(c){const set=MAP.get(c.set);const isOwned=!!state.owned[c.id];return `<article class="poke-card ${isOwned?'owned':''}" role="listitem" data-id="${esc(c.id)}">
+function cardHTML(c){const set=MAP.get(c.set);const isOwned=!!state.owned[c.id],pending=!!state.pendingPurchase[c.id];return `<article class="poke-card ${isOwned?'owned':''}" role="listitem" data-id="${esc(c.id)}">
  <div class="card-img-wrap" data-preview="${esc(c.id)}" title="תמונה ופרטים"><img class="card-img" loading="lazy" decoding="async" src="${esc(c.image)}" alt="${esc(c.name)}" onerror="this.style.display='none';this.nextElementSibling.hidden=false"><span class="img-placeholder" hidden>✦</span></div>
- <div class="card-data"><div class="card-name" title="${esc(c.name)}">${esc(c.name)}</div><div class="card-sub">${esc(set.name)} · #${esc(cardNumber(c))}</div><div class="badges">${rarityHtml(c)}</div><div class="card-actions">${!isOwned?`<button class="wish-btn ${state.wish[c.id]?'on':''}" data-wish="${esc(c.id)}" aria-label="Wishlist" title="Wishlist">${state.wish[c.id]?'★':'☆'}</button>`:''}<button class="small-link" data-preview="${esc(c.id)}">פרטים</button><a class="small-link" href="${esc(c.image)}" target="_blank" rel="noopener">תמונה ↗</a>${state.conditions[c.id]?`<span class="info-pill">${esc(state.conditions[c.id])}</span>`:''}</div></div>
+ <div class="card-data"><div class="card-name" title="${esc(c.name)}">${esc(c.name)}</div><div class="card-sub">${esc(set.name)} · #${esc(cardNumber(c))}</div><div class="badges">${rarityHtml(c)}${pending?'<span class="purchase-pending-tag">📦 נרכש · בדרך</span>':''}</div><div class="card-actions">${!isOwned&&!pending?`<button class="wish-btn ${state.wish[c.id]?'on':''}" data-wish="${esc(c.id)}" aria-label="Wishlist" title="Wishlist">${state.wish[c.id]?'★':'☆'}</button>`:''}<button class="small-link" data-preview="${esc(c.id)}">פרטים</button><a class="small-link" href="${esc(c.image)}" target="_blank" rel="noopener">תמונה ↗</a>${state.conditions[c.id]?`<span class="info-pill">${esc(state.conditions[c.id])}</span>`:''}</div></div>
  <button class="own-btn ${isOwned?'on':''}" data-own="${esc(c.id)}" aria-label="${isOwned?'הסר מהאוסף':'יש לי קלף זה'}" title="${isOwned?'יש לי ✓':'סמן שיש לי'}">${isOwned?'✓':'+'}</button></article>`;}
 // Update metadata without destroying a mounted image (including filtered views).
 function patchCardNode(node,c){
- const id=c.id,owned=!!state.owned[id],wished=!!state.wish[id];
+ const id=c.id,owned=!!state.owned[id],wished=!!state.wish[id],pending=!!state.pendingPurchase[id];
  node.classList.toggle('owned',owned);
  const ownButton=node.querySelector('[data-own]');
  if(ownButton){
@@ -66,9 +66,13 @@ function patchCardNode(node,c){
   ownButton.setAttribute('aria-label',owned?'הסר מהאוסף':'יש לי קלף זה');
   ownButton.title=owned?'יש לי ✓':'סמן שיש לי';
  }
+ const badges=node.querySelector('.badges');
+ let pendingTag=badges?.querySelector('.purchase-pending-tag');
+ if(pending&&!pendingTag){pendingTag=document.createElement('span');pendingTag.className='purchase-pending-tag';pendingTag.textContent='📦 נרכש · בדרך';badges?.append(pendingTag);}
+ else if(!pending)pendingTag?.remove();
  const actions=node.querySelector('.card-actions');
  let wishButton=node.querySelector('[data-wish]');
- if(owned){wishButton?.remove();}
+ if(owned||pending){wishButton?.remove();}
  else{
   if(!wishButton){
    wishButton=document.createElement('button');

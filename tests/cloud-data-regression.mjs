@@ -266,7 +266,7 @@ try {
     await upload(page,'roundtrip.json',backup);
     await page.waitForFunction(()=>window.VintageBinder.getProgress().owned['base1-1']===true);
     const restored=await getState(page);
-    for(const key of ['owned','wish','conditions','notes','purchasePrices','firstEdition',
+    for(const key of ['owned','wish','pendingPurchase','conditions','notes','purchasePrices','firstEdition',
       'ownedAddedAt','shipments','binderOrder','wishOrder','binderIncludeWish']) {
       assert.deepEqual(restored[key],beforeImport[key],'Backup roundtrip lost '+key);
     }
@@ -325,6 +325,64 @@ try {
     assert.deepEqual((await getState(page)).owned,oldBackup.owned);
     assert.deepEqual((await getState(page)).shipments,[shipment]);
     assert.deepEqual(errors,[],'Uncaught page errors during cloud test');
+
+    // Purchase state is created only by linking a card to an existing shipment.
+    // The mocked Firebase SDK ensures this test never touches production data.
+    await page.locator('[data-view-btn="shipments"]').click();
+    await page.evaluate(()=>document.querySelector('[data-ship-edit="parcel_test_01"]').click());
+    await page.locator('#shipmentNote').fill('Combined shipping confirmed');
+    await page.locator('#shipmentCardSearch').fill('base2-4');
+    await page.locator('[data-ship-pick="base2-4"]').click();
+    await page.locator('#shipmentForm button[type="submit"]').click();
+    await page.waitForFunction(()=>!!window.VintageBinder.getProgress().pendingPurchase['base2-4']);
+    let purchased=await getState(page);
+    assert.equal(!!purchased.wish['base2-4'],false,'A linked card must leave the Wishlist');
+    assert.equal(!!purchased.owned['base2-4'],false,'Undelivered cards are not physically owned');
+    assert.ok(!purchased.wishOrder.includes('base2-4'));
+    assert.equal(purchased.pendingPurchase['base2-4'].wasWish,true);
+    assert.equal(purchased.shipments[0].note,'Combined shipping confirmed');
+    assert.match(await page.locator('#shipmentList').innerText(),/Combined shipping confirmed/);
+
+    // Unlinking before delivery reverses Wishlist removal; linking again restores pending.
+    await page.evaluate(()=>document.querySelector('[data-ship-edit="parcel_test_01"]').click());
+    await page.locator('[data-ship-unpick="base2-4"]').click();
+    await page.locator('#shipmentForm button[type="submit"]').click();
+    await page.waitForFunction(()=>!window.VintageBinder.getProgress().pendingPurchase['base2-4']);
+    assert.equal((await getState(page)).wish['base2-4'],true);
+    await page.evaluate(()=>document.querySelector('[data-ship-edit="parcel_test_01"]').click());
+    await page.locator('#shipmentCardSearch').fill('base2-4');
+    await page.locator('[data-ship-pick="base2-4"]').click();
+    await page.locator('#shipmentForm button[type="submit"]').click();
+    await page.waitForFunction(()=>!!window.VintageBinder.getProgress().pendingPurchase['base2-4']);
+
+    // A passive label and the existing paid-amount field are shown, not another button.
+    await page.locator('.main-nav [data-view-btn="catalog"]').click();
+    await page.locator('#search').fill(await page.evaluate(()=>window.VintageBinder.getCardInfo('base2-4').name));
+    await page.locator('[data-id="base2-4"] [data-preview]').first().click();
+    assert.equal(await page.locator('#modalPendingBadge').isVisible(),true);
+    assert.equal(await page.locator('#modalWish').count(),0);
+    assert.equal(await page.locator('#modalPurchaseBox').isVisible(),true);
+    await page.locator('#modalPurchaseAmount').fill('27.5');
+    await page.locator('#modalPurchaseAmount').dispatchEvent('change');
+    await page.locator('#closeModal').click();
+
+    // Delivery is manual, not inferred from external 17TRACK status updates.
+    await page.locator('[data-view-btn="shipments"]').click();
+    await page.locator('[data-ship-deliver="parcel_test_01"]').click();
+    await page.waitForFunction(()=>window.VintageBinder.getProgress().shipments[0].deliveredAt>0);
+    const delivered=await getState(page);
+    assert.equal(delivered.owned['base2-4'],true);
+    assert.equal(!!delivered.wish['base2-4'],false);
+    assert.equal(!!delivered.pendingPurchase['base2-4'],false);
+    assert.ok(delivered.ownedAddedAt['base2-4']>0);
+    assert.deepEqual(delivered.purchasePrices['base2-4'],{amount:27.5,currency:'ILS'});
+    assert.equal(delivered.shipments[0].note,'Combined shipping confirmed');
+    assert.equal(await page.locator('[data-ship-deliver="parcel_test_01"]').count(),0);
+    await page.waitForFunction(()=>window.__cloudTest.docs['users/fixture-user']?.progress?.shipments?.[0]?.deliveredAt>0);
+    const persisted=await page.evaluate(()=>window.__cloudTest.docs['users/fixture-user'].progress);
+    assert.deepEqual(persisted.purchasePrices['base2-4'],{amount:27.5,currency:'ILS'});
+    assert.equal(persisted.owned['base2-4'],true);
+    assert.deepEqual(errors,[],'Purchase lifecycle introduced page errors');
     console.log('PASS cloud persistence, remote revisions, retry, backup/CSV/legacy import and re-login');
   } finally { await context.close(); }
 
