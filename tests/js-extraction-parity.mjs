@@ -244,7 +244,7 @@ if(updated.includes('js/card-actions.js')){
       moved+'\nreturn {toggleOwned,removeWish,toggleWish,updatePurchasePrice};\n}};\n})();\n',
       'Extracted card action function bodies changed unexpectedly');
   }
-  const actionTag='<script src="js/card-actions.js?v=20261116-purchase1"></script>';
+  const actionTag='<script src="js/card-actions.js?v=20261116-gbp1"></script>';
   const binderTag='<script src="js/binder.js?v=20261116-reinsert1"></script>';
   assert.ok(updated.indexOf(actionTag)>0&&updated.indexOf(actionTag)<updated.indexOf(binderTag),
     'Card actions script must load before binder');
@@ -270,7 +270,7 @@ if(updated.includes('js/card-details.js')){
       code+'\nreturn {showModal};\n}};\n})();\n';
     assert.equal(modal,expected,'Card details dialog markup or handlers changed');
   }
-  const modalTag='<script src="js/card-details.js?v=20261116-purchase1"></script>';
+  const modalTag='<script src="js/card-details.js?v=20261116-gbp1"></script>';
   const binderTag='<script src="js/binder.js?v=20261116-reinsert1"></script>';
   assert.ok(updated.indexOf(modalTag)>0&&updated.indexOf(modalTag)<updated.indexOf(binderTag),
     'Details module must load before binder');
