@@ -657,6 +657,73 @@ try {
     console.log('PASS shipment lifecycle preserves binder order and Wishlist priorities; old missing positions are not fabricated');
   }finally{await purchaseFixture.context.close();}
 
+  // Disaster-recovery workflow: historical REST reads and JSON previews are
+  // read-only; only an explicit owner confirmation writes binderOrder. Always
+  // preserve shipment and purchase fields from the CURRENT cloud document.
+  const recoveryFixture=await openFixture();
+  try{
+    const {page:rp,errors:recoveryErrors}=recoveryFixture;
+    const oldOrder=['base1-1','base1-3','__binder_empty__:saved_gap','base1-2'];
+    const badOrder=['base1-1','__binder_empty__:saved_gap','base1-2'];
+    await rp.evaluate(({badOrder,oldOrder})=>{
+      const p=window.VintageBinder.getProgress();
+      p.owned={'base1-1':true};p.wish={'base1-2':true};p.wishOrder=['base1-2'];
+      p.pendingPurchase={'base1-3':{wasWish:true}};
+      p.binderOrder=badOrder;p.binderExcluded={};
+      p.shipments=[{id:'parcel_rescue01',number:'',title:'Paid cards',cardIds:['base1-3'],
+        seenEventIds:[],initialized:false,createdAt:100,note:'keep this note'}];
+      p.purchasePrices={'base1-3':{amount:31,currency:'EUR'}};
+      window.VintageBinder.adoptProgress(p);
+      const originalFetch=window.fetch.bind(window);
+      window.__binderRecoveryReads=[];
+      window.fetch=(input,init)=>{
+        const url=String(input);
+        if(url.includes('firestore.googleapis.com/v1/projects/')){
+          window.__binderRecoveryReads.push({url,authorization:init?.headers?.authorization});
+          const vals=oldOrder.map(value=>({stringValue:value}));
+          return Promise.resolve({ok:true,json:async()=>({fields:{progress:{mapValue:{fields:{
+            binderOrder:{arrayValue:{values:vals}}
+          }}}}})});
+        }
+        return originalFetch(input,init);
+      };
+    },{badOrder,oldOrder});
+    const initialWrites=await rp.evaluate(()=>window.__cloudTest.writes.length);
+    await rp.locator('#accountTrigger').click();
+    await rp.locator('#openBinderRecovery').click();
+    assert.equal(await rp.locator('#binderRecoveryApply').isDisabled(),true);
+    await rp.locator('#binderRecoveryScan').click();
+    await rp.waitForFunction(()=>document.querySelector('#binderRecoveryVersions').options.length>=2 &&
+      !document.querySelector('#binderRecoveryScan').disabled);
+    assert.equal(await rp.evaluate(()=>window.__binderRecoveryReads.length),11);
+    assert.equal(await rp.evaluate(()=>window.__binderRecoveryReads.every(x=>
+      x.authorization==='Bearer fake-token'&&x.url.includes('readTime=')&&
+      x.url.includes('mask.fieldPaths=progress.binderOrder'))),true);
+    assert.equal(await rp.evaluate(()=>window.__cloudTest.writes.length),initialWrites,
+      'Looking up historical binder snapshots must NEVER write to Firestore');
+    assert.deepEqual((await getState(rp)).binderOrder,badOrder);
+    await rp.locator('#binderRecoveryVersions').selectOption('0');
+    assert.match(await rp.locator('#binderRecoveryPreview').textContent(),/מיקומים משתנים/);
+    assert.equal(await rp.locator('#binderRecoveryApply').isEnabled(),true);
+    rp.on('dialog',dialog=>dialog.accept());
+    const downloadPromise=rp.waitForEvent('download');
+    await rp.locator('#binderRecoveryApply').click();
+    const safetyBackup=await downloadPromise;
+    const downloaded=JSON.parse(readFileSync(await safetyBackup.path(),'utf8'));
+    assert.deepEqual(downloaded.binderOrder,badOrder,'Recovery must first back up the broken/current state');
+    await rp.waitForFunction(()=>window.__cloudTest.docs['users/fixture-user']?.progress?.binderOrder?.[1]==='base1-3');
+    const recovered=await getState(rp);
+    assert.deepEqual(recovered.binderOrder,oldOrder,'Only the chosen historic binder order should be restored');
+    assert.equal(recovered.owned['base1-1'],true);
+    assert.equal(recovered.pendingPurchase['base1-3'].wasWish,true);
+    assert.equal(recovered.wish['base1-2'],true);
+    assert.deepEqual(recovered.purchasePrices['base1-3'],{amount:31,currency:'EUR'});
+    assert.equal(recovered.shipments[0].note,'keep this note');
+    assert.equal(recovered.shipments[0].cardIds[0],'base1-3');
+    assert.deepEqual(recoveryErrors,[],'Historical recovery generated browser errors');
+    console.log('PASS history-only binder restore, safety backup, explicit confirmation and purchase data preservation');
+  }finally{await recoveryFixture.context.close();}
+
   // Page management and reserved pockets run against disposable in-memory Firestore.
   const binderFixture=await openFixture();
   try {
