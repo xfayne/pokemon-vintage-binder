@@ -132,8 +132,10 @@ function create({state,MAP,$,save}){
    '<div class="analytics-chart-focus" id="analyticsChartFocus" aria-live="polite">העבר את האצבע על הגרף כדי לראות מדידה</div>';
  }
  function render(){
-  if(state.view!=='owned'||pane!=='summary')return;
-  const s=current(),hist=history(),first=hist[0],last=hist.at(-1);
+  if(state.view!=='owned')return;
+  const s=current();
+  if(pane!=='summary'){maybeSnapshot(s);return;}
+  const hist=history(),first=hist[0],last=hist.at(-1);
   const change=hist.length>=2?(first.index>0?(last.index/first.index-1)*100:null):null;
   const roi=s.matchedCost>0?(s.matchedValue/s.matchedCost-1)*100:null;
   const balance=s.matchedValue-s.matchedCost;
