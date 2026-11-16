@@ -559,6 +559,104 @@ try {
     console.log('PASS cloud persistence, remote revisions, retry, backup/CSV/legacy import, optional shipment tracking and re-login');
   } finally { await context.close(); }
 
+  // Regression for issue: linking many Wishlist cards to a shipment destroyed
+  // the user's binder page layout and persisted the shortened order in Firestore.
+  const purchaseFixture=await openFixture();
+  try{
+    const {page:pp,errors:purchaseErrors}=purchaseFixture;
+    pp.on('dialog',dialog=>dialog.accept());
+    const originalOrder=[
+      'base1-1','base1-3','__binder_empty__:reserved_keep','base1-4','base1-2',
+      'base1-5','base1-6','base1-7','base1-8','base1-9','base1-10'
+    ];
+    const originalWishOrder=['base1-5','base1-3','base1-4'];
+    await pp.evaluate(({order,wishOrder})=>{
+      const p=window.VintageBinder.getProgress();
+      p.owned=Object.fromEntries(['base1-1','base1-2','base1-6','base1-7','base1-8','base1-9','base1-10'].map(id=>[id,true]));
+      p.wish=Object.fromEntries(['base1-3','base1-4','base1-5'].map(id=>[id,true]));
+      p.pendingPurchase={};p.removedWish={};p.binderExcluded={};p.binderOrder=order;
+      p.wishOrder=wishOrder;p.binderIncludeWish=false;
+      p.shipments=[{id:'parcel_preserve01',number:'',title:'Purchased from seller',cardIds:[],seenEventIds:[],initialized:false,createdAt:1600}];
+      window.VintageBinder.adoptProgress(p);
+    },{order:originalOrder,wishOrder:originalWishOrder});
+    const start=await getState(pp);
+    assert.deepEqual(start.binderOrder,originalOrder);
+    await pp.locator('[data-view-btn="shipments"]').click();
+    await pp.evaluate(()=>document.querySelector('[data-ship-edit="parcel_preserve01"]').click());
+    for(const id of ['base1-3','base1-5']){
+      await pp.locator('#shipmentCardSearch').fill(id);
+      await pp.locator('[data-ship-pick="'+id+'"]').click();
+    }
+    await pp.locator('#shipmentForm button[type="submit"]').click();
+    await pp.waitForFunction(()=>!!window.VintageBinder.getProgress().pendingPurchase['base1-5']);
+    const pending=await getState(pp);
+    assert.deepEqual(pending.binderOrder,originalOrder,
+      'Purchase linked cards must NEVER shift any binder positions or reserved pockets');
+    assert.equal(!!pending.owned['base1-3'],false);
+    assert.equal(!!pending.owned['base1-5'],false);
+    assert.equal(!!pending.wish['base1-3'],false);
+    assert.equal(!!pending.wish['base1-5'],false);
+    assert.deepEqual(pending.wishOrder,['base1-4']);
+    assert.equal(pending.pendingPurchase['base1-3'].binderIndex,1);
+    assert.equal(pending.pendingPurchase['base1-5'].binderIndex,5);
+    assert.equal(pending.pendingPurchase['base1-3'].wishIndex,1);
+    assert.equal(pending.pendingPurchase['base1-5'].wishIndex,0);
+    await pp.locator('[data-view-btn="binder"]').click();
+    assert.equal(await pp.locator('#binderGrid [data-card-id="base1-3"] .pocket-badge.pending').count(),1,
+      'Pending card should remain visible on binder even when Wishlist overlay is disabled');
+    assert.equal(await pp.locator('#binderGrid [data-card-id="base1-5"] .pocket-badge.pending').count(),1);
+    assert.equal(await pp.locator('#binderGrid .binder-pocket-reserved').count(),1);
+    const pendingIndexes=await pp.locator('#binderGrid .binder-pocket[data-card-id]').evaluateAll(nodes=>
+      nodes.filter(n=>['base1-3','base1-5'].includes(n.dataset.cardId)).map(n=>[n.dataset.cardId,n.dataset.orderIndex]));
+    assert.deepEqual(pendingIndexes,[['base1-3','1'],['base1-5','5']]);
+    await pp.waitForFunction(()=>window.__cloudTest.docs['users/fixture-user']?.progress?.pendingPurchase?.['base1-5']);
+    assert.deepEqual((await pp.evaluate(()=>window.__cloudTest.docs['users/fixture-user'].progress.binderOrder)),originalOrder,
+      'Cloud writes must keep all original binder pockets and positions');
+
+    // Undo shipment association: restore both Wishlist priority AND binder positions.
+    await pp.locator('[data-view-btn="shipments"]').click();
+    await pp.evaluate(()=>document.querySelector('[data-ship-edit="parcel_preserve01"]').click());
+    await pp.locator('[data-ship-unpick="base1-3"]').click();
+    await pp.locator('[data-ship-unpick="base1-5"]').click();
+    await pp.locator('#shipmentForm button[type="submit"]').click();
+    const unlinked=await getState(pp);
+    assert.deepEqual(unlinked.binderOrder,originalOrder);
+    assert.deepEqual(unlinked.wishOrder,originalWishOrder,
+      'Unlinking cards should restore wishlist priority, not append them randomly');
+    assert.equal(unlinked.wish['base1-3'],true);
+    assert.equal(unlinked.wish['base1-5'],true);
+
+    // Then buy and receive: same binder positions, but now physically owned.
+    await pp.evaluate(()=>document.querySelector('[data-ship-edit="parcel_preserve01"]').click());
+    for(const id of ['base1-3','base1-5']){
+      await pp.locator('#shipmentCardSearch').fill(id);
+      await pp.locator('[data-ship-pick="'+id+'"]').click();
+    }
+    await pp.locator('#shipmentForm button[type="submit"]').click();
+    await pp.locator('[data-ship-deliver="parcel_preserve01"]').click();
+    const received=await getState(pp);
+    assert.equal(received.owned['base1-3'],true);
+    assert.equal(received.owned['base1-5'],true);
+    assert.equal(!!received.pendingPurchase['base1-3'],false);
+    assert.deepEqual(received.binderOrder,originalOrder);
+
+    // Older broken data has no recorded binderIndex. Do not manufacture a
+    // replacement location, especially at the end of a multi-page binder.
+    await pp.evaluate(()=>{
+      const p=window.VintageBinder.getProgress();
+      delete p.owned['base1-3'];
+      p.pendingPurchase={'base1-3':{wasWish:true}};
+      p.wish={};p.wishOrder=[];
+      p.binderOrder=['base1-1','base1-2','__binder_empty__:reserved_keep'];
+      window.VintageBinder.adoptProgress(p);
+    });
+    assert.deepEqual((await getState(pp)).binderOrder,
+      ['base1-1','base1-2','__binder_empty__:reserved_keep'],
+      'Never invent positions for older damaged purchases without a binder snapshot');
+    assert.deepEqual(purchaseErrors,[],'Purchase preservation introduced browser errors');
+    console.log('PASS shipment lifecycle preserves binder order and Wishlist priorities; old missing positions are not fabricated');
+  }finally{await purchaseFixture.context.close();}
+
   // Page management and reserved pockets run against disposable in-memory Firestore.
   const binderFixture=await openFixture();
   try {
