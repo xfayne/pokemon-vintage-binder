@@ -148,3 +148,9 @@ Collector preference: English vintage Unlimited, ungraded/raw cards; prioritize 
 - Manual "✓ סמן כנמסר" records `deliveredAt`, moves all linked cards into `owned`, and clears their pending flag. External 17TRACK Delivered events do not automatically change ownership.
 - Private shipment `note` of up to 1000 characters is editable and displayed in shipment details. `note`/`deliveredAt` are optional for backwards compatibility; `pendingPurchase` is in existing private Firestore progress and JSON backup.
 - No production Firestore data is changed by regression tests; tests use in-memory Firebase.
+
+## Optional tracking for manually managed purchases (2026-11-16)
+- Tracking numbers are optional when creating/editing a shipment; an untracked shipment needs a nonempty name and can keep cards, notes, manual delivery and purchase status.
+- Empty number (`''`) is allowed through both `normalizeShipment` and Firestore's `clean`; nonempty numbers retain existing format validation/uniqueness. Multiple no-number shipments are supported by unique parcel IDs, not by number.
+- Worker registration is gated on an actual number, and scheduled/manual 17TRACK refresh filters out numberless entries. Editing the same shipment to add a number starts registration; editing out a number resets obsolete tracking cache without deleting cards.
+- The shipment card explicitly displays `ללא מעקב` / `אין מספר מעקב` and omits the updates button until a number is supplied. Manual `סמן כנמסר` still works.

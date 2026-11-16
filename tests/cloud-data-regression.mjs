@@ -383,7 +383,95 @@ try {
     assert.deepEqual(persisted.purchasePrices['base2-4'],{amount:27.5,currency:'ILS'});
     assert.equal(persisted.owned['base2-4'],true);
     assert.deepEqual(errors,[],'Purchase lifecycle introduced page errors');
-    console.log('PASS cloud persistence, remote revisions, retry, backup/CSV/legacy import and re-login');
+
+    // A shipment must be a useful purchase container before a seller gives a
+    // tracking number. Capture Worker calls without contacting 17TRACK.
+    await page.evaluate(()=>{
+      window.__shipmentCalls=[];
+      const originalFetch=window.fetch.bind(window);
+      window.fetch=(input,init)=>{
+        const url=String(input);
+        if(url.includes('/api/shipments/')){
+          const body=JSON.parse(init.body);
+          window.__shipmentCalls.push({url,body});
+          if(url.endsWith('/register')){
+            return Promise.resolve({ok:true,json:async()=>({shipments:[{number:body.number,registered:true}]})});
+          }
+          if(url.endsWith('/track')){
+            return Promise.resolve({ok:true,json:async()=>({shipments:[]})});
+          }
+        }
+        return originalFetch(input,init);
+      };
+      const progress=window.VintageBinder.getProgress();
+      progress.wish['base2-5']=true;
+      progress.wishOrder.unshift('base2-5');
+      window.VintageBinder.adoptProgress(progress);
+    });
+    await page.locator('#shipmentAdd').click();
+    await page.locator('#shipmentName').fill('Untracked cards from seller');
+    assert.equal(await page.locator('#shipmentNumber').evaluate(el=>el.required),false);
+    await page.locator('#shipmentNote').fill('Tracking to follow in a week');
+    await page.locator('#shipmentCardSearch').fill('base2-5');
+    await page.locator('[data-ship-pick="base2-5"]').click();
+    await page.locator('#shipmentForm button[type="submit"]').click();
+    await page.waitForFunction(()=>window.VintageBinder.getProgress().shipments.some(x=>x.title==='Untracked cards from seller'));
+    const manual=await getState(page);
+    const untracked=manual.shipments.find(x=>x.title==='Untracked cards from seller');
+    assert.equal(untracked.number,'');
+    assert.equal(untracked.note,'Tracking to follow in a week');
+    assert.deepEqual(untracked.cardIds,['base2-5']);
+    assert.equal(!!manual.wish['base2-5'],false);
+    assert.equal(!!manual.owned['base2-5'],false);
+    assert.equal(manual.pendingPurchase['base2-5'].wasWish,true);
+    assert.equal(await page.locator('[data-shipment-id="'+untracked.id+'"] [data-ship-open]').count(),0);
+    assert.match(await page.locator('[data-shipment-id="'+untracked.id+'"]').innerText(),/ללא מעקב/);
+    assert.equal(await page.evaluate(()=>window.__shipmentCalls.length),0,
+      'No numberless shipment may be sent to 17TRACK');
+
+    // Multiple numberless purchases are distinct; they are identified by ID.
+    await page.locator('#shipmentAdd').click();
+    await page.locator('#shipmentName').fill('Second untracked purchase');
+    await page.locator('#shipmentForm button[type="submit"]').click();
+    await page.waitForFunction(()=>window.VintageBinder.getProgress().shipments.length===3);
+    assert.equal((await getState(page)).shipments.filter(x=>!x.number).length,2);
+    await page.locator('#shipmentRefresh').click();
+    await page.waitForFunction(()=>!document.querySelector('#shipmentRefresh').disabled);
+    const trackCalls=await page.evaluate(()=>window.__shipmentCalls.filter(x=>x.url.endsWith('/track')));
+    assert.ok(trackCalls.every(x=>x.body.shipments.every(s=>!!s.number)),'An empty number reached the tracking API');
+
+    // The same purchase can be edited to add tracking (and later remove it).
+    await page.evaluate(id=>document.querySelector('[data-ship-edit="'+id+'"]').click(),untracked.id);
+    await page.locator('#shipmentNumber').fill('RR987654321IL');
+    await page.locator('#shipmentForm button[type="submit"]').click();
+    await page.waitForFunction(()=>window.__shipmentCalls.some(x=>x.url.endsWith('/register')&&x.body.number==='RR987654321IL'));
+    let manualWithNumber=(await getState(page)).shipments.find(x=>x.id===untracked.id);
+    assert.equal(manualWithNumber.number,'RR987654321IL');
+    assert.deepEqual(manualWithNumber.cardIds,['base2-5']);
+    await page.evaluate(id=>document.querySelector('[data-ship-edit="'+id+'"]').click(),untracked.id);
+    await page.locator('#shipmentNumber').fill('');
+    await page.locator('#shipmentForm button[type="submit"]').click();
+    assert.equal((await getState(page)).shipments.find(x=>x.id===untracked.id).number,'');
+
+    // JSON backup, cloud persistence, manual delivery and re-login all retain
+    // empty-number shipments; no live Firestore data is ever accessed.
+    const manualBackup=JSON.parse(await clickDownload(page,'exportJSON'));
+    assert.equal(manualBackup.shipments.find(x=>x.id===untracked.id).number,'');
+    await page.locator('[data-ship-deliver="'+untracked.id+'"]').click();
+    await page.waitForFunction(id=>window.VintageBinder.getProgress().shipments.find(s=>s.id===id).deliveredAt>0,untracked.id);
+    assert.equal((await getState(page)).owned['base2-5'],true);
+    await page.waitForFunction(id=>window.__cloudTest.docs['users/fixture-user']?.progress?.shipments?.some(s=>s.id===id&&s.deliveredAt>0),untracked.id);
+    await page.evaluate(()=>window.__cloudTest.setAuth(null));
+    await page.waitForFunction(()=>window.VintageCloud.canEdit()===false);
+    await page.evaluate(u=>window.__cloudTest.setAuth(u),user);
+    await page.waitForFunction(()=>window.VintageCloud.canEdit()===true);
+    const reloaded=await getState(page);
+    assert.equal(reloaded.shipments.find(x=>x.id===untracked.id).number,'');
+    assert.ok(reloaded.shipments.find(x=>x.id===untracked.id).deliveredAt>0);
+    assert.equal(reloaded.shipments.find(x=>x.title==='Second untracked purchase').number,'');
+    assert.equal(reloaded.owned['base2-5'],true);
+    assert.deepEqual(errors,[],'Optional shipment tracking introduced page errors');
+    console.log('PASS cloud persistence, remote revisions, retry, backup/CSV/legacy import, optional shipment tracking and re-login');
   } finally { await context.close(); }
 
   // Page management and reserved pockets run against disposable in-memory Firestore.

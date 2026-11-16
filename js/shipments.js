@@ -74,7 +74,7 @@ function renderShipments(){
  const count=shipmentCount();
  badge.hidden=!count;badge.textContent=count>99?'99+':String(count);
  const notice=$('shipmentNotice');
- notice.textContent=shipmentServiceError||'סטטוסים נמשכים מ־17TRACK; מספרי מעקב, שיוך קלפים וסימוני נקרא נשמרים בחשבון הפרטי.';
+ notice.textContent=shipmentServiceError||'משלוחים עם מספר מעקב מתעדכנים מ־17TRACK; משלוחים בלי מספר מנוהלים כאן ידנית. הנתונים נשמרים בחשבון הפרטי.';
  if(state.view!=='shipments')return;
  $('shipmentRefresh').disabled=shipmentRefreshing;
  $('shipmentRefresh').textContent=shipmentRefreshing?'מעדכן…':'↻ עדכון';
@@ -83,18 +83,18 @@ function renderShipments(){
   const live=shipmentLive.get(item.id),unread=shipmentNewEvents(item).length,expanded=shipmentExpandedId===item.id;
   const cards=item.cardIds.map(id=>lookup.get(id)).filter(Boolean);
   const latestEvent=Array.isArray(live?.events)?live.events[0]:null;
-  const status=item.deliveredAt?'✓ נמסר':live?.error?'אין עדכון':shipmentStatus(live?.status);
+  const status=item.deliveredAt?'✓ נמסר':!item.number?'ללא מעקב':live?.error?'אין עדכון':shipmentStatus(live?.status);
   const latestContent=latestEvent?.description?`<div class="shipment-latest"><span class="shipment-latest-icon" aria-hidden="true">🚚</span><div class="shipment-latest-body"><div class="shipment-latest-description">${esc(latestEvent.description)}</div>${latestEvent.time?`<time class="shipment-latest-date">${esc(shipmentEventTime(latestEvent.time))}</time>`:''}</div></div>`:'';
   const images=cards.slice(0,6).map(c=>`<img src="${esc(c.image)}" alt="${esc(c.name)}" loading="lazy" title="${esc(c.name)}">`).join('');
   const events=live?.events||[];
   const timeline=`<div class="shipment-timeline-region ${expanded?'is-expanded':''}" aria-hidden="${!expanded}"><div class="shipment-timeline-collapse"><div class="shipment-timeline">${live?.error?`<p class="shipment-label">${esc(live.error.message||'אין עדיין נתוני מעקב')}</p>`:events.length?events.map(event=>`<div class="shipment-event"><span class="shipment-dot" aria-hidden="true"></span><div class="shipment-event-main"><strong>${esc(event.description||shipmentStatus(event.stage))}</strong><small>${esc([shipmentEventTime(event.time),event.location].filter(Boolean).join(' · '))}</small></div></div>`).join(''):'<p class="shipment-label">עדיין אין אירועי מעקב זמינים. נסה לרענן בהמשך.</p>'}</div></div></div>`;
   return `<article class="shipment-entry ${unread?'is-new':''}" data-shipment-id="${esc(item.id)}">
-   <div class="shipment-entry-top"><div><h3 class="shipment-entry-title">${esc(item.title||'משלוח')}</h3><div class="shipment-tracking-number" dir="ltr">${esc(item.number)}</div><div class="shipment-label">${cards.length} קלפים משויכים</div></div><span class="shipment-status">${esc(status)}</span></div>
+   <div class="shipment-entry-top"><div><h3 class="shipment-entry-title">${esc(item.title||'משלוח')}</h3><div class="shipment-tracking-number" ${item.number?'dir="ltr"':''}>${item.number?esc(item.number):"אין מספר מעקב"}</div><div class="shipment-label">${cards.length} קלפים משויכים</div></div><span class="shipment-status">${esc(status)}</span></div>
    ${latestContent}
    ${item.note?`<div class="shipment-private-note">📝 ${esc(item.note)}</div>`:""}
    <div class="shipment-actions-row">
     ${cards.length?`<div class="shipment-card-images">${images}${cards.length>6?`<span class="shipment-label">+${cards.length-6}</span>`:''}</div>`:'<span></span>'}
-    <div class="shipment-actions">${!item.deliveredAt?`<button class="btn sm ship-deliver" type="button" data-ship-deliver="${esc(item.id)}">✓ סמן כנמסר</button>`:""}<button class="btn sm" type="button" data-ship-open="${esc(item.id)}" aria-expanded="${expanded}">${expanded?'⌃ סגור':'⌄ עדכונים'} ${unread?`<span class="shipment-new">${unread} חדשים</span>`:''}</button>
+    <div class="shipment-actions">${!item.deliveredAt?`<button class="btn sm ship-deliver" type="button" data-ship-deliver="${esc(item.id)}">✓ סמן כנמסר</button>`:""}${item.number?`<button class="btn sm" type="button" data-ship-open="${esc(item.id)}" aria-expanded="${expanded}">${expanded?'⌃ סגור':'⌄ עדכונים'} ${unread?`<span class="shipment-new">${unread} חדשים</span>`:''}</button>`:""}
     <details class="shipment-menu"><summary aria-label="אפשרויות משלוח">⋯</summary><div class="shipment-menu-options">
      <button type="button" data-ship-edit="${esc(item.id)}">עריכה</button>
      ${live?.error?.code===-18019902?`<button type="button" data-ship-register="${esc(item.id)}">רישום מעקב</button>`:''}
@@ -103,7 +103,7 @@ function renderShipments(){
    </div>
    ${timeline}
   </article>`;
- }).join(''):'<div class="shipment-empty">אין משלוחים עדיין. לחץ על ״+ משלוח״ כדי להוסיף מספר מעקב ולשייך אליו קלפים.</div>';
+ }).join(''):'<div class="shipment-empty">אין משלוחים עדיין. לחץ על ״+ משלוח״ כדי לנהל רכישה ולשייך אליה קלפים, גם בלי מספר מעקב.</div>';
  window.VintageStableDOM.reconcileHTML($('shipmentList'),markup,'data-shipment-id');
 }
 function openShipmentEditor(id=null){
@@ -152,7 +152,7 @@ async function shipmentRequest(route,body){
  return data;
 }
 async function registerShipment(item){
- if(!window.VintageCloud?.canEdit?.())return;
+ if(!item?.number||!window.VintageCloud?.canEdit?.())return;
  try{
   const response=await shipmentRequest('register',{number:item.number,carrier:item.carrier||undefined});
   const result=response.shipments?.find(x=>x.number===item.number);
@@ -166,10 +166,10 @@ async function registerShipment(item){
  renderShipments();
 }
 async function refreshShipments(force=false){
- if(shipmentRefreshing||!window.VintageCloud?.canEdit?.()||!state.shipments.length){renderShipments();return;}
+ if(shipmentRefreshing||!window.VintageCloud?.canEdit?.()||!state.shipments.some(x=>x.number)){renderShipments();return;}
  if(!force&&Date.now()-shipmentLastFetch<120000){renderShipments();return;}
  shipmentRefreshing=true;shipmentServiceError='';renderShipments();
- const tracked=state.shipments.map(x=>({id:x.id,number:x.number,carrier:x.carrier||undefined}));
+ const tracked=state.shipments.filter(x=>x.number).map(x=>({id:x.id,number:x.number,carrier:x.carrier||undefined}));
  let shouldSave=false,anySuccess=false;
  try{
   for(let offset=0;offset<tracked.length;offset+=12){
@@ -213,13 +213,15 @@ $('shipmentSelected').addEventListener('click',e=>{
 $('shipmentForm').addEventListener('submit',e=>{
  e.preventDefault();if(!ensureCloudEdit())return;
  const number=$('shipmentNumber').value.trim().toUpperCase(),title=$('shipmentName').value.trim().slice(0,70),note=$('shipmentNote').value.trim().slice(0,1000);
- if(!/^[A-Z0-9-]{5,50}$/.test(number)){toast('מספר המעקב אינו תקין');return;}
- if(state.shipments.some(x=>x.number===number&&x.id!==shipmentEditingId)){toast('המשלוח כבר קיים');return;}
+ if(number&&!/^[A-Z0-9-]{5,50}$/.test(number)){toast('מספר המעקב אינו תקין');return;}
+ if(!number&&!title){toast('למשלוח ללא מספר מעקב צריך לתת שם');return;}
+ if(number&&state.shipments.some(x=>x.number===number&&x.id!==shipmentEditingId)){toast('המשלוח כבר קיים');return;}
  let item=state.shipments.find(x=>x.id===shipmentEditingId),fresh=!item;
+ const numberChanged=!fresh&&item.number!==number;
  if(fresh){
   item={id:crypto.randomUUID().replace(/-/g,''),number,title,cardIds:[],seenEventIds:[],initialized:false,carrier:0,createdAt:Date.now()};
   state.shipments.unshift(item);
- }else if(item.number!==number){
+ }else if(numberChanged){
   item.number=number;item.carrier=0;item.seenEventIds=[];item.initialized=false;shipmentLive.delete(item.id);
  }
  const previousIds=[...item.cardIds];
@@ -233,7 +235,7 @@ $('shipmentForm').addEventListener('submit',e=>{
  restoreUnlinked(previousIds);
  $('shipmentDialog').close();save(true);refreshCards(changed);
  // Register the number only when first added (or explicitly changed).
- if(fresh||!item.initialized&&!shipmentLive.has(item.id))registerShipment(item);
+ if(number&&!item.deliveredAt&&(fresh||numberChanged||!item.initialized&&!shipmentLive.has(item.id)))registerShipment(item);
 });
 $('shipmentList').addEventListener('click',e=>{
  const control=e.target.closest('[data-ship-open],[data-ship-edit],[data-ship-delete],[data-ship-register],[data-ship-deliver]');
