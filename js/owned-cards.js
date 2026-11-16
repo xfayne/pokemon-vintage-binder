@@ -18,10 +18,11 @@ function sortedOwnedCards(){
 let ownedRenderTimer=null;
 function refreshOwned(){
  // Market data is shared by My Cards and Wishlist; either list must update when prices arrive.
- if(!['owned','wishlist','deals'].includes(state.view)||ownedRenderTimer)return;
+ if(!['owned','wishlist','deals','shipments'].includes(state.view)||ownedRenderTimer)return;
  ownedRenderTimer=setTimeout(()=>{
   ownedRenderTimer=null;
   if(state.view==='owned')renderOwnedList();
+  else if(state.view==='shipments')window.VintageBinder.refreshPendingCards?.();
   else if(state.view==='wishlist'||state.view==='deals')renderCollections();
  },120);
 }

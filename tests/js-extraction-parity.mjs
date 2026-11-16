@@ -85,7 +85,7 @@ if (updated.includes('js/shipments.js')) {
     assert.equal(newBinder.replace(call, () => extracted), oldBinder,
       'Shipment extraction changed any other binder behavior');
   }
-  const shipmentsTag = '<script src="js/shipments.js?v=20261116-binder-preserve1"></script>';
+  const shipmentsTag = '<script src="js/shipments.js?v=20261116-transit1"></script>';
   const binderTag = '<script src="js/binder.js?v=20261116-reinsert1"></script>';
   assert.ok(updated.indexOf(shipmentsTag) > 0 && updated.indexOf(shipmentsTag) < updated.indexOf(binderTag),
     'Shipment controller must be loaded before binder.js');
@@ -157,7 +157,7 @@ if (updated.includes('js/owned-cards.js')) {
     assert.equal(after.replace(call,()=>module.slice(i+begin.length,j)),before,
       'Owned-cards extraction changed binder logic beyond this exact block');
   }
-  const ownedTag='<script src="js/owned-cards.js?v=20261113-currency1"></script>';
+  const ownedTag='<script src="js/owned-cards.js?v=20261116-transit1"></script>';
   const binderTag='<script src="js/binder.js?v=20261116-reinsert1"></script>';
   assert.ok(updated.indexOf(ownedTag)>0&&updated.indexOf(ownedTag)<updated.indexOf(binderTag),
     'Owned cards controller must load before binder');

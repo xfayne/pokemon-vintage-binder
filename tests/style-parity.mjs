@@ -57,6 +57,9 @@ const normalizeUnchangedLayout = html => normalizeScripts(html)
     '<!-- intentionally updated binder controls and placement accordion -->')
   .replace(/<section class="collection-page" id="wishPage"[\s\S]*?<\/section>/,
     '<!-- intentionally updated wishlist search -->')
+  // The shipment page intentionally adds client-only parcels/in-transit sub-tabs.
+  .replace(/<section class="collection-page" id="shipmentsPage"[\s\S]*?<\/section>/,
+    '<!-- intentionally updated shipment sub-tabs -->')
   // Binder-specific dialogs are new UI, not part of the unchanged catalog shell.
   .replace(/<dialog id="binderMovePageDialog"[\s\S]*?<\/dialog>\n/, '')
   .replace(/<dialog id="binderPocketDialog"[\s\S]*?<\/dialog>\n/, '')

@@ -4,6 +4,7 @@ window.VintageShipments={create({state,MAP,cardNumber,esc,$,ensureCloudEdit,save
    metadata, linked card IDs and which remote event IDs were already read. */
 const shipmentLive=new Map();
 let shipmentEditingId=null,shipmentSelectedIds=new Set(),shipmentExpandedId=null,shipmentRefreshing=false,shipmentLastFetch=0,shipmentServiceError='';
+let shipmentPane='parcels';
 const SHIPMENT_API='https://pokemon-vintage-ebay-deals.xfayne.workers.dev';
 const SHIPMENT_STATUS={
  InfoReceived:'פרטי משלוח התקבלו',InTransit:'בדרך',AvailableForPickup:'ממתין לאיסוף',
@@ -99,6 +100,16 @@ function renderShipments(){
  const notice=$('shipmentNotice');
  notice.textContent=shipmentServiceError||'משלוחים עם מספר מעקב מתעדכנים מ־17TRACK; משלוחים בלי מספר מנוהלים כאן ידנית. הנתונים נשמרים בחשבון הפרטי.';
  if(state.view!=='shipments')return;
+ const cardsPane=shipmentPane==='cards';
+ $('shipmentParcelsPanel').hidden=cardsPane;
+ $('shipmentCardsPanel').hidden=!cardsPane;
+ $('shipmentHeadActions').hidden=cardsPane;
+ for(const tab of document.querySelectorAll('[data-shipment-pane]')){
+  const active=tab.dataset.shipmentPane===shipmentPane;
+  tab.classList.toggle('active',active);
+  tab.setAttribute('aria-selected',String(active));
+ }
+ if(cardsPane){renderPendingCards();return;}
  $('shipmentRefresh').disabled=shipmentRefreshing;
  $('shipmentRefresh').textContent=shipmentRefreshing?'מעדכן…':'↻ עדכון';
  const lookup=new Map(state.cards.map(c=>[c.id,c]));
@@ -128,6 +139,49 @@ function renderShipments(){
   </article>`;
  }).join(''):'<div class="shipment-empty">אין משלוחים עדיין. לחץ על ״+ משלוח״ כדי לנהל רכישה ולשייך אליה קלפים, גם בלי מספר מעקב.</div>';
  window.VintageStableDOM.reconcileHTML($('shipmentList'),markup,'data-shipment-id');
+}
+
+ // Read-only view: purchased-but-not-delivered cards retain the existing Firestore shape.
+ // Never infer a missing purchaseDate from when a parcel was created.
+function pendingCardRows(){
+ const pending=state.pendingPurchase||{},active=state.shipments.filter(s=>!s.deliveredAt);
+ return state.cards.filter(c=>!!pending[c.id]&&!state.owned[c.id]).map(card=>{
+  const linked=active.filter(s=>s.cardIds.includes(card.id));
+  const dated=linked.filter(s=>s.purchaseDate).sort((a,b)=>b.purchaseDate.localeCompare(a.purchaseDate));
+  const shipment=dated[0]||linked[0]||null;
+  return {card,shipment,purchaseDate:shipment?.purchaseDate||''};
+ });
+}
+function renderPendingCards(){
+ if(state.view!=='shipments'||shipmentPane!=='cards')return;
+ const rows=pendingCardRows(),q=$('shipmentPendingSearch').value.trim().toLocaleLowerCase(),sort=$('shipmentPendingSort').value;
+ $('shipmentPendingCount').textContent=String(rows.length);
+ const name=(a,b)=>a.card.name.localeCompare(b.card.name,'he')||a.card.id.localeCompare(b.card.id);
+ if(sort==='name')rows.sort(name);
+ else if(sort==='set')rows.sort((a,b)=>(MAP.get(a.card.set)?.name||'').localeCompare(MAP.get(b.card.set)?.name||'','he')||name(a,b));
+ else rows.sort((a,b)=>{
+  if(!a.purchaseDate)return b.purchaseDate?1:name(a,b);
+  if(!b.purchaseDate)return -1;
+  const order=a.purchaseDate.localeCompare(b.purchaseDate);
+  return (sort==='purchase-asc'?order:-order)||name(a,b);
+ });
+ const filtered=rows.filter(({card,shipment})=>(card.name+' '+card.id+' '+cardNumber(card)+' '+(MAP.get(card.set)?.name||'')+' '+(shipment?.title||'')).toLocaleLowerCase().includes(q));
+ const markup=filtered.length?filtered.map(({card:c,shipment,purchaseDate})=>{
+  const condition=state.conditions[c.id]||'';
+  const market=condition?window.VintageMarketPrices?.getOwnedPrice?.(c,MAP.get(c.set)?.name||'',condition,!!state.firstEdition[c.id]):null;
+  const amount=typeof market==='number'?window.VintageCurrency.format(market,'USD'):'';
+  const date=purchaseDate?purchaseDate.split('-').reverse().join('.'):'תאריך רכישה לא ידוע';
+  const source=shipment?.title||shipment?.number||'ללא חבילה משויכת';
+  return '<article class="owned-item shipment-pending-item" role="listitem" tabindex="0" data-open-owned="'+esc(c.id)+'" aria-label="פרטים על '+esc(c.name)+'">'+
+   '<img loading="lazy" decoding="async" src="'+esc(c.image)+'" alt="'+esc(c.name)+'">'+
+   '<div class="owned-copy"><strong>'+esc(c.name)+'</strong><small>'+esc(MAP.get(c.set)?.name||'')+' · #'+esc(cardNumber(c))+'</small>'+
+   '<small class="shipment-pending-caption">📦 '+esc(source)+'</small>'+
+   '<small class="shipment-pending-date">'+esc(date)+'</small></div>'+
+   '<div class="owned-meta">'+(amount?'<span class="owned-price">'+esc(amount)+'</span>':market===undefined?'<span class="owned-price pending">טוען מחיר…</span>':'')+
+   (condition?'<span class="owned-condition">'+esc(condition)+(state.firstEdition[c.id]?' · 1st':'')+'</span>':'')+
+   '<span class="shipment-pending-badge">בדרך</span></div></article>';
+ }).join(''):'<div class="no-cards">'+(rows.length?'לא נמצאו קלפים שמתאימים לחיפוש.':'אין כרגע קלפים שנרכשו וממתינים להגעה.')+'</div>';
+ window.VintageStableDOM.reconcileHTML($('shipmentPendingList'),markup,'data-open-owned');
 }
 function openShipmentEditor(id=null){
  if(!ensureCloudEdit())return;
@@ -221,6 +275,13 @@ async function refreshShipments(force=false){
  finally{shipmentRefreshing=false;renderShipments();}
 }
 window.VintageBinder.refreshShipments=()=>refreshShipments();
+$('shipmentPendingSearch').addEventListener('input',renderPendingCards);
+$('shipmentPendingSort').addEventListener('change',renderPendingCards);
+document.querySelector('.shipment-subtabs').addEventListener('click',event=>{
+ const tab=event.target.closest('[data-shipment-pane]');if(!tab)return;
+ shipmentPane=tab.dataset.shipmentPane;renderShipments();
+});
+window.VintageBinder.refreshPendingCards=()=>{if(state.view==='shipments'&&shipmentPane==='cards')renderPendingCards();};
 $('shipmentAdd').addEventListener('click',()=>openShipmentEditor());
 $('shipmentRefresh').addEventListener('click',()=>{shipmentLastFetch=0;refreshShipments(true);});
 $('shipmentCancel').addEventListener('click',()=>$('shipmentDialog').close());
