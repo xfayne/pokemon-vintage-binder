@@ -64,7 +64,7 @@ function showModal(id){const c=state.cards.find(c=>c.id===id);if(!c)return;const
   <div class="purchase-controls">
    <input type="number" id="modalPurchaseAmount" inputmode="decimal" min="0" max="1000000000" step="0.01" placeholder="סכום" value="${state.purchasePrices[c.id]?.amount??''}" aria-label="מחיר הרכישה">
    <select id="modalPurchaseCurrency" aria-label="מטבע הרכישה">
-    ${[['ILS','₪'],['EUR','€'],['USD','$']].map(([code,label])=>`<option value="${code}" ${(state.purchasePrices[c.id]?.currency||'ILS')===code?'selected':''}>${label}</option>`).join('')}
+    ${[['ILS','₪'],['EUR','€'],['USD','$'],['GBP','£']].map(([code,label])=>`<option value="${code}" ${(state.purchasePrices[c.id]?.currency||'ILS')===code?'selected':''}>${label}</option>`).join('')}
    </select>
   </div>
  </div>

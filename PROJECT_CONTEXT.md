@@ -130,7 +130,7 @@ Collector preference: English vintage Unlimited, ungraded/raw cards; prioritize 
 
 
 ## Display currency (2026-11-13)
-- Account menu allows ILS (default), USD or EUR display, persisted per device under `pokemon-vintage-display-currency`. This preference is presentation-only and is not written to Firestore. Card purchase-cost editing retains its explicitly selected transaction currency.
+- Account menu allows ILS (default), USD or EUR display, persisted per device under `pokemon-vintage-display-currency`. This preference is presentation-only and is not written to Firestore. Card purchase-cost editing accepts ILS, EUR, USD and GBP (GBP appears only in the purchase-price field) and retains its explicitly selected transaction currency.
 - `js/currency.js` is the sole FX client. It fetches the latest USD-based central-bank reference rates from Frankfurter on page load, shows the reference date, and needs no API key or Cloudflare Worker change. When a conversion is unavailable, the UI shows `—` rather than reverting silently to the listing currency or fabricating rates.
 - eBay bid, international shipping, all-in amounts, market reference prices, and advanced filter limit labels display in the selected currency. Comparison, filters and sorting retain their existing USD numeric basis. Owned-card totals, card-details market prices, and Wishlist prices also follow the selected display currency; manual purchase entry stays in the currency recorded by the user.
 - `tests/currency.test.mjs` validates rate calculations, local preference persistence and failure behavior. Display uses reference exchange rates, not guaranteed payment-provider rates.

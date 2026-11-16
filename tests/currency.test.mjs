@@ -60,3 +60,62 @@ test('invalid source and bad rate payload cannot produce fabricated amounts',asy
  assert.equal(fx.toUSD(-5,'USD'),null);
  assert.equal(fx.toUSD(null,'USD'),null);
 });
+
+
+test('GBP purchase amount persists with its original currency and is selected on reopening card details',()=>{
+ const actionsSource=readFileSync(new URL('../js/card-actions.js',import.meta.url),'utf8');
+ const detailsSource=readFileSync(new URL('../js/card-details.js',import.meta.url),'utf8');
+ const elements={
+  modalPurchaseAmount:{value:'19.95'},
+  modalPurchaseCurrency:{value:'GBP'},
+  modalPendingBadge:{hidden:true},
+  modalOwned:{classList:{toggle(){}},setAttribute(){},textContent:''},
+  modalPurchaseBox:{hidden:true},
+  modalMove:{textContent:'',onclick:null},
+  modalDeals:{onclick:null},
+  modalCondition:{onchange:null},
+  modalFirstEdition:{onchange:null},
+  modal:{open:false,showModal(){this.open=true;}}
+ };
+ let modalHTML='';
+ elements.modalContent={
+  set innerHTML(value){modalHTML=value;},
+  querySelector(){
+   return {parentElement:{classList:{add(){}}},addEventListener(){},complete:false};
+  }
+ };
+ const $=id=>elements[id]||null;
+ const state={
+  cards:[{id:'base1-1',set:'base1',name:'Alakazam',number:'1',large:'https://example.test/card.png'}],
+  owned:{'base1-1':true},wish:{},pendingPurchase:{},binderOrder:[],
+  conditions:{},firstEdition:{},purchasePrices:{}
+ };
+ let saves=0;
+ const actionWindow={};
+ runInNewContext(actionsSource,{window:actionWindow});
+ const actions=actionWindow.VintageCardActions.create({
+  state,$,ensureCloudEdit:()=>true,normalizeOrders(){},save(){saves++;},
+  refreshCard(){},toast(){},showModal(){}
+ });
+ actions.updatePurchasePrice('base1-1');
+ assert.deepEqual(JSON.parse(JSON.stringify(state.purchasePrices['base1-1'])),{amount:19.95,currency:'GBP'});
+ assert.equal(saves,1);
+ // Existing cloud/backup serializers preserve the purchase currency as provided.
+ state.purchasePrices=JSON.parse(JSON.stringify(state.purchasePrices));
+ const detailsWindow={VintageMarketPrices:{show(){}},VintageCloud:{canEdit:()=>true}};
+ runInNewContext(detailsSource,{window:detailsWindow});
+ const details=detailsWindow.VintageCardDetails.create({
+  state,MAP:new Map([['base1',{name:'Base Set',year:1999}]]),$,
+  esc:String,cardNumber:c=>c.number,rarityHtml:()=>'',dealAuctionUrl:()=>'',openDealsForCard(){},
+  toggleOwned(){},toggleWish(){},ensureCloudEdit:()=>true,openMovePicker(){},
+  save(){},renderCards(){},updatePurchasePrice:actions.updatePurchasePrice
+ });
+ details.showModal('base1-1');
+ assert.match(modalHTML,/<option value="GBP" selected>£<\/option>/);
+ assert.equal(elements.modalPurchaseBox.hidden,false);
+ assert.equal(typeof elements.modalPurchaseCurrency.onchange,'function');
+ elements.modalPurchaseCurrency.value='EUR';
+ elements.modalPurchaseCurrency.onchange();
+ assert.deepEqual(JSON.parse(JSON.stringify(state.purchasePrices['base1-1'])),{amount:19.95,currency:'EUR'});
+ assert.equal(saves,2);
+});
