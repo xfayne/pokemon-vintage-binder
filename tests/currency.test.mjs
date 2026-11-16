@@ -71,6 +71,7 @@ test('GBP purchase amount persists with its original currency and is selected on
   modalPendingBadge:{hidden:true},
   modalOwned:{classList:{toggle(){}},setAttribute(){},textContent:''},
   modalPurchaseBox:{hidden:true},
+  modalMove:{textContent:'',onclick:null},
   modalDeals:{onclick:null},
   modalCondition:{onchange:null},
   modalFirstEdition:{onchange:null},
