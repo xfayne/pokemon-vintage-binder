@@ -395,8 +395,12 @@ if(updated.includes('js/collection-backup.js')){
     assert.equal(after,before.slice(0,start)+factory+before.slice(end),
       'Backup extraction altered unrelated binder logic');
   } else {
-    assert.equal(module,execFileSync('git',['show','origin/main:js/collection-backup.js'],
-      {encoding:'utf8'}),'Previously extracted backup controller unexpectedly changed');
+    // This feature extends the existing backup/import keys with pendingPurchase.
+    const baselineBackup=execFileSync('git',['show','origin/main:js/collection-backup.js'],{encoding:'utf8'});
+    const expectedBackup=baselineBackup.replace(
+      "['owned','wish','removedWish','conditions','notes','purchasePrices','firstEdition','ownedAddedAt','binderExcluded']",
+      "['owned','wish','pendingPurchase','removedWish','conditions','notes','purchasePrices','firstEdition','ownedAddedAt','binderExcluded']");
+    assert.equal(module,expectedBackup,'Backup must differ from main only by pendingPurchase support');
   }
 }
 const root = process.cwd();
