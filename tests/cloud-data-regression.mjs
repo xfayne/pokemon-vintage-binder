@@ -702,8 +702,21 @@ try {
     assert.equal(await rp.evaluate(()=>window.__cloudTest.writes.length),initialWrites,
       'Looking up historical binder snapshots must NEVER write to Firestore');
     assert.deepEqual((await getState(rp)).binderOrder,badOrder);
+    // A manual extra read-only scan looks beyond the one-hour window ONLY if
+    // historical PITR data is available; Firestore requires whole-minute reads.
+    await rp.locator('#binderRecoveryOlder').click();
+    await rp.waitForFunction(()=>!document.querySelector('#binderRecoveryOlder').disabled);
+    const recoveryReads=await rp.evaluate(()=>window.__binderRecoveryReads);
+    assert.ok(recoveryReads.length>=16,'Extended recovery did not request older snapshots');
+    assert.ok(recoveryReads.slice(11).every(r=>{
+      const t=new Date(new URL(r.url).searchParams.get('readTime'));
+      return t.getUTCSeconds()===0&&t.getUTCMilliseconds()===0;
+    }), 'Past-hour PITR readTime must be rounded to whole minutes');
+    assert.equal(await rp.evaluate(()=>window.__cloudTest.writes.length),initialWrites,
+      'Even extended historical searches must be read-only');
     await rp.locator('#binderRecoveryVersions').selectOption('0');
     assert.match(await rp.locator('#binderRecoveryPreview').textContent(),/מיקומים משתנים/);
+    assert.match(await rp.locator('#binderRecoveryPreview').textContent(),/1 קלפים חסרים נמצאו/);
     assert.equal(await rp.locator('#binderRecoveryApply').isEnabled(),true);
     rp.on('dialog',dialog=>dialog.accept());
     const downloadPromise=rp.waitForEvent('download');
