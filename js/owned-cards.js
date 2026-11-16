@@ -1,5 +1,6 @@
 (()=>{'use strict';
-window.VintageOwnedCards={create({state,MAP,$,SETS,showHolo,normalNum,searchKey,searchText,rarityHtml,esc,cardNumber,renderCollections}){
+window.VintageOwnedCards={create({state,MAP,$,SETS,showHolo,normalNum,searchKey,searchText,rarityHtml,esc,cardNumber,renderCollections,save}){
+const analytics=window.VintageCollectionAnalytics.create({state,MAP,$,save});
 function sortedOwnedCards(){
  const own=state.cards.filter(c=>state.owned[c.id]), mode=$('ownedSort').value;
  const setIndex=c=>SETS.findIndex(s=>s.id===c.set);
@@ -62,6 +63,7 @@ function renderOwnedList(){
     </div>`:''}
   </article>`}).join(''):`<div class="no-cards">${own.length?'לא נמצאו קלפים מתאימים לחיפוש.':'עוד אין קלפים ברשימה. אפשר לסמן ״יש לי״ בקטלוג.'}</div>`;
  window.VintageStableDOM.reconcileHTML($('ownedItems'),markup,'data-open-owned');
+  analytics.render();
 }
 
 return {sortedOwnedCards,refreshOwned,renderOwnedList};

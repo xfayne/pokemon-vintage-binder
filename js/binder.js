@@ -157,7 +157,7 @@ function openDealsForCard(id){
  cardDealsOrigin={view:state.view,scrollY:window.scrollY};
  showView('deals',true,id);
 }
-const {sortedOwnedCards,refreshOwned,renderOwnedList}=window.VintageOwnedCards.create({state,MAP,$,SETS,showHolo,normalNum,searchKey,searchText,rarityHtml,esc,cardNumber,renderCollections:()=>renderCollections()});
+const {sortedOwnedCards,refreshOwned,renderOwnedList}=window.VintageOwnedCards.create({state,MAP,$,SETS,showHolo,normalNum,searchKey,searchText,rarityHtml,esc,cardNumber,renderCollections:()=>renderCollections(),save});
 function dealAuctionUrl(c,precise){
  const setName=MAP.get(c.set)?.name||'';
  const edition=state.firstEdition[c.id]?'1st edition':'';

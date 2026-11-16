@@ -906,3 +906,52 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
  .shipment-pending-item .owned-meta{flex-basis:76px;gap:4px}
 }
 @media(prefers-reduced-motion:reduce){.shipment-subtab{transition:none}}
+
+
+/* Collection analytics: compact mobile-first summary, scoped to My Cards. */
+.owned-analytics-tabs{display:flex;gap:6px;background:#f0f3fa;border-radius:11px;padding:4px;margin:12px 0 15px;width:max-content;max-width:100%}
+.owned-analytics-tabs button{border:0;border-radius:8px;background:transparent;color:#637089;padding:9px 23px;font-weight:750;min-width:98px;transition:background .18s,color .18s,box-shadow .18s}
+.owned-analytics-tabs button[aria-selected="true"]{background:#fff;color:#263a6d;box-shadow:0 2px 8px #16284613}
+.owned-analytics-summary{min-width:0;display:grid;gap:17px}
+.owned-analytics-summary[hidden],.owned-analytics-list[hidden]{display:none!important}
+.analytics-intro h3,.analytics-chart-header h3,.analytics-details-heading h3{font-size:17px;margin:0;color:var(--ink)}
+.analytics-intro p{margin:5px 0 0;color:var(--muted);font-size:12px}
+.analytics-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.analytics-stat{border:1px solid #e0e6f0;background:#f8faff;border-radius:12px;padding:14px 13px;min-width:0;display:flex;flex-direction:column;gap:7px}
+.analytics-stat span{font-size:12px;color:#57657c;font-weight:700}
+.analytics-stat strong{font-size:clamp(18px,2.4vw,25px);font-weight:830;line-height:1.2;direction:ltr;text-align:right;overflow-wrap:anywhere}
+.analytics-stat small{font-size:11px;color:#7a879c;line-height:1.55}
+.analytics-stat .is-positive,.analytics-big.is-positive{color:#12805f}
+.analytics-stat .is-negative,.analytics-big.is-negative{color:#b34c5b}
+.analytics-chart-panel{border:1px solid var(--border);border-radius:14px;padding:16px 12px;min-width:0;display:grid;gap:12px;background:#fff}
+.analytics-chart-header{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.analytics-muted,.analytics-footnote,.analytics-disclaimer{font-size:11px;color:#708099;line-height:1.8}
+.analytics-segments{display:flex;flex-wrap:wrap;gap:5px}
+.analytics-segments button{border:1px solid #d9e0ec;background:#fff;color:#637087;border-radius:8px;padding:7px 11px;font-size:12px;font-weight:750;min-height:34px}
+.analytics-segments button.selected{color:#2e478c;background:#ecf1ff;border-color:#bfcdfa}
+.analytics-big{font-size:clamp(28px,4vw,40px);font-weight:850;direction:ltr;text-align:right;line-height:1.05}
+.analytics-chart{width:100%;height:210px;display:block;overflow:visible;color:#7b859c;touch-action:pan-y}
+.analytics-chart-focus{min-height:21px;color:#4d5f7a;text-align:center;font-size:12px}
+.analytics-no-history{background:#f7f9fd;border:1px dashed #d8dfec;border-radius:11px;text-align:center;padding:28px 12px;color:#65748b;font-size:13px;line-height:1.8}
+.analytics-periods{justify-content:center}
+.analytics-disclaimer{border-top:1px solid #e9edf5;padding-top:9px}
+.analytics-footnote{border:1px solid #e6ebf2;background:#f9fbfe;border-radius:11px;padding:12px 14px}
+.analytics-details-btn{justify-self:start}
+.analytics-details-heading{display:flex;justify-content:space-between;align-items:center;flex-direction:row-reverse;gap:9px}
+.analytics-purchase-list{border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.analytics-purchase-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 13px;border-bottom:1px solid #edf1f7;cursor:pointer;min-width:0}
+.analytics-purchase-row:last-child{border-bottom:0}
+.analytics-purchase-row:focus-visible{outline:2px solid #5366d6;outline-offset:-2px}
+.analytics-purchase-row>div{display:flex;flex-direction:column;gap:4px;min-width:0}
+.analytics-purchase-row strong{font-size:13px;overflow-wrap:anywhere}
+.analytics-purchase-row small{font-size:11px;color:#718098}
+.analytics-purchase-amount{flex-shrink:0;text-align:left;direction:ltr}
+@media(max-width:650px){
+ .analytics-stats{gap:8px}.analytics-stat{padding:12px 10px}
+ .analytics-stat strong{font-size:20px}
+ .analytics-chart-panel{padding:13px 10px}
+ .analytics-chart{height:178px}
+ .owned-analytics-tabs{width:100%}
+ .owned-analytics-tabs button{flex:1}
+}
+@media(prefers-reduced-motion:reduce){.owned-analytics-tabs button{transition:none}}
