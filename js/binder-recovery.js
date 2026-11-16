@@ -29,12 +29,21 @@ function renderSelection(){
  if(!candidate){preview.textContent='בחר גרסה כדי לראות אילו מיקומים יוחזרו.';return;}
  const current=window.VintageBinder.getProgress(),merged=mergeBinderOrder(candidate.order,current);
  const differences=merged.reduce((count,id,i)=>count+(current.binderOrder[i]===id?0:1),0);
+ const present=new Set(current.binderOrder);
+ const recovered=merged.filter(id=>!id.startsWith('__binder_empty__:')&&!present.has(id));
+ const historicalCards=candidate.order.filter(id=>!id.startsWith('__binder_empty__:')).length;
+ const currentCards=current.binderOrder.filter(id=>!id.startsWith('__binder_empty__:')).length;
  const names=merged.slice(0,9).map(id=>{
   if(id.startsWith('__binder_empty__:'))return 'כיס ריק';
   return window.VintageBinder.getCardInfo(id)?.name||id;
  }).join(' · ');
- preview.textContent=candidate.label+' — '+describe(merged)+'. '+differences+
-  ' מיקומים משתנים בהשוואה לסידור הנוכחי. תחילת הסידור: '+names+'.';
+ preview.textContent=candidate.label+' — בגרסת המקור: '+historicalCards+
+  ' קלפים; בבינדר הנוכחי: '+currentCards+
+  ' קלפים. '+recovered.length+' קלפים חסרים נמצאו בגרסה הזו. '+
+  differences+' מיקומים משתנים. תחילת הסידור: '+names+
+  (recovered.length?'\. קלפים שיוחזרו למקומם: '+recovered.slice(0,24).map(id=>
+   window.VintageBinder.getCardInfo(id)?.name||id).join(', '):'')+
+  (historicalCards<=currentCards?'\nשים לב: בגרסה הזו אין יותר קלפים מאשר בבינדר הנוכחי. אין להניח שהיא שחזור מלא.':'');
 }
 function updateOptions(){
  picker.replaceChildren(new Option('בחר גרסה לשחזור',''));
@@ -55,33 +64,50 @@ $('openBinderRecovery').addEventListener('click',()=>{
 });
 $('binderRecoveryClose').addEventListener('click',()=>dialog.close());
 picker.addEventListener('change',renderSelection);
-$('binderRecoveryScan').addEventListener('click',async()=>{
+async function scanHistory(offsets,button){
  if(scanning||!window.VintageCloud?.canEdit?.())return;
- scanning=true;$('binderRecoveryScan').disabled=true;
- const now=Date.now(),offsets=[5,10,15,20,25,30,35,40,45,50,55];
- let found=0,failed=0,lastError='';
+ scanning=true;
+ $('binderRecoveryScan').disabled=true;
+ $('binderRecoveryOlder').disabled=true;
+ const now=Date.now();
+ let found=0,failed=0,lastError='',firstSuccess=false;
  try{
-  setStatus('בודק גרסאות קודמות של הבינדר, בקריאה בלבד…');
-  const responses=await Promise.allSettled(offsets.map(async minutes=>{
-   const at=new Date(now-minutes*60000).toISOString();
-   const order=await window.VintageCloud.getHistoricalBinderOrder(at);
-   return {minutes,order};
-  }));
-  for(let i=0;i<responses.length;i++){
-   const r=responses[i];
-   if(r.status==='fulfilled'){
-    const {minutes,order}=r.value;
-    if(addCandidate('לפני '+minutes+' דקות',order,'firestore'))found++;
-   }else{failed++;lastError=String(r.reason?.message||r.reason);}
+  setStatus('בודק '+offsets.length+' נקודות זמן היסטוריות, בקריאה בלבד…');
+  // Older-than-an-hour PITR timestamps MUST be at minute precision.
+  // Batch requests to avoid rate-limit spikes.
+  for(let i=0;i<offsets.length;i+=5){
+   const batch=offsets.slice(i,i+5);
+   const responses=await Promise.allSettled(batch.map(async minutes=>{
+    const date=new Date(now-minutes*60000);
+    date.setUTCSeconds(0,0);
+    const order=await window.VintageCloud.getHistoricalBinderOrder(date.toISOString());
+    return {minutes,order};
+   }));
+   for(const r of responses){
+    if(r.status==='fulfilled'){
+     firstSuccess=true;
+     const {minutes,order}=r.value;
+     const label=minutes<60?'לפני '+minutes+' דקות':minutes<1440?'לפני '+(minutes/60)+' שעות':'לפני '+(minutes/1440)+' ימים';
+     if(addCandidate(label,order,'firestore'))found++;
+    }else{failed++;lastError=String(r.reason?.message||r.reason);}
+   }
+   if(failed>=5&&!firstSuccess&&offsets[0]>=60)break;
   }
   updateOptions();
-  if(found)setStatus('נמצאו '+found+' גרסאות שונות. בחר את הגרסה שבה הסידור שלך עדיין היה תקין.');
-  else setStatus('לא נמצאו גרסאות קודמות שונות. '+(lastError?
-   'שגיאת Firestore: '+lastError.slice(0,190)+'; ':'')+
-   'אפשר לנסות גיבוי JSON שנשמר לפני התקלה.');
- }catch(e){setStatus('החיפוש נכשל: '+String(e.message||e));}
- finally{scanning=false;$('binderRecoveryScan').disabled=false;}
-});
+  if(found)setStatus('נמצאו '+found+' גרסאות נוספות. חפש גרסה עם מספר הקלפים המקורי שלך לפני אישור שחזור.');
+  else setStatus('לא נמצאה גרסה מתאימה. '+(lastError?
+   'הקריאה ההיסטורית נכשלה: '+lastError.slice(0,180)+'. ':'')+
+   'גרסאות מלפני שעה זמינות רק אם PITR הופעל בזמן הרלוונטי, או באמצעות גיבוי JSON ישן.');
+ }catch(e){setStatus('הבדיקה נכשלה: '+String(e.message||e));}
+ finally{
+  scanning=false;$('binderRecoveryScan').disabled=false;$('binderRecoveryOlder').disabled=false;
+ }
+}
+$('binderRecoveryScan').addEventListener('click',()=>scanHistory([5,10,15,20,25,30,35,40,45,50,55]));
+$('binderRecoveryOlder').addEventListener('click',()=>scanHistory([
+ 60,75,90,105,120,150,180,210,240,270,300,330,360,390,420,450,480,540,600,660,720,
+ 840,960,1080,1200,1320,1440,1800,2160,2880,4320,5760,7200,8640,10080
+]));
 $('binderRecoveryFile').addEventListener('change',async e=>{
  const file=e.target.files?.[0];if(!file)return;
  try{
