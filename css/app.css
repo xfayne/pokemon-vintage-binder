@@ -902,7 +902,7 @@ body.reader-open .hero,body.reader-open .cloudbar,body.reader-open .main-nav,bod
  .shipment-subtab{flex:1;padding:9px 6px;font-size:12px}
  .shipment-cards-controls{gap:7px}
  .shipment-cards-controls input{flex-basis:100%;width:100%}
- .shipment-cards-controls select{flex:1;min-width:0}
+ .shipment-cards-controls select{flex:1;min-width:0;font-size:16px}
  .shipment-pending-item .owned-meta{flex-basis:76px;gap:4px}
 }
 @media(prefers-reduced-motion:reduce){.shipment-subtab{transition:none}}
