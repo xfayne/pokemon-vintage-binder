@@ -36,7 +36,10 @@ const normalizeUnchangedLayout = html => normalizeScripts(html)
   // Tracking is optional in the editor; this does not change the offline catalog.
   .replace(/<label>מספר מעקב \(לא חובה\) <input id="shipmentNumber"[^>]*>/,
     '<label>מספר מעקב <input id="shipmentNumber" maxlength="50" required dir="ltr" placeholder="LA657049767NL" autocomplete="off" autocapitalize="characters" spellcheck="false">')
-  // The new shipment body is only a scroll region; static catalog DOM is unchanged.
+  // Shipment metadata and card results now scroll independently within the fixed-footer editor.
+  .replace(/  <div class="shipment-details-scroll">\n([\s\S]*?)  <\/div>\n  <div class="shipment-picker">\n([\s\S]*?)  <\/div>\n  <\/div>\n  <div class="shipment-form-actions">/,
+    (_, details, picker) => details+picker+'  </div>\n  <div class="shipment-form-actions">')
+  // Only the shipment scroll body was added in the earlier fix; ignore it for catalog parity.
   .replace(/  <div class="shipment-form-body" id="shipmentFormBody">\n([\s\S]*?)  <\/div>\n  <div class="shipment-form-actions">/,
     (_, body) => body+'  <div class="shipment-form-actions">')
   // Purchase date only belongs to the shipment editor, outside static catalog parity.

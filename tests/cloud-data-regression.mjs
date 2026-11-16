@@ -330,48 +330,66 @@ try {
     // The mocked Firebase SDK ensures this test never touches production data.
     await page.locator('[data-view-btn="shipments"]').click();
     await page.evaluate(()=>document.querySelector('[data-ship-edit="parcel_test_01"]').click());
-    // The dialog header + Save/Cancel footer remain in view; only the fields
-    // scroll. Simulate both an iPhone viewport and a shorter keyboard viewport.
+    // Exercise the real mobile layout, including a full card picker and several
+    // selected chips. The saving footer is fixed; metadata and result lists scroll
+    // separately. Reproduces the original screenshot with only one visible result.
     const originalViewport=page.viewportSize();
-    const dialogGeometry=()=>page.evaluate(()=>{
-      const dialog=document.querySelector('#shipmentDialog'),
-        form=document.querySelector('#shipmentForm'),
-        body=document.querySelector('#shipmentFormBody'),
-        actions=document.querySelector('.shipment-form-actions'),
-        header=document.querySelector('.shipment-dialog-head'),
-        save=form.querySelector('button[type="submit"]');
-      const d=dialog.getBoundingClientRect(),h=header.getBoundingClientRect(),
-        b=body.getBoundingClientRect(),f=actions.getBoundingClientRect(),
-        s=save.getBoundingClientRect();
-      return {viewportHeight:innerHeight,dialog:d.toJSON(),header:h.toJSON(),body:b.toJSON(),
-        footer:f.toJSON(),save:s.toJSON(),scrollHeight:body.scrollHeight,clientHeight:body.clientHeight,
-        dialogScrollTop:dialog.scrollTop,bodyScrollTop:body.scrollTop,
-        overflow:getComputedStyle(body).overflowY};
+    await page.setViewportSize({width:390,height:844});
+    await page.locator('#shipmentCardSearch').fill('a');
+    await page.waitForFunction(()=>document.querySelectorAll('#shipmentCardResults [data-ship-pick]').length>=8);
+    await page.evaluate(()=>{
+      const selected=document.querySelector('#shipmentSelected');
+      for(let i=0;i<7;i++){
+        const chip=document.createElement('button');
+        chip.type='button';chip.textContent='Selected card '+i+' ×';
+        selected.appendChild(chip);
+      }
     });
-    for(const viewport of [{width:390,height:844},{width:390,height:540}]){
-      await page.setViewportSize(viewport);
-      let before=await dialogGeometry();
-      assert.ok(before.dialog.top>=0&&before.dialog.bottom<=viewport.height+1,
-        'Shipment dialog must fit inside the visual viewport');
-      assert.ok(before.save.top>=before.dialog.top&&before.save.bottom<=before.dialog.bottom,
-        'Save button must remain visible inside the modal');
-      assert.ok(before.footer.bottom<=before.dialog.bottom&&before.header.top>=before.dialog.top,
-        'Fixed header/footer must stay inside the dialog');
-      assert.equal(before.overflow,'auto','Shipment body should be the scroll container');
-      await page.locator('#shipmentFormBody').evaluate(el=>{el.scrollTop=el.scrollHeight;});
-      let after=await dialogGeometry();
-      assert.ok(Math.abs(after.save.top-before.save.top)<1,
-        'Scrolling fields must not move Save button');
-      assert.ok(Math.abs(after.header.top-before.header.top)<1,
-        'Scrolling fields must not move the modal header');
-      assert.ok(after.bodyScrollTop>0||before.scrollHeight<=before.clientHeight+1,
-        'Long shipment content should scroll independently: '+
-        JSON.stringify({viewportHeight:viewport.height,scrollHeight:before.scrollHeight,
-          clientHeight:before.clientHeight,afterScrollTop:after.bodyScrollTop}));
-      assert.equal(after.dialogScrollTop,0,'The entire dialog should not scroll');
-      await page.locator('#shipmentFormBody').evaluate(el=>{el.scrollTop=0;});
-    }
+    const geometry=()=>page.evaluate(()=>{
+      const rect=id=>document.querySelector(id).getBoundingClientRect();
+      const dialog=rect('#shipmentDialog'),header=rect('.shipment-dialog-head'),
+        footer=rect('.shipment-form-actions'),save=rect('#shipmentForm button[type="submit"]'),
+        metadata=rect('.shipment-details-scroll'),search=rect('#shipmentCardSearch'),
+        selected=rect('#shipmentSelected'),results=rect('#shipmentCardResults');
+      const cards=[...document.querySelectorAll('#shipmentCardResults [data-ship-pick]')].map(el=>el.getBoundingClientRect());
+      const visible=cards.filter(c=>c.top>=results.top-1&&c.bottom<=results.bottom+1&&c.bottom<=innerHeight).length;
+      return {dialog:dialog.toJSON(),header:header.toJSON(),footer:footer.toJSON(),
+        save:save.toJSON(),metadata:metadata.toJSON(),search:search.toJSON(),
+        selected:selected.toJSON(),results:results.toJSON(),visible,
+        resultScrollHeight:document.querySelector('#shipmentCardResults').scrollHeight,
+        resultClientHeight:document.querySelector('#shipmentCardResults').clientHeight,
+        resultScrollTop:document.querySelector('#shipmentCardResults').scrollTop,
+        detailScrollTop:document.querySelector('.shipment-details-scroll').scrollTop,
+        dialogScrollTop:document.querySelector('#shipmentDialog').scrollTop,
+        bodyScrollTop:document.querySelector('#shipmentFormBody').scrollTop
+      };
+    });
+    const initial=await geometry();
+    assert.ok(initial.visible>=4,
+      'At least four fully visible card results required on iPhone: '+JSON.stringify(initial));
+    assert.ok(initial.save.bottom<=initial.dialog.bottom&&initial.save.top>=initial.dialog.top,
+      'The Save button must be fixed inside the dialog');
+    assert.ok(initial.footer.bottom<=initial.dialog.bottom+1,
+      'The footer must stay on screen');
+    assert.ok(initial.resultScrollHeight>initial.resultClientHeight,
+      'Card results should have independent scrolling for additional matches');
+    await page.locator('#shipmentCardResults').evaluate(el=>{el.scrollTop=el.scrollHeight;});
+    await page.locator('.shipment-details-scroll').evaluate(el=>{el.scrollTop=el.scrollHeight;});
+    const scrolled=await geometry();
+    assert.ok(scrolled.resultScrollTop>0&&scrolled.detailScrollTop>0,
+      'Both card results and metadata should scroll independently');
+    assert.ok(Math.abs(scrolled.footer.top-initial.footer.top)<1,
+      'Save button moved while scrolling');
+    assert.ok(Math.abs(scrolled.search.top-initial.search.top)<1,
+      'Card search should remain visible while scrolling the result list');
+    assert.equal(scrolled.dialogScrollTop,0);
+    assert.equal(scrolled.bodyScrollTop,0);
+    await page.setViewportSize({width:390,height:540});
+    const compact=await geometry();
+    assert.ok(compact.footer.bottom<=compact.dialog.bottom+1&&compact.dialog.bottom<=540+1,
+      'Save/Cancel must remain visible with mobile keyboard viewport');
     await page.setViewportSize(originalViewport);
+    await page.locator('#shipmentCardSearch').fill('');
     assert.equal(await page.locator('#shipmentPurchaseDate').inputValue(),'',
       'Existing shipments with unknown purchase dates must not be assigned today');
     await page.locator('#shipmentNote').fill('Combined shipping confirmed');
