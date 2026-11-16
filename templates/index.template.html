@@ -41,7 +41,7 @@
 @media(max-width:650px){.static-img{height:121px;}}
 
 </style></noscript>
-<link rel="stylesheet" href="css/app.css?v=20261116-recovery1">
+<link rel="stylesheet" href="css/app.css?v=20261116-transit1">
 <link rel="stylesheet" href="deal-finder/live.css?v=20261113-deals-sort1">
 </head>
 <body>
@@ -160,10 +160,29 @@
  <div class="collection-panel">
   <div class="collection-heading shipment-head">
    <div><h2>📦 משלוחים</h2><div class="subtle">מעקב משלוחים ושיוך קלפים מהקטלוג שלך</div></div>
-   <div class="shipment-head-actions"><button type="button" class="btn sm" id="shipmentRefresh">↻ עדכון</button><button type="button" class="btn primary sm" id="shipmentAdd">+ משלוח</button></div>
+   <div class="shipment-head-actions" id="shipmentHeadActions"><button type="button" class="btn sm" id="shipmentRefresh">↻ עדכון</button><button type="button" class="btn primary sm" id="shipmentAdd">+ משלוח</button></div>
   </div>
-  <div class="subtle shipment-notice" id="shipmentNotice" role="status"></div>
-  <div class="shipment-list" id="shipmentList"></div>
+  <div class="shipment-subtabs" role="tablist" aria-label="תצוגות משלוחים">
+   <button type="button" class="shipment-subtab active" id="shipmentParcelsTab" data-shipment-pane="parcels" role="tab" aria-selected="true" aria-controls="shipmentParcelsPanel">📦 חבילות</button>
+   <button type="button" class="shipment-subtab" id="shipmentCardsTab" data-shipment-pane="cards" role="tab" aria-selected="false" aria-controls="shipmentCardsPanel">🃏 קלפים בדרך <span class="shipment-subtab-count" id="shipmentPendingCount"></span></button>
+  </div>
+  <div id="shipmentParcelsPanel" role="tabpanel" aria-labelledby="shipmentParcelsTab">
+   <div class="subtle shipment-notice" id="shipmentNotice" role="status"></div>
+   <div class="shipment-list" id="shipmentList"></div>
+  </div>
+  <div id="shipmentCardsPanel" role="tabpanel" aria-labelledby="shipmentCardsTab" hidden>
+   <div class="shipment-cards-controls">
+    <input id="shipmentPendingSearch" type="search" placeholder="חיפוש לפי שם, סדרה או מספר..." aria-label="חיפוש בקלפים בדרך" autocomplete="off">
+    <label for="shipmentPendingSort">מיון</label>
+    <select id="shipmentPendingSort" aria-label="מיון קלפים בדרך">
+     <option value="purchase-desc">תאריך רכישה: חדש לישן</option>
+     <option value="purchase-asc">תאריך רכישה: ישן לחדש</option>
+     <option value="name">שם הקלף (א–ת)</option>
+     <option value="set">לפי סדרה</option>
+    </select>
+   </div>
+   <div id="shipmentPendingList" class="owned-items shipment-pending-list" role="list"></div>
+  </div>
  </div>
 </section>
 <dialog id="shipmentDialog" class="shipment-dialog" aria-labelledby="shipmentDialogTitle">
@@ -310,9 +329,9 @@
 <script src="js/catalog-data.js?v=20261109-data1"></script>
 <script src="js/currency.js?v=20261113-deals-sort1"></script>
 <script src="js/image-stable-dom.js?v=20261113-audit1"></script>
-<script src="js/shipments.js?v=20261116-binder-preserve1"></script>
+<script src="js/shipments.js?v=20261116-transit1"></script>
 <script src="js/collection-views.js?v=20261116-binder-preserve1"></script>
-<script src="js/owned-cards.js?v=20261113-currency1"></script>
+<script src="js/owned-cards.js?v=20261116-transit1"></script>
 <script src="js/collection-drag.js?v=20261109-drag1"></script>
 <script src="js/collection-ordering.js?v=20261116-reinsert1"></script>
 <script src="js/card-actions.js?v=20261116-gbp1"></script>
