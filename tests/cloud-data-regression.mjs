@@ -644,7 +644,7 @@ try {
     // replacement location, especially at the end of a multi-page binder.
     await pp.evaluate(()=>{
       const p=window.VintageBinder.getProgress();
-      delete p.owned['base1-3'];
+      p.owned={'base1-1':true,'base1-2':true};
       p.pendingPurchase={'base1-3':{wasWish:true}};
       p.wish={};p.wishOrder=[];
       p.binderOrder=['base1-1','base1-2','__binder_empty__:reserved_keep'];
