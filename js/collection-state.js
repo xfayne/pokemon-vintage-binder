@@ -6,7 +6,7 @@ const state={cards:[],owned:{},wish:{},pendingPurchase:{},removedWish:{},conditi
 function normalizeShipment(raw){
  if(!raw||typeof raw!=='object')return null;
  const number=String(raw.number||'').trim().toUpperCase();
- if(!/^[A-Z0-9-]{5,50}$/.test(number))return null;
+ if(number&&!/^[A-Z0-9-]{5,50}$/.test(number))return null;
  const id=String(raw.id||'').slice(0,70);
  if(!/^[a-z0-9_-]{8,70}$/i.test(id))return null;
  return {id,number,title:String(raw.title||'').slice(0,70),carrier:Number(raw.carrier)||0,cardIds:Array.isArray(raw.cardIds)?[...new Set(raw.cardIds.filter(x=>typeof x==='string'&&x.length<50))].slice(0,60):[],seenEventIds:Array.isArray(raw.seenEventIds)?[...new Set(raw.seenEventIds.filter(x=>typeof x==='string'&&x.length<100))].slice(0,200):[],initialized:raw.initialized===true,createdAt:Number(raw.createdAt)||0,...(typeof raw.note==='string'&&raw.note.trim()?{note:raw.note.slice(0,1000)}:{}),...(Number(raw.deliveredAt)>0?{deliveredAt:Number(raw.deliveredAt)}:{})};
