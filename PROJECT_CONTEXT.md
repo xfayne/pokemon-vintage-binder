@@ -159,3 +159,8 @@ Collector preference: English vintage Unlimited, ungraded/raw cards; prioritize 
 - New shipments get an editable `purchaseDate` as local calendar `YYYY-MM-DD` defaulted to today, with earlier dates allowed (future dates blocked). The native date input is 16px for mobile focus.
 - Purchase date is displayed in the shipment card and saved to the existing private Firestore progress document and JSON backup/import; date and shipment `createdAt` are separate.
 - Existing legacy shipments without a known purchase date retain that absence until manually edited; do not infer purchase date from creation timestamp. Normalization and cloud sanitization preserve only valid ISO calendar days, without modifying other shipment data or the 17TRACK flow.
+
+## Mobile shipment editor viewport fix (2026-11-16)
+- The shipment dialog was growing taller than the visible iPhone viewport after adding the purchase-date field and card picker. Refactor the existing form to have a fixed header and footer with a single independently scrollable `#shipmentFormBody` for shipment fields and card suggestions.
+- `#shipmentDialog` is capped by dynamic viewport units, and Save/Cancel remain visible at the bottom even when the card list is long or the viewport height is reduced. Native form submit, existing shipment editing, card selection, notes and date validation are unchanged; CSS-only layout fix, no Firestore schema or Worker changes.
+- A mocked browser regression at iPhone-sized viewports checks that the header and Save/Cancel stay inside the dialog/viewport while the body scrolls, without moving the page. Retain 16px font sizes for focusable controls on iOS.
