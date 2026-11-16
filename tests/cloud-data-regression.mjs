@@ -404,6 +404,27 @@ try {
     assert.equal(purchased.shipments[0].note,'Combined shipping confirmed');
     assert.equal(purchased.shipments[0].purchaseDate,undefined);
     assert.match(await page.locator('#shipmentList').innerText(),/Combined shipping confirmed/);
+    // Purchased-but-not-arrived cards have their own read-only list. A card
+    // merely linked to a legacy shipment but still on the Wishlist is excluded.
+    const progressBeforeTransit=await getState(page);
+    await page.locator('#shipmentCardsTab').click();
+    assert.equal(await page.locator('#shipmentCardsTab').getAttribute('aria-selected'),'true');
+    assert.equal(await page.locator('#shipmentParcelsPanel').isVisible(),false);
+    assert.equal(await page.locator('#shipmentHeadActions').isVisible(),false);
+    assert.equal(await page.locator('#shipmentPendingCount').textContent(),'1');
+    assert.deepEqual(await page.locator('#shipmentPendingList [data-open-owned]').evaluateAll(nodes=>nodes.map(node=>node.dataset.openOwned)),['base2-4']);
+    assert.match(await page.locator('[data-open-owned="base2-4"]').innerText(),/תאריך רכישה לא ידוע/);
+    await page.locator('#shipmentPendingSearch').fill('not-a-real-card');
+    assert.equal(await page.locator('#shipmentPendingList [data-open-owned]').count(),0);
+    await page.locator('#shipmentPendingSearch').fill('base2-4');
+    assert.equal(await page.locator('#shipmentPendingList [data-open-owned]').count(),1);
+    await page.locator('#shipmentPendingSearch').fill('');
+    await page.locator('#shipmentPendingSort').selectOption('name');
+    assert.equal(await page.locator('#shipmentPendingList [data-open-owned]').count(),1);
+    assert.deepEqual(await getState(page),progressBeforeTransit,'Viewing, searching and sorting transit cards must not modify Firestore progress');
+    await page.locator('#shipmentParcelsTab').click();
+    assert.equal(await page.locator('#shipmentParcelsPanel').isVisible(),true);
+
 
     // Unlinking before delivery reverses Wishlist removal; linking again restores pending.
     await page.evaluate(()=>document.querySelector('[data-ship-edit="parcel_test_01"]').click());
@@ -495,6 +516,17 @@ try {
     assert.equal(untracked.number,'');
     assert.equal(untracked.note,'Tracking to follow in a week');
     assert.equal(untracked.purchaseDate,'2025-09-01');
+    // Date comes from the associated parcel, not from its createdAt.
+    await page.locator('#shipmentCardsTab').click();
+    await page.locator('#shipmentPendingSort').selectOption('purchase-desc');
+    assert.match(await page.locator('[data-open-owned="base2-5"]').innerText(),/01\.09\.2025/);
+    await page.locator('#shipmentPendingSort').selectOption('purchase-asc');
+    assert.equal(await page.locator('[data-open-owned="base2-5"]').count(),1);
+    await page.locator('#shipmentPendingSearch').fill('Untracked cards from seller');
+    assert.deepEqual(await page.locator('#shipmentPendingList [data-open-owned]').evaluateAll(nodes=>nodes.map(node=>node.dataset.openOwned)),['base2-5']);
+    await page.locator('#shipmentPendingSearch').fill('');
+    await page.locator('#shipmentParcelsTab').click();
+
     assert.match(await page.locator('[data-shipment-id="'+untracked.id+'"]').innerText(),
       /תאריך קנייה: 01\.09\.2025/);
     assert.deepEqual(untracked.cardIds,['base2-5']);
