@@ -410,7 +410,7 @@ try {
     });
     await page.locator('#shipmentAdd').click();
     await page.locator('#shipmentName').fill('Untracked cards from seller');
-    assert.equal(await page.locator('#shipmentNumber').isRequired(),false);
+    assert.equal(await page.locator('#shipmentNumber').evaluate(el=>el.required),false);
     await page.locator('#shipmentNote').fill('Tracking to follow in a week');
     await page.locator('#shipmentCardSearch').fill('base2-5');
     await page.locator('[data-ship-pick="base2-5"]').click();
