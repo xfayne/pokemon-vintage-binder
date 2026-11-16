@@ -169,3 +169,8 @@ Collector preference: English vintage Unlimited, ungraded/raw cards; prioritize 
 - Mobile shipment editor keeps the existing fixed header and Save/Cancel footer but divides the middle into independently scrollable metadata (`.shipment-details-scroll`) and card picker (`.shipment-picker`). The card search, selected chips, and picker results no longer get pushed beneath the shipping fields.
 - At 390×844 (normal iPhone-sized viewport), at least four **full-height** card-result rows must be visible inside `#shipmentCardResults` even when several cards are already selected. Results scroll independently for more matches. The smaller 390×540 keyboard-height viewport keeps Save/Cancel in view and allows scrolling with reduced row visibility.
 - CSS/layout only; no change to shipment state, Firestore, catalog matching, or the 17TRACK Worker. Regression tests assert actual row geometry and scrolling, rather than only the presence of a footer.
+
+## Shipment editor single-scroll UX correction (2026-11-16)
+- Follow-up feedback overrides the split-scrolling approach: the entire editor (title/close, fields, date, notes, selected chips, search, result cards) scrolls together as one continuous surface. **Only Save/Cancel is fixed.**
+- `#shipmentFormBody` is the sole scroll container. Remove fixed height ratios, internally scrolling metadata, selected-chip and result lists, and pinned header/search. All rows retain normal height and the body scroll reaches the end naturally.
+- Dynamic viewport/safe-area footer, mobile text sizing and all shipment data behaviors are retained. Browser tests verify genuine one-surface scrolling and fixed footer on 390×844 / 390×540 with no real Firestore access.
