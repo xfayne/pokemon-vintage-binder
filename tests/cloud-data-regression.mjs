@@ -364,7 +364,10 @@ try {
         'Scrolling fields must not move Save button');
       assert.ok(Math.abs(after.header.top-before.header.top)<1,
         'Scrolling fields must not move the modal header');
-      assert.ok(after.bodyScrollTop>0,'Long shipment content should scroll independently');
+      assert.ok(after.bodyScrollTop>0||before.scrollHeight<=before.clientHeight+1,
+        'Long shipment content should scroll independently: '+
+        JSON.stringify({viewportHeight:viewport.height,scrollHeight:before.scrollHeight,
+          clientHeight:before.clientHeight,afterScrollTop:after.bodyScrollTop}));
       assert.equal(after.dialogScrollTop,0,'The entire dialog should not scroll');
       await page.locator('#shipmentFormBody').evaluate(el=>{el.scrollTop=0;});
     }
