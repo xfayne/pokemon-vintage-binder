@@ -12,7 +12,7 @@ A mobile-friendly web app for organizing a personal **vintage Pokémon TCG** col
 - **Wishlist** — prioritize and reorder wanted cards.
 - **Deals** — discover eBay listings for wishlist cards, compare condition-specific prices, and filter suspicious or irrelevant listings.
 - **AI condition analysis** — analyze an eBay listing from Deals or use the standalone **Condition Analysis** tab to take/select up to eight phone photos or paste an eBay listing link. Both paths use the same Gemini grading engine, distribution and defect markers. eBay results reuse the private Firestore cache; personal photo uploads are processed only on demand and are not stored. Owner sign-in is required.
-- **Shipments** — manage parcels with or without tracking numbers, automatically mark linked cards purchased (removing them from Wishlist), keep private notes, add tracking later, and manually mark delivered parcels to move their cards to My Cards.
+- **Shipments** — manage parcels with or without tracking numbers, save an editable purchase date (today by default), automatically mark linked cards purchased (removing them from Wishlist), keep private notes, add tracking later, and manually mark delivered parcels to move their cards to My Cards.
 - **Google sign-in and backups** — collection data is stored in Firestore; JSON backup/import is available.
 
 ## Architecture

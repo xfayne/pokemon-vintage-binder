@@ -36,6 +36,8 @@ const normalizeUnchangedLayout = html => normalizeScripts(html)
   // Tracking is optional in the editor; this does not change the offline catalog.
   .replace(/<label>מספר מעקב \(לא חובה\) <input id="shipmentNumber"[^>]*>/,
     '<label>מספר מעקב <input id="shipmentNumber" maxlength="50" required dir="ltr" placeholder="LA657049767NL" autocomplete="off" autocapitalize="characters" spellcheck="false">')
+  // Purchase date only belongs to the shipment editor, outside static catalog parity.
+  .replace(/^  <label>תאריך קנייה <input[^\n]*\n/gm, '')
   // Shipment note field is intentionally added to the existing parcel editor.
   .replace(/^  <label>הערות למשלוח <textarea[^\n]*\n/gm, '')
   // Currency chooser is an intentional user-menu addition, not a catalog layout change.

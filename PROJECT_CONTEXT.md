@@ -154,3 +154,8 @@ Collector preference: English vintage Unlimited, ungraded/raw cards; prioritize 
 - Empty number (`''`) is allowed through both `normalizeShipment` and Firestore's `clean`; nonempty numbers retain existing format validation/uniqueness. Multiple no-number shipments are supported by unique parcel IDs, not by number.
 - Worker registration is gated on an actual number, and scheduled/manual 17TRACK refresh filters out numberless entries. Editing the same shipment to add a number starts registration; editing out a number resets obsolete tracking cache without deleting cards.
 - The shipment card explicitly displays `ללא מעקב` / `אין מספר מעקב` and omits the updates button until a number is supplied. Manual `סמן כנמסר` still works.
+
+## Shipment purchase date (2026-11-16)
+- New shipments get an editable `purchaseDate` as local calendar `YYYY-MM-DD` defaulted to today, with earlier dates allowed (future dates blocked). The native date input is 16px for mobile focus.
+- Purchase date is displayed in the shipment card and saved to the existing private Firestore progress document and JSON backup/import; date and shipment `createdAt` are separate.
+- Existing legacy shipments without a known purchase date retain that absence until manually edited; do not infer purchase date from creation timestamp. Normalization and cloud sanitization preserve only valid ISO calendar days, without modifying other shipment data or the 17TRACK flow.
