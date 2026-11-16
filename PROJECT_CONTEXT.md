@@ -174,3 +174,10 @@ Collector preference: English vintage Unlimited, ungraded/raw cards; prioritize 
 - Follow-up feedback overrides the split-scrolling approach: the entire editor (title/close, fields, date, notes, selected chips, search, result cards) scrolls together as one continuous surface. **Only Save/Cancel is fixed.**
 - `#shipmentFormBody` is the sole scroll container. Remove fixed height ratios, internally scrolling metadata, selected-chip and result lists, and pinned header/search. All rows retain normal height and the body scroll reaches the end naturally.
 - Dynamic viewport/safe-area footer, mobile text sizing and all shipment data behaviors are retained. Browser tests verify genuine one-surface scrolling and fixed footer on 390×844 / 390×540 with no real Firestore access.
+
+## Critical fix: purchases destroyed binder positions (2026-11-16)
+- Root cause PR #82: `removeWishlist` also deleted `binderOrder` entries, and `normalizeOrders` filtered pending cards because they were neither Owned nor Wishlist. The shortened order synced to Firestore, shifting unrelated cards.
+- Invariant: linking, unlinking and delivering a shipment MUST NOT change any existing binder position. Pending cards are valid binder residents and render "📦 בדרך", including if wishlist overlays are disabled; they leave Wishlist but are not physically owned until delivered.
+- Pending metadata adds optional `binderIndex` and `wishIndex`, for defensive reinsertion and accurate wishlist-priority restoration on unlink. Reserved empty pockets are unchanged; existing Firestore clean and JSON backup permit these metadata keys.
+- Old positions already removed in a historical save are *not reconstructable* from `wasWish` and `removedWish`. Restore only from an authorized pre-incident backup or Firestore historical snapshot, carefully merging only `binderOrder`, not overwriting current purchases or prices.
+- Public share preserves pending pocket visibility without shipping metadata; browser tests use mock Firestore only.

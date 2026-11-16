@@ -68,7 +68,7 @@ function searchBinder(){
  if(!query){box.innerHTML='';return;}
  const matching=state.binderOrder.map(id=>state.cards.find(c=>c.id===id)).filter(Boolean).filter(c=>
   (c.name+' '+c.id+' '+cardNumber(c)+' '+(MAP.get(c.set)?.name||'')).toLowerCase().includes(query));
- const markup=matching.length?matching.slice(0,12).map(c=>`<button type="button" class="binder-match ${c.id===binderSelectedId?'selected':''}" data-pick-binder="${esc(c.id)}" role="option" aria-selected="${c.id===binderSelectedId}"><img src="${esc(c.image)}" alt="" loading="lazy"><span class="binder-match-label"><b>${esc(c.name)}</b><small>${esc(MAP.get(c.set)?.name||'')} · #${esc(cardNumber(c))}${state.owned[c.id]?' · ✓ שלי':' · ☆ משאלה'}</small></span><span aria-hidden="true">בחר ←</span></button>`).join(''):`<span class="binder-place-hint">לא נמצא קלף באוסף או במשאלות. הוסף אותו קודם בקטלוג.</span>`;
+ const markup=matching.length?matching.slice(0,12).map(c=>`<button type="button" class="binder-match ${c.id===binderSelectedId?'selected':''}" data-pick-binder="${esc(c.id)}" role="option" aria-selected="${c.id===binderSelectedId}"><img src="${esc(c.image)}" alt="" loading="lazy"><span class="binder-match-label"><b>${esc(c.name)}</b><small>${esc(MAP.get(c.set)?.name||'')} · #${esc(cardNumber(c))}${state.owned[c.id]?' · ✓ שלי':state.pendingPurchase[c.id]?' · 📦 בדרך':' · ☆ משאלה'}</small></span><span aria-hidden="true">בחר ←</span></button>`).join(''):`<span class="binder-place-hint">לא נמצא קלף בבינדר. הוסף אותו קודם בקטלוג.</span>`;
  window.VintageStableDOM.reconcileHTML(box,markup,'data-pick-binder');
 }
 function selectBinder(id){
@@ -166,13 +166,13 @@ function removeFromBinder(id){
 }
 function addToBinder(id){
  if(!ensureCloudEdit())return;
- if(!state.owned[id]&&!state.wish[id])return;
+ if(!state.owned[id]&&!state.wish[id]&&!state.pendingPurchase[id])return;
  delete state.binderExcluded[id];
  normalizeOrders();save();toast('הקלף נוסף לבינדר');
 }
 function openMovePicker(id){
  if(!ensureCloudEdit())return;
- if(!state.owned[id]&&!state.wish[id])return;
+ if(!state.owned[id]&&!state.wish[id]&&!state.pendingPurchase[id])return;
  if(!state.binderOrder.includes(id))addToBinder(id);
  showView('binder',false);
  selectBinder(id);

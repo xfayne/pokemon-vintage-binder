@@ -3,7 +3,7 @@ window.VintageCollectionViews={create({state,MAP,$,esc,cardNumber,normalizeOrder
 const isEmptyPocket=window.VintageCollectionOrdering.isEmptyPocket;
 function renderCollections({skipHidden=false}={}){if(!state.ready)return;normalizeOrders();if(!skipHidden||state.view==='shipments')renderShipments();
  $('binderCountTab').textContent=state.binderOrder.filter(id=>!isEmptyPocket(id)).length+' קלפים';$('wishCountTab').textContent=state.wishOrder.length;
- $('binderCount').textContent=state.binderOrder.filter(id=>state.owned[id]).length+' באוסף · '+state.binderOrder.filter(id=>!state.owned[id]&&state.wish[id]).length+' משאלות';
+ $('binderCount').textContent=state.binderOrder.filter(id=>state.owned[id]).length+' באוסף · '+state.binderOrder.filter(id=>!state.owned[id]&&state.pendingPurchase[id]).length+' בדרך · '+state.binderOrder.filter(id=>!state.owned[id]&&!state.pendingPurchase[id]&&state.wish[id]).length+' משאלות';
  $('wishCount').textContent=state.wishOrder.length+' משאלות';
  $('binderIncludeWish').checked=state.binderIncludeWish;
  // Catalog actions need updated nav badges, not several off-screen image grids.
@@ -15,9 +15,9 @@ function renderCollections({skipHidden=false}={}){if(!state.ready)return;normali
  const binderMarkup=Array.from({length:9},(_,slot)=>{const idx=state.binderPage*9+slot,id=list[idx];if(!id)return `<div class="binder-pocket empty" aria-label="כיס ריק"></div>`;
  if(isEmptyPocket(id))return `<div class="binder-pocket empty binder-pocket-reserved" aria-label="כיס ${slot+1} שמור כריק"><span>כיס ריק</span><button type="button" data-binder-clear-empty="${idx}" aria-label="בטל רווח בכיס ${slot+1}">✕ בטל רווח</button></div>`;
  const c=cardLookup.get(id);if(!c)return '<div class="binder-pocket empty"></div>';
- const owned=!!state.owned[id],muted=!owned&&!state.binderIncludeWish;
- return `<article class="binder-pocket ${owned?'':'wish'} ${muted?'wish-muted':''}" role="listitem" data-order-kind="binder" data-order-index="${idx}" data-card-id="${esc(id)}">
- <span class="pocket-badge ${owned?'owned':''}">${owned?'✓ שלי':muted?'☆ משאלה מוסתרת':'☆ משאלה'}</span>
+ const owned=!!state.owned[id],pending=!owned&&!!state.pendingPurchase[id],muted=!owned&&!pending&&!state.binderIncludeWish;
+ return `<article class="binder-pocket ${pending?'pending':owned?'':'wish'} ${muted?'wish-muted':''}" role="listitem" data-order-kind="binder" data-order-index="${idx}" data-card-id="${esc(id)}">
+ <span class="pocket-badge ${owned?'owned':pending?'pending':''}">${owned?'✓ שלי':pending?'📦 בדרך':muted?'☆ משאלה מוסתרת':'☆ משאלה'}</span>
  <img loading="lazy" decoding="async" src="${esc(c.image)}" alt="${esc(c.name)}" data-preview="${esc(id)}" onerror="this.style.opacity='.3'">
  <div class="pocket-title">${esc(c.name)}</div><div class="pocket-sub">${esc(MAP.get(c.set)?.name||'')} #${esc(cardNumber(c))}</div>
  <div class="pocket-actions"><button type="button" data-binder-move="${esc(id)}" aria-label="בחר מיקום חדש עבור ${esc(c.name)}">↗ העבר</button><button type="button" class="binder-remove" data-binder-remove="${esc(id)}" aria-label="הסר את ${esc(c.name)} מהבינדר בלבד">✕ הסר</button></div>

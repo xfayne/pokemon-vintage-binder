@@ -17,11 +17,24 @@ function normalizeOrders(){
  const valid=(arr,predicate)=>[...new Set((Array.isArray(arr)?arr:[]).filter(id=>predicate(id)))];
  const bySet=state.cards.map(c=>c.id);
  const wish=id=>keys.has(id)&&!!state.wish[id];
- const binder=id=>keys.has(id)&&!!(state.owned[id]||state.wish[id])&&!state.binderExcluded[id];
+ // A purchased-in-transit card still owns its original binder pocket.
+ const binder=id=>keys.has(id)&&!!(state.owned[id]||state.wish[id]||state.pendingPurchase?.[id])&&!state.binderExcluded[id];
  state.wishOrder=valid(state.wishOrder,wish);
  const wp=new Set(state.wishOrder);for(const id of bySet)if(wish(id)&&!wp.has(id)){state.wishOrder.push(id);wp.add(id);}
  state.binderOrder=valid(state.binderOrder,id=>isEmptyPocket(id)||binder(id));
- const bp=new Set(state.binderOrder);for(const id of bySet)if(binder(id)&&!bp.has(id)){state.binderOrder.push(id);bp.add(id);}
+ const bp=new Set(state.binderOrder);
+ // Defensive re-insertion at a recorded pre-purchase index, without shifting
+ // other cards during normal transitions. Old records may lack this metadata.
+ const missing=Object.keys(state.pendingPurchase||{}).filter(id=>binder(id)&&!bp.has(id)&&
+  Number.isInteger(state.pendingPurchase[id]?.binderIndex)&&state.pendingPurchase[id].binderIndex>=0)
+  .sort((a,b)=>state.pendingPurchase[a].binderIndex-state.pendingPurchase[b].binderIndex);
+ for(const id of missing){state.binderOrder.splice(Math.min(state.pendingPurchase[id].binderIndex,state.binderOrder.length),0,id);bp.add(id);}
+ // Do not invent positions for cards damaged by the previous release.
+ // Pending cards missing an original binderIndex must wait for historical
+ // recovery; silently appending them could corrupt the user's arranged pages.
+ for(const id of bySet)if(binder(id)&&!bp.has(id)&&(state.owned[id]||state.wish[id])){
+  state.binderOrder.push(id);bp.add(id);
+ }
 }
 function binderVisible(){normalizeOrders();return state.binderOrder.slice();}
 function binderPageCount(){return Math.max(1,Math.ceil(binderVisible().length/9));}

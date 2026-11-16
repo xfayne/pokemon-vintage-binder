@@ -12,7 +12,7 @@ function shareSettingsRef(){return user?sdk.doc(db,'users',user.uid,'sharing','s
 function newShareId(){if(typeof crypto.randomUUID==='function')return crypto.randomUUID();const b=crypto.getRandomValues(new Uint8Array(16));b[6]=(b[6]&15)|64;b[8]=(b[8]&63)|128;const h=Array.from(b,x=>x.toString(16).padStart(2,'0')).join('');return h.slice(0,8)+'-'+h.slice(8,12)+'-'+h.slice(12,16)+'-'+h.slice(16,20)+'-'+h.slice(20);}
 function shareLink(){return shareId?location.origin+location.pathname+'?share='+encodeURIComponent(shareId):'';}
 function renderShare(){const b=$('openReader');if(b){b.disabled=!(user&&ready&&shareLoaded);b.title=b.disabled?'יש להתחבר לחשבון Google ולהמתין לטעינת האוסף':'פתח בלשונית חדשה, עם כתובת שאפשר לשלוח לחברים';}}
-function shareSnapshot(){const p=bridge()?.getProgress?.()||{};const order=Array.isArray(p.binderOrder)?p.binderOrder:[];const cards=order.map(id=>p.owned?.[id]?{id,kind:'owned'}:(shareIncludeWish&&p.wish?.[id])?{id,kind:'wish'}:null);
+function shareSnapshot(){const p=bridge()?.getProgress?.()||{};const order=Array.isArray(p.binderOrder)?p.binderOrder:[];const cards=order.map(id=>p.owned?.[id]?{id,kind:'owned'}:p.pendingPurchase?.[id]?{id,kind:'pending'}:(shareIncludeWish&&p.wish?.[id])?{id,kind:'wish'}:null);
  return {ownerUid:user.uid,cards:cards.slice(0,1252),includeWish:shareIncludeWish,updatedAt:sdk.serverTimestamp()};}
 function queueSharePublish(){
  if(!shareEnabled||!shareId||!user||!ready||!shareLoaded)return Promise.resolve();
