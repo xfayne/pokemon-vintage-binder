@@ -36,10 +36,14 @@ const normalizeUnchangedLayout = html => normalizeScripts(html)
   // Tracking is optional in the editor; this does not change the offline catalog.
   .replace(/<label>מספר מעקב \(לא חובה\) <input id="shipmentNumber"[^>]*>/,
     '<label>מספר מעקב <input id="shipmentNumber" maxlength="50" required dir="ltr" placeholder="LA657049767NL" autocomplete="off" autocapitalize="characters" spellcheck="false">')
-  // Normalize the shipment editor's single scrollable region to the original
-  // source layout for the unchanged offline-catalog parity contract.
+  // Normalize BOTH the previous split-scroll layout and the new single-scroll
+  // form to the same markup so offline catalog parity remains meaningful.
+  .replace(/  <div class="shipment-details-scroll">\n([\s\S]*?)  <\/div>\n  <div class="shipment-picker">\n([\s\S]*?)  <\/div>\n  <\/div>\n  <div class="shipment-form-actions">/,
+    (_, details, picker) => details+picker+'  </div>\n  <div class="shipment-form-actions">')
   .replace(/  <div class="shipment-form-body" id="shipmentFormBody">\n(  <div class="shipment-dialog-head">[^\n]+\n)([\s\S]*?)  <\/div>\n  <div class="shipment-form-actions">/,
     (_, head, body) => head+body+'  <div class="shipment-form-actions">')
+  .replace(/  <div class="shipment-form-body" id="shipmentFormBody">\n([\s\S]*?)  <\/div>\n  <div class="shipment-form-actions">/,
+    (_, body) => body+'  <div class="shipment-form-actions">')
   // Purchase date only belongs to the shipment editor, outside static catalog parity.
   .replace(/^  <label>תאריך קנייה <input[^\n]*\n/gm, '')
   // Shipment note field is intentionally added to the existing parcel editor.
