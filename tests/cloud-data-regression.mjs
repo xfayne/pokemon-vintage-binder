@@ -411,8 +411,11 @@ try {
     assert.equal(await page.locator('#shipmentCardsTab').getAttribute('aria-selected'),'true');
     assert.equal(await page.locator('#shipmentParcelsPanel').isVisible(),false);
     assert.equal(await page.locator('#shipmentHeadActions').isVisible(),false);
-    assert.equal(await page.locator('#shipmentPendingCount').textContent(),'1');
-    assert.deepEqual(await page.locator('#shipmentPendingList [data-open-owned]').evaluateAll(nodes=>nodes.map(node=>node.dataset.openOwned)),['base2-4']);
+    const expectedTransit=Object.keys(progressBeforeTransit.pendingPurchase||{})
+      .filter(id=>!progressBeforeTransit.owned[id]).sort();
+    assert.equal(await page.locator('#shipmentPendingCount').textContent(),String(expectedTransit.length));
+    const visibleTransit=await page.locator('#shipmentPendingList [data-open-owned]').evaluateAll(nodes=>nodes.map(node=>node.dataset.openOwned));
+    assert.deepEqual(visibleTransit.sort(),expectedTransit,'Transit list must include only pending, unowned cards');
     assert.match(await page.locator('[data-open-owned="base2-4"]').innerText(),/תאריך רכישה לא ידוע/);
     await page.locator('#shipmentPendingSearch').fill('not-a-real-card');
     assert.equal(await page.locator('#shipmentPendingList [data-open-owned]').count(),0);
@@ -420,7 +423,7 @@ try {
     assert.equal(await page.locator('#shipmentPendingList [data-open-owned]').count(),1);
     await page.locator('#shipmentPendingSearch').fill('');
     await page.locator('#shipmentPendingSort').selectOption('name');
-    assert.equal(await page.locator('#shipmentPendingList [data-open-owned]').count(),1);
+    assert.equal(await page.locator('#shipmentPendingList [data-open-owned]').count(),expectedTransit.length);
     assert.deepEqual(await getState(page),progressBeforeTransit,'Viewing, searching and sorting transit cards must not modify Firestore progress');
     await page.locator('#shipmentParcelsTab').click();
     assert.equal(await page.locator('#shipmentParcelsPanel').isVisible(),true);
